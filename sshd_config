@@ -1,0 +1,16 @@
+#+BEGIN crypt_profiles ssd_config block
+# https://stribika.github.io/2015/01/04/secure-secure-shell.html
+Protocol 2
+HostKey /etc/ssh/ssh_host_ed25519_key
+HostKey /etc/ssh/ssh_host_rsa_key
+Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
+MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-ripemd160-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-512,hmac-sha2-256,hmac-ripemd160,umac-128@openssh.com
+PermitRootLogin no
+# TODO: don't want extra DNS activity, does this add security?
+# https://unix.stackexchange.com/questions/56941/what-is-the-point-of-sshd-usedns-option
+UseDNS no
+# TODO: this is the default, but if set to yes could cause delays
+GSSAPIAuthentication no
+# Authentication:
+LoginGraceTime 30
+#+END crypt_profiles ssd_config block

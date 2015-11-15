@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# replace the <<>> with the desired value
+export BACKUPHOSTNAME="<<hostname>>"                              # the hostname allowed for backup
+export BACKUPUUID="<<backup drive UUID>>"                         # the UUID of the backup drive
+export CRYPTGPGKEY="<<path of public key to import>>"             # file with the public key if not already imported
+export CRYPTGPGUSER="<<name or email of user>>"                   # the user of the public key to use in general
+export CRYPTGPGCONFIGPATH="<<path with gpg.conf/gpg-agent.conf>>" # directory containing a standard gpg.conf and gpg-agent.conf
+export CRYPTSSHCONFIGPATH="<<path with config for SSH>>"          # directory with standard ssh_config configuration file

@@ -1,0 +1,157 @@
+#!/bin/bash
+
+################################################################################
+# functions useful for external use without all the crypt_profiles functions
+
+function ssh-key-info () {
+    # get information on an SSH key
+    ssh-keygen -lf "$1"
+}
+
+function kill-freespace-random-file () {
+    # wipe freespace by filling a random file until it stops working
+    # this function runs faster than the hard disk itself on modern machines
+    # TODO: fill reserved space as well, this one works as normal user so will not do that
+    # TODO: add guideline how long this takes on my machines as a guideline
+    # TODO: add a helpfile
+    #
+    # References
+    # http://serverfault.com/questions/6440/is-there-an-alternative-to-dev-urandom
+    # time openssl enc -aes-256-ctr -pass pass:"$(dd if=/dev/urandom bs=128 count=1 2>/dev/null | base64)" -nosalt < /dev/zero | pv -pterb > ~/randomfile.bin
+    if [[ -z "$1" ]]
+    then
+        ROOTPATH=~
+    else
+        ROOTPATH="$1"
+    fi
+
+    if [[ -e "$ROOTPATH"/randomfile.bin ]]
+    then
+        rm "$ROOTPATH"/randomfile.bin
+    fi
+    # TODO:: not sure mbuffer is necessary
+    # time openssl enc -aes-256-ctr -pass pass:"$(dd if=/dev/urandom bs=128 count=1 2>/dev/null | base64)" -nosalt < /dev/zero | mbuffer -D 16384M -m 2048M -s 64k -A /bin/false -f -o "$ROOTPATH"/randomfile.bin
+    # TODO: it fluxuates, not sure why this is?
+    time openssl enc -aes-256-ctr -pass pass:"$(dd if=/dev/urandom bs=128 count=1 2>/dev/null | base64)" -nosalt < /dev/zero | mbuffer -D 16384M -m 2048M -s 64k -A /bin/false -f -o "$ROOTPATH"/randomfile.bin
+    sync
+    sleep 60
+    sync
+    sleep 60
+    rm "$ROOTPATH"/randomfile.bin
+}
+
+function write-random-data () {
+    # use openssl to write random data, useful for generating files for benchmarking and tests
+    USAGE="Usage: write-random-data <<size in gb>> <<output file>>
+
+  <<size in gb>>      number of gigs of random data to generate
+
+  <<output filename>> filename to write"
+    if [[ ! -z $1 && ! -z $2 ]]
+    then
+        time openssl enc -aes-256-ctr -pass pass:"$(dd if=/dev/urandom bs=128 count=1 2>/dev/null | base64)" -nosalt < /dev/zero | pv -pterb --size "$1"g --stop-at-size > "$2"
+    else
+        echo "$USAGE"
+    fi
+}
+
+# TODO: need to know if privledges are enough
+#       check if we can sudo first so this can be used in unpriviledged environments
+
+function kill-file () {
+    # XXXX: dangerous functions for convenience in batch mode
+    if [[ -f "$1" ]]
+    then
+        sudo srm -d -l "$1"
+    fi
+}
+
+function kill-recursive () {
+    # XXXX: dangerous functions for convenience in batch mode
+    if [[ -e "$1" ]]
+    then
+        sudo srm -d -l "$1"
+    fi
+}
+
+function kill-file-contents () {
+    # XXXX: dangerous functions for convenience in batch mode
+    kill-file "$1"
+    touch "$1"
+}
+
+function kill-directory-contents () {
+    # XXXX: dangerous functions for convenience in batch mode
+    # XXXX: recursive, very dangerous!!!
+    if [[ -d "$1" ]]
+    then
+        sudo srm -r -d -l "$1"/*
+    fi
+}
+
+function kill-directory-contents-preserve-structure () {
+    # XXXX: dangerous functions for convenience in batch mode
+    if [[ -d "$1" ]]
+    then
+        sudo find "$1" -type f -exec srm -d -l {} \;
+    fi
+}
+
+function kill-find-matching () {
+    # XXXX: dangerous functions for convenience in batch mode
+    if [[ -d "$1" ]]
+    then
+        sudo find "$1" -name "$2" -exec srm -d -l {} \;
+    fi
+}
+
+function kill-matching-line () {
+    # XXXX: dangerous functions for convenience in batch mode
+    if [[ -f "$1" ]]
+    then
+        sed -i "/${1}/d" "$2"
+    fi
+}
+
+function super-password () {
+    # generate a 30 character random password for many uses
+    # XXXX: may not actually be a super password generator, needs to be security audited
+    # TODO: I have been using 24 character passwords in other places
+    # TODO: decide whether to use GPG or openssl for this
+    #
+    # References:
+    #   http://www.commandlinefu.com/commands/view/8869/generate-a-random-password-30-characters-long
+    RANDOMTIMES=$[ ($RANDOM % 113) + 151]
+    # XXXX: is this loop a good or bad thing?
+    for i in {1.."$RANDOMTIMES"}
+    do
+        gpg --gen-random --armor 1 30 >> /dev/null
+    done
+    gpg --gen-random --armor 1 30
+}
+
+function ssh-host-fingerprint () {
+    # get the sshd fingerprints of the current host
+    echo `hostname`
+    if [[ -f /etc/ssh/ssh_host_ecdsa_key.pub ]]
+    then
+        echo '---------- ECDSA fingerprint'
+        ssh-keygen -lf /etc/ssh/ssh_host_ecdsa_key.pub
+        echo '---------- ECDSA public key'
+        cat /etc/ssh/ssh_host_ecdsa_key.pub
+    fi
+    if [[ -f /etc/ssh/ssh_host_ed25519_key.pub ]]
+    then
+        echo '---------- ED25519 fingerprint'
+        ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub
+        echo '---------- ED25519 public key'
+        cat /etc/ssh/ssh_host_ed25519_key.pub
+    fi
+    if [[ -f /etc/ssh/ssh_host_rsa_key.pub ]]
+    then
+        echo '---------- RSA fingerprint'
+        ssh-keygen -lf /etc/ssh/ssh_host_rsa_key.pub
+        echo '---------- RSA public key'
+        cat /etc/ssh/ssh_host_rsa_key.pub
+    fi
+}
