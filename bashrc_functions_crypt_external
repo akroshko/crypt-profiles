@@ -32,7 +32,7 @@ function kill-freespace-random-file () {
     # TODO:: not sure mbuffer is necessary
     # time openssl enc -aes-256-ctr -pass pass:"$(dd if=/dev/urandom bs=128 count=1 2>/dev/null | base64)" -nosalt < /dev/zero | mbuffer -D 16384M -m 2048M -s 64k -A /bin/false -f -o "$ROOTPATH"/randomfile.bin
     # TODO: it fluxuates, not sure why this is?
-    time openssl enc -aes-256-ctr -pass pass:"$(dd if=/dev/urandom bs=128 count=1 2>/dev/null | base64)" -nosalt < /dev/zero | mbuffer -D 16384M -m 2048M -s 64k -A /bin/false -f -o "$ROOTPATH"/randomfile.bin
+    time openssl enc -aes-256-ctr -pass pass:"$(dd if=/dev/urandom bs=128 count=1 2>/dev/null | base64)" -nosalt < /dev/zero | mbuffer -m 2048M -s 64k -A /bin/false -f -o "$ROOTPATH"/randomfile.bin
     sync
     sleep 60
     sync
@@ -62,7 +62,7 @@ function kill-file () {
     # XXXX: dangerous functions for convenience in batch mode
     if [[ -f "$1" ]]
     then
-        sudo srm -d -l "$1"
+        sudo \srm -d -l "$1"
     fi
 }
 
@@ -70,7 +70,7 @@ function kill-recursive () {
     # XXXX: dangerous functions for convenience in batch mode
     if [[ -e "$1" ]]
     then
-        sudo srm -d -l "$1"
+        sudo \srm -d -l "$1"
     fi
 }
 
@@ -85,7 +85,8 @@ function kill-directory-contents () {
     # XXXX: recursive, very dangerous!!!
     if [[ -d "$1" ]]
     then
-        sudo srm -r -d -l "$1"/*
+        sudo \srm -r -d -l "$1"/*
+        sudo \srm -r -d -l "$1"/.*
     fi
 }
 
@@ -93,7 +94,8 @@ function kill-directory-contents-preserve-structure () {
     # XXXX: dangerous functions for convenience in batch mode
     if [[ -d "$1" ]]
     then
-        sudo find "$1" -type f -exec srm -d -l {} \;
+        # TODO: does this go into dot directories
+        sudo find "$1" -type f -exec \srm -d -l {} \;
     fi
 }
 
@@ -101,7 +103,7 @@ function kill-find-matching () {
     # XXXX: dangerous functions for convenience in batch mode
     if [[ -d "$1" ]]
     then
-        sudo find "$1" -name "$2" -exec srm -d -l {} \;
+        sudo find "$1" -name "$2" -exec \srm -d -l {} \;
     fi
 }
 
@@ -155,3 +157,6 @@ function ssh-host-fingerprint () {
         cat /etc/ssh/ssh_host_rsa_key.pub
     fi
 }
+
+# TODO: do not want to use the wrong version
+alias srm='srm -d -l'

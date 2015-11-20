@@ -291,6 +291,7 @@ function fix-gpg-ssh-permissions () {
     fix-crypt-permissions "${HOME}"/.ssh
 }
 
+
 function killall-agents () {
     # kill all the agents and remove identifying information
     # XXXX: this is an incredibly crude way to reset, but works when nothing else does
@@ -331,7 +332,7 @@ function harm-crypt () {
 
 function ssh-keygen-ed25519 () {
     # generate an ssh key in the current directory based on username and host
-    #
+
     # $1=full path to put the key in, current path if not specified
     # $2=password to use for key, will ask if not specified
     if [[ -z "$1" ]]
@@ -352,7 +353,7 @@ function ssh-keygen-ed25519 () {
 function ssh-keygen-rsa () {
     # generate an ssh key using RSA in the current directory based on username and host
     # XXXX: often used on older hosts or for things like github
-    #
+
     # $1=full path to put the key in, current path if not specified
     # $2=password to use for key, will ask if not specified
     if [[ -z "$1" ]]
@@ -689,52 +690,94 @@ function kill-recent-files-line () {
 }
 
 function master-privacy () {
+    echo "================================================================================"
+    echo "Bleachbit browsers"
+    echo "----------------------------------------"
+    echo "Chromium"
+    bleachbit --overwrite --clean chromium.cache chromium.form_history chromium.history chromium.vacuum
+    echo "----------------------------------------"
+    echo "Firefox"
+    bleachbit --overwrite --clean firefox.cache firefox.crash_reports firefox.forms firefox.download_history firefox.url_history firefox.vacuum
+    echo "----------------------------------------"
+    echo "Flash"
+    bleachbit --overwrite --clean flash.*
+    echo "----------------------------------------"
+    echo "Google Chrome, Konqueror, and Epiphany"
+    bleachbit --overwrite --clean epiphany.* google_chrome.* konqueror.*
+    echo "================================================================================"
+    echo "Bleachbit system"
+    echo "----------------------------------------"
+    echo "Recent application files"
+    bleachbit --overwrite --clean adobe_reader.* google_earth.* google_toolbar.* gwenview.* vlc.*
+    echo "----------------------------------------"
+    echo "Gnome"
+    bleachbit --overwrite --clean gnome.* nautilus.*
+    echo "----------------------------------------"
+    echo "KDE"
+    bleachbit --overwrite --clean kde.*
+    echo "----------------------------------------"
+    echo "System-wide"
+    bleachbit --overwrite --clean system.cache system.clipboard system.recent_documents system.tmp thumbnails.*
     # destroy files that could leak privacy data
     # XXXX: this is a dangerous function that really nukes everything!!!
     # TODO: do I want umount-all type-function here?
     # TODO: replace as much as possible with bleachbit
     # clean out recently used lists
+    kill-find-matching ~/.conkeror.mozdev.org/conkeror places.sqlite
+    kill-find-matching ~/.conkeror.mozdev.org/conkeror formhistory.sqlite
+    kill-find-matching ~/.conkeror.mozdev.org/conkeror downloads.json
     kill-directory-contents ~/.kde/share/apps/RecentDocuments/*
-    kill-directory-contents ~/.kde/share/apps/gwenview/recentfolders/*
     kill-file ~/.recently-used
-    kill-file ~/.config/epiphany/ephy-history.db
+    # kill-file ~/.config/epiphany/ephy-history.db
     kill-file ~/.config/gxine/playlist
     kill-recursive ~/.local/share/*xbel*;
     kill-file-contents ~/.local/share/recently-used.xbel;
     kill-file-contents ~/.local/share/user-places.xbel;
     kill-directory-contents-preserve-structure ~/.local/share/tracker;
     kill-directory-contents ~/.local/share/zeitgeist
-    kill-directory-contents-preserve-structure ~/.cache/thumbnails
+    # kill-directory-contents ~/.kde/share/apps/gwenview/recentfolders/*
+    # bleachbit --overwrite --clean thumbnails.cache
+    # TODO: clear .cache much better
+    # kill-directory-contents-preserve-structure ~/.cache/thumbnails
     # TODO: interferes with Firefox sync!!!
-    kill-find-matching ~/.mozilla/firefox places.sqlite
-    kill-find-matching ~/.mozilla/firefox formhistory.sqlite
-    kill-find-matching ~/.conkeror.mozdev.org/conkeror places.sqlite
-    kill-find-matching ~/.conkeror.mozdev.org/conkeror formhistory.sqlite
-    kill-find-matching ~/.conkeror.mozdev.org/conkeror downloads.json
     # dragonplayer
     # ~/.kde/share/config/dragonplayerrc
     # https://unix.stackexchange.com/questions/192465/remove-paragraph-from-file
     # TODO: need a delete paragraph function
     kill-recent-files-line '/\[Recent Files\]/,/^\s*$/{d}' ~/.kde/share/config/arkrc
     kill-matching-line '/Recent Urls/d' ~/.kde/share/config/dragonplayerrc
-    kill-recent-files-line ~/.kde/share/config/gwenviewrc
+    # kill-recent-files-line ~/.kde/share/config/gwenviewrc
     kill-recent-files-line ~/.kde/share/config/katerc
     kill-recent-files-line ~/.kde/share/config/okularrc
     # clear my personal trash
     # TODO: have a non-interactive version of this function
+    # TODO: only kills dotfiles(dirs) if a normal file exists
     if [[ -d ~/tmp/trash ]] && ls -A ~/tmp/trash/* >> /dev/null 2>&1
     then
-        echo "Contents of ~/tmp/trash"
+        echo "Contents of ~/tmp/trash:"
         ls -A ~/tmp/trash/*
-        # TODO: ask and delete
+        read -p "Do you want to delete ~/tmp/trash? " yn
+        if [[ "$yn" =~ y ]]
+        then
+            # TODO: add a countdown here
+            kill-directory-contents ~/tmp/trash
+        fi
     else
         echo "Nothing in ~/tmp/trash"
     fi
     if [[ -d ~/.local/share/Trash/files ]] && ls -A -d ~/.local/share/Trash/files/* >> /dev/null 2>&1
     then
-        echo "Contents of ~/.local/share/Trash/files"
+        echo "Contents of ~/.local/share/Trash/files:"
         ls -A ~/.local/share/Trash/files
-        # TODO: ask and delete
+        # TODO: check if empty?
+        read -p "Do you want to delete ~/.local/share/Trash/files? " yn
+        if [[ "$yn" =~ y ]]
+        then
+            bleachbit --overwrite --clean system.trash
+            # TODO: add a countdown here
+            # kill-directory-contents ~/.local/share/Trash/files
+            # kill-directory-contents ~/.local/share/Trash/info
+        fi
     else
         echo "Nothing in ~/.local/share/Trash/files"
     fi

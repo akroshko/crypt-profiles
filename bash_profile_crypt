@@ -1,4 +1,6 @@
 #!/bin/bash
+# TODO: detect whether this is first attempt on this login
+
 pkill -9 pinentry
 # set up to force pinentry-curses for this particular program
 # otherwise there is an issue with pinentry popping up on a remote X11 display when logging in remotely
@@ -27,9 +29,12 @@ export TOPSECRET=
 export TRYAGAIN=y
 if [[ $EUID -ne 0 ]]
 then
+    # XXXX: don't want something so severe in the future
+    pkill -9 -f gnome-keyring-daemon
     while [[ -z $TOPSECRET  && "$TRYAGAIN" == "y" ]]
     do
         envfile="${HOME}/.gnupg/gpg-agent-info-$(hostname)"
+        # TODO: check if this is an agent that I started
         if [[ -e "$envfile" ]] && kill -0 "$(grep GPG_AGENT_INFO $envfile | cut -d: -f 2)" 2>/dev/null; then
             # eval "$(DISPLAY= cat "$envfile")"
             echo "Sourcing envfile!"
