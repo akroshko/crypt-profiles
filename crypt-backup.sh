@@ -101,6 +101,7 @@ else
     else
         COMPRESSPROG="lzop"
         COMPRESSEXT="lzo"
+    fi
     if [[ -n "$3" ]]
     then
         COMPRESSLEVEL="$3"

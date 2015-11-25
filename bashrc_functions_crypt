@@ -690,6 +690,7 @@ function kill-recent-files-line () {
 }
 
 function master-privacy () {
+    # because sudo is
     echo "================================================================================"
     echo "Bleachbit browsers"
     echo "----------------------------------------"
@@ -794,6 +795,7 @@ function fix-sshd-config () {
         echo "Must be run in crypt-profiles path."
         return 1
     fi
+    sudo cp --backup=t /etc/ssh/sshd_config /etc/ssh/sshd_config.bak
     # edit my ssh block
     # delete my ssh block, deal with multiple copies
     # TODO: change this name
@@ -811,5 +813,7 @@ function fix-sshd-config () {
     # add my ssh block back
     sudo bash -c "echo '' >> /etc/ssh/sshd_config"
     sudo bash -c "cat ./sshd_config >> /etc/ssh/sshd_config"
+    # eliminate double lines
+    sudo sed -e '/^$/N;/^\n$/D' -i /etc/ssh/sshd_config
     sudo service ssh restart
 }
