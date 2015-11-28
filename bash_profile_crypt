@@ -1,53 +1,70 @@
 #!/bin/bash
 # TODO: detect whether this is first attempt on this login
-
-pkill -9 pinentry
-# set up to force pinentry-curses for this particular program
-# otherwise there is an issue with pinentry popping up on a remote X11 display when logging in remotely
 # TODO: possibly make pinentry-select a dot file in ~
-if [[ -f "${HOME}/bin/pinentry-select" ]]
-then
-    rm -f "${HOME}/bin/pinentry-select"
-fi
-if [[ -f /usr/bin/pinentry-curses ]]
-then
-    ln -s /usr/bin/pinentry-curses "${HOME}/bin/pinentry-select"
-fi
-
-if type -P keychain >/dev/null 2>&1
-then
-    `type -P keychain` --nogui --agents ssh
-    source ${HOME}/.keychain/*-sh > /dev/null
-fi
-echo "Keychain done!"
-
+# TODO: should keychain be done after?
+# TODO: this script will sometimes spit out passwords to the terminal on error, fix do this!!!!
 ################################################################################
 ## this section initializes the GPG key
 # start up the agents
 # from https://wiki.archlinux.org/index.php/GnuPG#gpg-agent
+
+# source ~/.bashrc that should source crypt-profile bash functions
+# make sure this is wiped for all child process
 export TOPSECRET=
-export TRYAGAIN=y
+TRYAGAIN=y
+# stop this from being run as root, just in case
 if [[ $EUID -ne 0 ]]
 then
+    source $(dirname "${BASH_SOURCE[0]}")/bashrc_functions_crypt
     # XXXX: don't want something so severe in the future
     pkill -9 -f gnome-keyring-daemon
-    # test if we can decrypt
+    # test if we can decrypt, make non-interactive by linking linking pinentry to /bin/false
+    pkill -9 pinentry
+    if [[ -f "${HOME}/bin/pinentry-select" ]]
+    then
+        rm -f "${HOME}/bin/pinentry-select"
+    fi
+    ln -s /bin/false "${HOME}/bin/pinentry-select"
     if [[ -f ~/.secrets/secrets.txt.gpg ]]
     then
-        TOPSECRET="$(DISPLAY= gpg2 --batch --decrypt --use-agent ~/.secrets/secrets.txt.gpg)"
+        # TODO: suppress any output to avoid reveaing passwords
+        # TODO: maybe incorporate dummy file
+        DISPLAY= gpg2 --batch --decrypt ~/.secrets/secrets.txt.gpg >> /dev/null
     fi
     if [[ $? != 0 ]]
     then
         # reset everything properly if key for GPG profile expired or set up wrong
         echo "Resetting agents!"
         killall-agents
+    else
+        echo "Decrypt OK! Skipping resetting gpg agent!"
     fi
+    # set up to force pinentry-curses for this particular program
+    # otherwise there is an issue with pinentry popping up on a remote
+    # X11 display when logging in remotely
+    # TODO: describe this issue with GnuPG in documentation
+    if [[ -f "${HOME}/bin/pinentry-select" ]]
+    then
+        rm -f "${HOME}/bin/pinentry-select"
+    fi
+    if [[ -f /usr/bin/pinentry-curses ]]
+    then
+        ln -s /usr/bin/pinentry-curses "${HOME}/bin/pinentry-select"
+    fi
+    # run keychain after we see if we need to kill agents
+    if type -P keychain >/dev/null 2>&1
+    then
+        `type -P keychain` --nogui --agents ssh
+        source ${HOME}/.keychain/*-sh > /dev/null
+    fi
+    echo "Keychain done!"
     while [[ -z $TOPSECRET  && "$TRYAGAIN" == "y" ]]
     do
         envfile="${HOME}/.gnupg/gpg-agent-info-$(hostname)"
         # TODO: check if this is an agent that I started
         if [[ -e "$envfile" ]] && kill -0 "$(grep GPG_AGENT_INFO $envfile | cut -d: -f 2)" 2>/dev/null; then
             # eval "$(DISPLAY= cat "$envfile")"
+            # TODO: can be infinite loop when not setup properly
             echo "Sourcing envfile!"
             DISPLAY= source $envfile
             export GPG_AGENT_INFO
@@ -61,7 +78,8 @@ then
         fi
         if [[ $? != 0 ]]
         then
-            read -p "Error decrypting such as bad password.  Try again (y/n)?" TRYAGAIN
+            # TODO: add option for quit
+            read -p "Error decrypting such as bad password.  Try again (y/n/q)? " TRYAGAIN
         fi
     done
 fi

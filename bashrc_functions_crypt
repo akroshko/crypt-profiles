@@ -194,8 +194,8 @@ function crypt-switch-profile () {
         need_new_symlink "$PRIMARYPROFILE"/id_rsa.pub ~/.ssh/id_rsa.pub
         # need_new_symlink "$PRIMARYPROFILE"/authorized_keys ~/.ssh/authorized_keys
         need_new_symlink "$CRYPTSSHCONFIGPATH"/ssh/config ~/.ssh/config
-        need_new_symlink "$CRYPTGPGCONFIGPATH"/gnupg/gpg.conf ~/.gnupg/gpg.conf
-        need_new_symlink "$CRYPTGPGCONFIGPATH"/gnupg/gpg-agent.conf ~/.gnupg/gpg-agent.conf
+        need_new_symlink "$CRYPTGPGCONFIGPATH"/gpg.conf ~/.gnupg/gpg.conf
+        need_new_symlink "$CRYPTGPGCONFIGPATH"/gpg-agent.conf ~/.gnupg/gpg-agent.conf
     fi
     fix-gpg-ssh-permissions
 }
@@ -290,7 +290,6 @@ function fix-gpg-ssh-permissions () {
     fix-crypt-permissions "${HOME}"/.gnupg
     fix-crypt-permissions "${HOME}"/.ssh
 }
-
 
 function killall-agents () {
     # kill all the agents and remove identifying information
