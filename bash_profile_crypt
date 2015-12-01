@@ -15,11 +15,13 @@ TRYAGAIN=y
 # stop this from being run as root, just in case
 if [[ $EUID -ne 0 ]]
 then
-    source $(dirname "${BASH_SOURCE[0]}")/bashrc_functions_crypt
     # XXXX: don't want something so severe in the future
     pkill -9 -f gnome-keyring-daemon
-    # test if we can decrypt, make non-interactive by linking linking pinentry to /bin/false
     pkill -9 pinentry
+    # initializes and add important functions
+    source $(dirname "${BASH_SOURCE[0]}")/bash_env_crypt
+    source $(dirname "${BASH_SOURCE[0]}")/bashrc_functions_crypt
+    # test if we can decrypt, make non-interactive by linking linking pinentry to /bin/false
     if [[ -f "${HOME}/bin/pinentry-select" ]]
     then
         rm -f "${HOME}/bin/pinentry-select"
@@ -60,11 +62,10 @@ then
     echo "Keychain done!"
     while [[ -z $TOPSECRET  && "$TRYAGAIN" == "y" ]]
     do
-        envfile="${HOME}/.gnupg/gpg-agent-info-$(hostname)"
         # TODO: check if this is an agent that I started
-        if [[ -e "$envfile" ]] && kill -0 "$(grep GPG_AGENT_INFO $envfile | cut -d: -f 2)" 2>/dev/null; then
+        if [[ -e "$envfile" ]] && kill -0 "$(grep GPG_AGENT_INFO $envfile | cut -d: -f 2)" 2>/dev/null
+        then
             # eval "$(DISPLAY= cat "$envfile")"
-            # TODO: can be infinite loop when not setup properly
             echo "Sourcing envfile!"
             DISPLAY= source $envfile
             export GPG_AGENT_INFO

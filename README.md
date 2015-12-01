@@ -120,7 +120,7 @@ can be initialized from the users `~/.bash_profile` in order to
 initialize the GnuPG and SSH keys into their respective agents.
 
 The file
-[bashrc_crypt](http://github.com/akroshko/crypt-profiles/bashrc_crypt)
+[bash_env_crypt](http://github.com/akroshko/crypt-profiles/bash_env_crypt)
 should be sourced in `~/.bashrc`.
 
 The files
@@ -252,6 +252,12 @@ many-computer setting.
 - address isses for syncing a `crypte-profile`
 
 - manage client certificates for web browsers
+
+- add things like (encrypted) preshared keys, e.g., for OpenVPN, after
+  profile has been created
+
+- create a one-time password encrypted method for sharing private key
+  (or crypt-profile) initially via USB key
 
 ## Bugs
 

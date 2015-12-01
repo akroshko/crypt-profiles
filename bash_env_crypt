@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# TODO: rename to bash_env_crypt
+# source along with bashrc when doing cryptography
+if [[ -f "${HOME}/.keychain/$(hostname)-sh" ]]
+then
+    source "${HOME}/.keychain/$(hostname)-sh" > /dev/null
+fi
+# TODO: I don't use this
+# if [[ -f "${HOME}/.keychain/$(hostname)-sh-gpg" ]]
+# then
+#     source "${HOME}/.keychain/$(hostname)-sh-gpg" > /dev/null
+# fi
+# XXXX: duplicate from bash_profile_crypt
+envfile="${HOME}/.gnupg/gpg-agent-info-$(hostname)"
+if [[ -e "$envfile" ]] && kill -0 "$(grep GPG_AGENT_INFO $envfile | cut -d: -f 2)" 2>/dev/null
+then
+    DISPLAY= source $envfile
+    export GPG_AGENT_INFO
+fi
