@@ -159,8 +159,6 @@ function crypt-switch-profile () {
     # need library hardcoded
     source ~/.bash_library
     # kill symlinks by default, send to all child processes
-    export KILL_SYMLINKS=1
-    echo "KILL_SYMLINKS=$KILL_SYMLINKS"
     PRIMARYPROFILE="$1"
     WORKINGPROFILE="$2"
     # create crypt-profiles automatically
