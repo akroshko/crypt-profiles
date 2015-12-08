@@ -148,55 +148,53 @@ function crypt-switch-profile () {
     then
         echo "No specified primary path!"
         echo $USAGE
-        exit
+        return 1
     fi
     if [[ -z "$2" ]]
     then
         echo "No specified working path!"
         echo $USAGE
-        exit
+        return 1
     fi
     # need library hardcoded
     source ~/.bash_library
-    # kill symlinks by default
-    KILL_SYMLINKS=1
+    # kill symlinks by default, send to all child processes
+    export KILL_SYMLINKS=1
     echo "KILL_SYMLINKS=$KILL_SYMLINKS"
     PRIMARYPROFILE="$1"
     WORKINGPROFILE="$2"
+    # create crypt-profiles automatically
     mkdir -p "$WORKINGPROFILE"
-    if [[ -h ~/.gnupg || ! -e ~/.gnupg ]]
+    # get rid of agents
+    killall-agents
+    # gpg symlinks
+    if [[ -e ~/.gnupg ]]
     then
-        # get rid of agents
-        killall-agents
-        # gpg symlinks
-        if [[ -h ~/.gnupg ]]
-        then
-            rm ~/.gnupg
-        fi
-        # make sure things are synced
-        need_new_symlink "$PRIMARYPROFILE"/pubring.gpg "$WORKINGPROFILE"/pubring.gpg
-        need_new_symlink "$PRIMARYPROFILE"/secring.gpg "$WORKINGPROFILE"/secring.gpg
-        need_new_symlink "$PRIMARYPROFILE"/trustdb.gpg "$WORKINGPROFILE"/trustdb.gpg
-        need_new_symlink "$WORKINGPROFILE" ~/.gnupg
-        # link to the secrets files
-        need_new_directory ~/.secrets
-        need_new_symlink "$PRIMARYPROFILE"/secrets.txt.gpg ~/.secrets/secrets.txt.gpg
-        need_new_symlink "$PRIMARYPROFILE"/id_rsa.txt.gpg ~/.secrets/id_rsa.txt.gpg
-        need_new_symlink "$PRIMARYPROFILE"/id_ecdsa.txt.gpg ~/.secrets/id_ecdsa.txt.gpg
-        need_new_symlink "$PRIMARYPROFILE"/id_ed25519.txt.gpg ~/.secrets/id_ed25519.txt.gpg
-        # ssh symlinks
-        # TODO: what to do if something other than symlinks exists?
-        need_new_symlink "$PRIMARYPROFILE"/id_ecdsa ~/.ssh/id_ecdsa
-        need_new_symlink "$PRIMARYPROFILE"/id_ecdsa.pub ~/.ssh/id_ecdsa.pub
-        need_new_symlink "$PRIMARYPROFILE"/id_ed25519 ~/.ssh/id_ed25519
-        need_new_symlink "$PRIMARYPROFILE"/id_ed25519.pub ~/.ssh/id_ed25519.pub
-        need_new_symlink "$PRIMARYPROFILE"/id_rsa ~/.ssh/id_rsa
-        need_new_symlink "$PRIMARYPROFILE"/id_rsa.pub ~/.ssh/id_rsa.pub
-        # need_new_symlink "$PRIMARYPROFILE"/authorized_keys ~/.ssh/authorized_keys
-        need_new_symlink "$CRYPTSSHCONFIGPATH"/ssh/config ~/.ssh/config
-        need_new_symlink "$CRYPTGPGCONFIGPATH"/gpg.conf ~/.gnupg/gpg.conf
-        need_new_symlink "$CRYPTGPGCONFIGPATH"/gpg-agent.conf ~/.gnupg/gpg-agent.conf
+        \mv --backup=t -- ~/.gnupg ~/.gnupg.backup
     fi
+    # make sure things are synced
+    need_new_symlink "$PRIMARYPROFILE"/pubring.gpg "$WORKINGPROFILE"/pubring.gpg
+    need_new_symlink "$PRIMARYPROFILE"/secring.gpg "$WORKINGPROFILE"/secring.gpg
+    need_new_symlink "$PRIMARYPROFILE"/trustdb.gpg "$WORKINGPROFILE"/trustdb.gpg
+    need_new_symlink "$WORKINGPROFILE" ~/.gnupg
+    # link to the secrets files
+    need_new_directory ~/.secrets
+    need_new_symlink "$PRIMARYPROFILE"/secrets.txt.gpg ~/.secrets/secrets.txt.gpg
+    need_new_symlink "$PRIMARYPROFILE"/id_rsa.txt.gpg ~/.secrets/id_rsa.txt.gpg
+    need_new_symlink "$PRIMARYPROFILE"/id_ecdsa.txt.gpg ~/.secrets/id_ecdsa.txt.gpg
+    need_new_symlink "$PRIMARYPROFILE"/id_ed25519.txt.gpg ~/.secrets/id_ed25519.txt.gpg
+    # ssh symlinks
+    # TODO: what to do if something other than symlinks exists?
+    need_new_symlink "$PRIMARYPROFILE"/id_ecdsa ~/.ssh/id_ecdsa
+    need_new_symlink "$PRIMARYPROFILE"/id_ecdsa.pub ~/.ssh/id_ecdsa.pub
+    need_new_symlink "$PRIMARYPROFILE"/id_ed25519 ~/.ssh/id_ed25519
+    need_new_symlink "$PRIMARYPROFILE"/id_ed25519.pub ~/.ssh/id_ed25519.pub
+    need_new_symlink "$PRIMARYPROFILE"/id_rsa ~/.ssh/id_rsa
+    need_new_symlink "$PRIMARYPROFILE"/id_rsa.pub ~/.ssh/id_rsa.pub
+    # need_new_symlink "$PRIMARYPROFILE"/authorized_keys ~/.ssh/authorized_keys
+    need_new_symlink "$CRYPTSSHCONFIGPATH"/config ~/.ssh/config
+    need_new_symlink "$CRYPTGPGCONFIGPATH"/gpg.conf ~/.gnupg/gpg.conf
+    need_new_symlink "$CRYPTGPGCONFIGPATH"/gpg-agent.conf ~/.gnupg/gpg-agent.conf
     fix-gpg-ssh-permissions
 }
 
@@ -689,7 +687,6 @@ function kill-recent-files-line () {
 }
 
 function master-privacy () {
-    # because sudo is
     echo "================================================================================"
     echo "Bleachbit browsers"
     echo "----------------------------------------"
@@ -764,6 +761,14 @@ function master-privacy () {
         fi
     else
         echo "Nothing in ~/tmp/trash"
+    fi
+    # if emacs daemon is not running, kill it's tmp files
+    if ! check-emacs-daemon
+    then
+        if [[ -d ~/.emacs.d/tmp ]]
+        then
+            kill-directory-contents ~/.emacs.d/tmp
+        fi
     fi
     if [[ -d ~/.local/share/Trash/files ]] && ls -A -d ~/.local/share/Trash/files/* >> /dev/null 2>&1
     then

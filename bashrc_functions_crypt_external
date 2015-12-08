@@ -93,8 +93,12 @@ function kill-directory-contents () {
     # XXXX: recursive, very dangerous!!!
     if [[ -d "$1" ]]
     then
-        \srm -r -d -l "$1"/*
-        \srm -r -d -l "$1"/.*
+        find "$1" -mindepth 1 -exec \srm -d -l {} \;
+        # TODO: dangerous and descructive when used, might be bug
+        #       kill-directory-contents ~/.emacs.d/tmp kills all of ~/.emacs.d
+        # \srm -r -d -l "$1"/*
+        # \srm -r -d -l "$1"/.*
+
     fi
 }
 

@@ -76,11 +76,15 @@ then
         if [[ -f ~/.secrets/secrets.txt.gpg ]]
         then
             TOPSECRET="$(DISPLAY= gpg2 --decrypt --use-agent ~/.secrets/secrets.txt.gpg)"
-        fi
-        if [[ $? != 0 ]]
-        then
-            # TODO: add option for quit
-            read -p "Error decrypting such as bad password.  Try again (y/n/q)? " TRYAGAIN
+            if [[ $? != 0 ]]
+            then
+                # TODO: add option for quit
+                read -p "Error decrypting such as bad password.  Try again (y/n/q)? " TRYAGAIN
+            fi
+        else
+            # file not present, break by killing appropriate functions
+            export TOPSECRET=
+            export TRYAGAIN=
         fi
     done
 fi
