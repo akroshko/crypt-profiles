@@ -189,6 +189,7 @@ function crypt-switch-profile () {
     need_new_symlink "$PRIMARYPROFILE"/id_ed25519.pub ~/.ssh/id_ed25519.pub
     need_new_symlink "$PRIMARYPROFILE"/id_rsa ~/.ssh/id_rsa
     need_new_symlink "$PRIMARYPROFILE"/id_rsa.pub ~/.ssh/id_rsa.pub
+    # TODO: may be an obsolete lines
     # need_new_symlink "$PRIMARYPROFILE"/authorized_keys ~/.ssh/authorized_keys
     need_new_symlink "$CRYPTSSHCONFIGPATH"/config ~/.ssh/config
     need_new_symlink "$CRYPTGPGCONFIGPATH"/gpg.conf ~/.gnupg/gpg.conf
@@ -445,6 +446,48 @@ function encrypt-file () {
     verify-operation "Encrypt OK? do you wish to delete the original? (y/n) " "Really keep original? (y/n) " "$1"
 }
 
+function encrypt-file-password () {
+    # encrypt a file with a password (to be put through
+    # another channel) get the psk in plain text
+    #
+    # generally to transfer secret keys, things needed to bootstrap a
+    # secret system, or other information once; after which the paper
+    # is completely destroyed
+    #
+    # this methodlogy is used because one can take precautions to be
+    # relatively confident that any comprimise of paper would be
+    # suspected
+    export TOPSECRET=
+    export TOPSECRET1=
+    TOPSECRET=$(super-password-easy)
+    echo "Password is: $TOPSECRET"
+    read -p "Please write down the password and press enter to continue... "
+    export TRYAGAIN=
+    while [[ $TRYAGAIN != "y" ]]
+    do
+        clear
+        # TODO: not sure if I should really do this twice
+        read -p "Re-enter password: " TOPSECRET1
+        if [[ $TOPSECRET != $TOPSECRET1 ]]
+        then
+            # TODO: try again
+            echo "Password does not match!!! Write down again!!!"
+            echo "Password is: $TOPSECRET"
+            read -p "Press enter to continue... "
+            TRYAGAIN="n"
+            continue
+        fi
+        TRYAGAIN=y
+    done
+    echo "Passwords recorded successfully!"
+    FILEUID="$(generate-uid)"
+    echo "The file UID is: $FILEUID"
+    tar -cvzf - "$1" | gpg2 --batch --cipher-algo AES256 --passphrase "$TOPSECRET" --output "$FILEUID".tgz.gpg --symmetric -
+    export TOPSECRET=
+    export TOPSECRET1=
+    echo "Encryption finished!!! "
+}
+
 function decrypt-file () {
     # decrypt a file encrypted using gpg into a temporary path and then move to the current path
     # uses the backup feature of mv to ensure files are never clobbered and operation is verified
@@ -452,7 +495,7 @@ function decrypt-file () {
     #
     # $1=path of file to decrypt
     echo "================================================================================"
-    if [[ -e "$1" ]]
+    if [[ ! -e "$1" ]]
     then
         echo "$1 is not a real file to decrypt!!!"
         return 1
@@ -467,6 +510,22 @@ function decrypt-file () {
     # TODO: want to fail completely if not able to remove?
     rmdir "${TMPPATH}"
     verify-operation "Decrypt OK? Do you wish to delete the encrypted file? (y/n) " "Really keep encrypted? (y/n) " "$1"
+}
+
+function decrypt-file-password () {
+    echo "================================================================================"
+    if [[ ! -e "$1" ]]
+    then
+        echo "$1 is not a real file to decrypt!!!"
+        return 1
+    fi
+    TMPPATH=$(mktemp -d -p .)
+    echo "Decrypting $1 into ${TMPPATH}"
+    gpg2 --decrypt "$1" | tar -xvzf - --directory "${TMPPATH}"
+    echo "Exit status: $? || Pipe status: ${PIPESTATUS[*]}"
+    \mv --backup=t -- ${TMPPATH}/* .
+    # TODO: want to fail completely if not able to remove?
+    rmdir "${TMPPATH}"
 }
 
 function decrypt-flatten () {
@@ -711,23 +770,30 @@ function master-privacy () {
     echo "KDE"
     bleachbit --overwrite --clean kde.*
     echo "----------------------------------------"
+    # TODO: reinstate these
     echo "System-wide"
-    bleachbit --overwrite --clean system.cache system.clipboard system.recent_documents system.tmp thumbnails.*
+    # XXXX: not system.tmp!!! interferes with many many things
+    bleachbit --overwrite --clean system.cache system.clipboard system.recent_documents thumbnails.*
     # destroy files that could leak privacy data
     # XXXX: this is a dangerous function that really nukes everything!!!
     # TODO: do I want umount-all type-function here?
     # TODO: replace as much as possible with bleachbit
+    # TODO: do better job at this?
     # clean out recently used lists
+    echo "Clearing conkeror"
     kill-find-matching ~/.conkeror.mozdev.org/conkeror places.sqlite
     kill-find-matching ~/.conkeror.mozdev.org/conkeror formhistory.sqlite
     kill-find-matching ~/.conkeror.mozdev.org/conkeror downloads.json
     kill-directory-contents ~/.kde/share/apps/RecentDocuments/*
+    echo "Clearing recently used"
     kill-file ~/.recently-used
     # kill-file ~/.config/epiphany/ephy-history.db
     kill-file ~/.config/gxine/playlist
-    kill-recursive ~/.local/share/*xbel*;
-    kill-file-contents ~/.local/share/recently-used.xbel;
+    # XXXX: these are killed by bleachbit
+    # kill-recursive ~/.local/share/*xbel*;
+    # kill-file-contents ~/.local/share/recently-used.xbel;
     kill-file-contents ~/.local/share/user-places.xbel;
+    echo "Clearing tracker/indexers"
     kill-directory-contents-preserve-structure ~/.local/share/tracker;
     kill-directory-contents ~/.local/share/zeitgeist
     # kill-directory-contents ~/.kde/share/apps/gwenview/recentfolders/*

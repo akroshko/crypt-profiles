@@ -130,7 +130,6 @@ function kill-matching-line () {
 function super-password () {
     # generate a 30 character random password for many uses
     # XXXX: may not actually be a super password generator, needs to be security audited
-    # TODO: I have been using 24 character passwords in other places
     # TODO: decide whether to use GPG or openssl for this
     #
     # References:
@@ -143,6 +142,24 @@ function super-password () {
     done
     gpg --gen-random --armor 1 30
 }
+
+function super-password-easy () {
+    # XXXX: 30 character only lowercase password that is slighly nicer
+    # for humans to enter on mobile devices, etc.
+    #
+    # large enough that it is as hard as a 128 bit key to brute force
+    #
+    # if mobile devices become nicer
+    RANDOMTIMES=$[ ($RANDOM % 113) + 151]
+    # XXXX: is this loop a good or bad thing?
+    for i in {1.."$RANDOMTIMES"}
+    do
+        openssl rand -base64 128 >> /dev/null
+    done
+    # http://www.commandlinefu.com/commands/view/722/generate-a-random-password-30-characters-long
+    openssl rand -base64 128 | grep -o '[a-z]' | head -n 30 | tr -d '\n'; echo
+}
+
 
 function ssh-host-fingerprint () {
     # get the sshd fingerprints of the current host
