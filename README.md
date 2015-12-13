@@ -1,10 +1,42 @@
-crypt-profiles: Easily synced GnuPG and SSH keys
-===============================================
+crypt-profiles: Easily synced GnuPG and OpenSSH keys
+====================================================
 
 The *crypt-profiles* package generates password-protected OpenSSH
 keypairs that are secured by GnuPG encryption in a way that allows for
 managing multiple sets of keys and easy synchronization among many
 computers.
+
+This project has its genesis from doing my graduate work on
+distributed heterogeneous computers, and finding that good security
+practices using existing tools (e.g., using OpenSSH public key
+authenication) was difficult.  And it became increasingly difficult as
+the need to use more computers and compartmentalize became necessary.
+Rather than resorting to insecure practices (e.g., OpenSSH private
+keys without passwords) I decided to see if it was possible to remedy
+the situtation using a small amount of code based on common platforms
+(e.g., shell scripting).
+
+WARNING: This project is an experiment in high-level usability of
+common cryptography tools for everyday use, rather than being a secure
+system for production use.  Despite being better and more convenient
+than insecurely used private keys; there is still much to be desired
+in terms of completeness, robustness, and security.  IT WOULD NOT
+CURRENTLY PASS CLOSE INSPECTION OF A SECURITY PROFESSIONAL.  USE AT
+YOUR OWN RISK!
+
+Requirements
+============
+
+This package has been mostly tested on *Debian Linux(Jessie) 8.2*.
+The packages required, given by a convenient installation command are:
+
+    sudo apt-get install bleachbit expect gnupg gnupg-agent keychain openssh-client openssh-server openssl pinentry-curses pinentry-gtk2 secure_delete
+
+Also required for the `crypt-backup.sh` script is an encrypted LVM
+volume group with free space.
+
+Detailed description
+====================
 
 From the website, [GnuPG](https://gnupg.org):
 
@@ -39,27 +71,7 @@ to set up.  Due to this, in practice, many SSH private keys are
 generated without passwords and are often synchronized insecurely
 (such as via email).
 
-WARNING: This project is an experiment in high-level usability of
-common cryptography tools for everyday use, rather than being a secure
-system for production use.  Despite being better and more convenient
-than insecurely used private keys; there is still much to be desired
-in terms of completeness, robustness, and security.  IT WOULD NOT
-CURRENTLY PASS CLOSE INSPECTION OF A SECURITY PROFESSIONAL.  USE AT
-YOUR OWN RISK!
-
-Requirements
-============
-
-This package has been mostly tested on *Debian Linux(Jessie) 8.2*.
-The packages required, given by a convenient installation command are:
-
-    sudo apt-get install bleachbit expect gnupg gnupg-agent keychain openssh-client openssh-server openssl pinentry-curses pinentry-gtk2 secure_delete
-
-Also required for the `crypt-backup.sh` script is an encrypted LVM
-volume group with free space.
-
-Detailed description
-====================
+## A `crypt-profile`
 
 Each `crypt-profile` is based on a master GnuPG key that is secured
 with a user-remembered password and stored in the GnuPG agent.  The

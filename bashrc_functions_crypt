@@ -395,6 +395,8 @@ function bootstrap-temporary-ssh () {
 
 function bootstrap-temporary-ssh-remove () {
     # delete specific one on specific host?
+    # TODO: I should ask nicely before I do this
+    # TODO: give some options for hosts?
     if [[ -z "$1" ]]
     then
         echo "No host specified!"
@@ -413,6 +415,7 @@ function bootstrap-temporary-ssh-remove () {
 function bootstrap-temporary-ssh-remove-all () {
     # delete public and authorized keys on this machine
     # fix up authorized keys
+    # TODO: I should ask nicely before I do this
     # TODO: do I want to clear up authorized keys elsewhere
     sed -i '/Temporary key to login/d' ~/.ssh/authorized_keys
     # delete the keys themselves
