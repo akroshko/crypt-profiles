@@ -747,6 +747,7 @@ function kill-recent-files-line () {
 }
 
 function master-privacy () {
+    # TODO: reset so gnome does not give errors
     echo "================================================================================"
     echo "Bleachbit browsers"
     echo "----------------------------------------"

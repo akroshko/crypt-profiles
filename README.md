@@ -9,12 +9,12 @@ computers.
 This project has its genesis from doing my graduate work on
 distributed heterogeneous computers, and finding that good security
 practices using existing tools (e.g., using OpenSSH public key
-authenication) was difficult.  And it became increasingly difficult as
-the need to use more computers and compartmentalize became necessary.
-Rather than resorting to insecure practices (e.g., OpenSSH private
-keys without passwords) I decided to see if it was possible to remedy
-the situtation using a small amount of code based on common platforms
-(e.g., shell scripting).
+authenication) was difficult.  I found it became increasingly
+difficult as the need to use more computers and compartmentalize
+information became necessary.  Rather than accepting insecure
+practices (e.g., OpenSSH private keys without passwords) I decided to
+see if it was possible to do better by using a small amount of code
+based on commonly used tools (most shell scripting).
 
 WARNING: This project is an experiment in high-level usability of
 common cryptography tools for everyday use, rather than being a secure
@@ -32,8 +32,9 @@ The packages required, given by a convenient installation command are:
 
     sudo apt-get install bleachbit expect gnupg gnupg-agent keychain openssh-client openssh-server openssl pinentry-curses pinentry-gtk2 secure_delete
 
-Also required for the `crypt-backup.sh` script is an encrypted LVM
-volume group with free space.
+Also required for the
+[crypt-backup.sh](http://github.com/akroshko/crypt-profiles/crypt-backup.sh)
+script is an encrypted LVM volume group with free space.
 
 Detailed description
 ====================
@@ -56,11 +57,10 @@ to different purposes for GnuPG and OpenSSH can be problematic.  The
 keys for different purposes much easier and provide helper functions
 for working with agent-stored GnuPG and SSH private keys.  I have
 found I can easily work with a dozen different computers and set up
-new ones, while only having to enter passwords once a day (or on boot
-up or initial login).  It also provides a number of helper functions
-using public-key encryption such as file encryption and backups, both
-using only the public key, that are useful for many different
-purposes.
+new ones, while only having to enter passwords once a day (unless
+rebooting or for the initial login to a remote server).  Functions are
+also provided for tasks such as file encryption and backups using only
+the GnuPG public key.
 
 In order to avoid entering passwords too regularly (especially when
 using automated or unattended scripts), public/private keypairs are
@@ -232,6 +232,8 @@ It is widely accepted that public key-distribution a very difficult
 problem in cryptography.  This is even the case in a single-user
 many-computer setting.
 
+- allow automatic rotation and of passwords and keys between profiles
+
 - make it easier to have a public-key-only profile, for instance, for
   mobile or travel applications where information can be encrypted and
   later decrypted in a secure environment
@@ -280,8 +282,9 @@ many-computer setting.
 - script to check and modify `sshd_config`, and similar files, to be
   more secure
 
-- allow `crypt-backup.sh` to be run as root and make it more flexible
-  where it is run
+- allow
+  [crypt-backup.sh](http://github.com/akroshko/crypt-profiles/crypt-backup.sh)
+  to be run as root and make it more flexible where it is run
 
 - there are issues with reinitializing after a hibernation or sleep
   (often required opening and closing several terminals and running

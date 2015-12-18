@@ -1,7 +1,6 @@
 #!/bin/bash
-
 ################################################################################
-# functions useful for external use without all the crypt_profiles functions
+# functions useful for external use without all the other crypt_profiles functionality
 
 function ssh-key-info () {
     # get information on an SSH key
@@ -47,6 +46,23 @@ du -sh "$ROOTPATH"/randomfile.bin
 du -shb "$ROOTPATH"/randomfile.bin
 rm "$ROOTPATH"/randomfile.bin
 EOF
+}
+
+function kill-drive-random-data () {
+    # TODO: ask if we are sure and add some better checks
+    # use openssl to write random data to disks, much faster than /dev/urandom and appropriate for this
+    USAGE="Usage: kill-drive-random-data <<device name>>
+
+<<device name>> device to fill with random data"
+    if [[ ! -z "$1" && -b "$1" ]]
+    then
+        time {
+            openssl enc -aes-256-ctr -pass pass:"$(dd if=/dev/urandom bs=128 count=1 2>/dev/null | base64)" -nosalt < /dev/zero | pv -pterb | sudo dd of="$1" bs=64k
+        }
+    else
+        echo "File $1 is non-existent or not a block device!!!"
+        echo "$USAGE"
+    fi
 }
 
 function write-random-data () {
