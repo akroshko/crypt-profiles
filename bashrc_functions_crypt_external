@@ -2,12 +2,12 @@
 ################################################################################
 # functions useful for external use without all the other crypt_profiles functionality
 
-function ssh-key-info () {
+ssh-key-info () {
     # get information on an SSH key
     ssh-keygen -lf "$1"
 }
 
-function kill-freespace-random-file () {
+kill-freespace-random-file () {
     # wipe freespace by filling a random file until it stops working
     # this function runs faster than the hard disk itself on modern machines
     # TODO: fill reserved space as well, this one works as normal user so will not do that
@@ -17,14 +17,12 @@ function kill-freespace-random-file () {
     # References
     # http://serverfault.com/questions/6440/is-there-an-alternative-to-dev-urandom
     # time openssl enc -aes-256-ctr -pass pass:"$(dd if=/dev/urandom bs=128 count=1 2>/dev/null | base64)" -nosalt < /dev/zero | pv -pterb > ~/randomfile.bin
-    if [[ -z "$1" ]]
-    then
-        ROOTPATH=~
+    if [[ -z "$1" ]]; then
+        local ROOTPATH=~
     else
-        ROOTPATH="$1"
+        local ROOTPATH="$1"
     fi
-    if [[ -e "$ROOTPATH"/randomfile.bin ]]
-    then
+    if [[ -e "$ROOTPATH"/randomfile.bin ]]; then
         rm "$ROOTPATH"/randomfile.bin
     fi
     # check if I can run a command with elevated priveleges
@@ -48,14 +46,13 @@ rm "$ROOTPATH"/randomfile.bin
 EOF
 }
 
-function kill-drive-random-data () {
+kill-drive-random-data () {
     # TODO: ask if we are sure and add some better checks
     # use openssl to write random data to disks, much faster than /dev/urandom and appropriate for this
-    USAGE="Usage: kill-drive-random-data <<device name>>
+    local USAGE="Usage: kill-drive-random-data <<device name>>
 
 <<device name>> device to fill with random data"
-    if [[ ! -z "$1" && -b "$1" ]]
-    then
+    if [[ ! -z "$1" && -b "$1" ]]; then
         time {
             openssl enc -aes-256-ctr -pass pass:"$(dd if=/dev/urandom bs=128 count=1 2>/dev/null | base64)" -nosalt < /dev/zero | pv -pterb | sudo dd of="$1" bs=64k
         }
@@ -65,15 +62,14 @@ function kill-drive-random-data () {
     fi
 }
 
-function write-random-data () {
+write-random-data () {
     # use openssl to write random data, useful for generating files for benchmarking and tests
-    USAGE="Usage: write-random-data <<size in gb>> <<output file>>
+    local USAGE="Usage: write-random-data <<size in gb>> <<output file>>
 
   <<size in gb>>      number of gigs of random data to generate
 
   <<output filename>> filename to write"
-    if [[ ! -z $1 && ! -z $2 ]]
-    then
+    if [[ ! -z $1 && ! -z $2 ]]; then
         time openssl enc -aes-256-ctr -pass pass:"$(dd if=/dev/urandom bs=128 count=1 2>/dev/null | base64)" -nosalt < /dev/zero | pv -pterb --size "$1"g --stop-at-size > "$2"
     else
         echo "$USAGE"
@@ -82,33 +78,30 @@ function write-random-data () {
 
 # TODO: decide whether elevated privileages is necessary for these commands
 
-function kill-file () {
+kill-file () {
     # XXXX: dangerous functions for convenience in batch mode
-    if [[ -f "$1" ]]
-    then
+    if [[ -f "$1" ]]; then
         \srm -d -l "$1"
     fi
 }
 
-function kill-recursive () {
+kill-recursive () {
     # XXXX: dangerous functions for convenience in batch mode
-    if [[ -e "$1" ]]
-    then
+    if [[ -e "$1" ]]; then
         \srm -d -l "$1"
     fi
 }
 
-function kill-file-contents () {
+kill-file-contents () {
     # XXXX: dangerous functions for convenience in batch mode
     kill-file "$1"
     touch "$1"
 }
 
-function kill-directory-contents () {
+kill-directory-contents () {
     # XXXX: dangerous functions for convenience in batch mode
     # XXXX: recursive, very dangerous!!!
-    if [[ -d "$1" ]]
-    then
+    if [[ -d "$1" ]]; then
         find "$1" -mindepth 1 -exec \srm -d -l {} \;
         # TODO: dangerous and descructive when used, might be bug
         #       kill-directory-contents ~/.emacs.d/tmp kills all of ~/.emacs.d
@@ -118,58 +111,53 @@ function kill-directory-contents () {
     fi
 }
 
-function kill-directory-contents-preserve-structure () {
+kill-directory-contents-preserve-structure () {
     # XXXX: dangerous functions for convenience in batch mode
-    if [[ -d "$1" ]]
-    then
+    if [[ -d "$1" ]]; then
         # TODO: does this go into dot directories
         find "$1" -type f -exec \srm -d -l {} \;
     fi
 }
 
-function kill-find-matching () {
+kill-find-matching () {
     # XXXX: dangerous functions for convenience in batch mode
-    if [[ -d "$1" ]]
-    then
+    if [[ -d "$1" ]]; then
         find "$1" -name "$2" -exec \srm -d -l {} \;
     fi
 }
 
-function kill-matching-line () {
+kill-matching-line () {
     # XXXX: dangerous functions for convenience in batch mode
-    if [[ -f "$1" ]]
-    then
+    if [[ -f "$1" ]]; then
         sed -i "/${1}/d" "$2"
     fi
 }
 
-function super-password () {
+super-password () {
     # generate a 30 character random password for many uses
     # XXXX: may not actually be a super password generator, needs to be security audited
     # TODO: decide whether to use GPG or openssl for this
     #
     # References:
     #   http://www.commandlinefu.com/commands/view/8869/generate-a-random-password-30-characters-long
-    RANDOMTIMES=$[ ($RANDOM % 113) + 151]
+    local RANDOMTIMES=$((($RANDOM % 113) + 151))
     # XXXX: is this loop a good or bad thing?
-    for i in {1.."$RANDOMTIMES"}
-    do
+    for i in {1.."$RANDOMTIMES"}; do
         gpg --gen-random --armor 1 30 >> /dev/null
     done
     gpg --gen-random --armor 1 30
 }
 
-function super-password-easy () {
+super-password-easy () {
     # XXXX: 30 character only lowercase password that is slighly nicer
     # for humans to enter on mobile devices, etc.
     #
     # large enough that it is as hard as a 128 bit key to brute force
     #
     # if mobile devices become nicer
-    RANDOMTIMES=$[ ($RANDOM % 113) + 151]
+    local RANDOMTIMES=$((($RANDOM % 113) + 151))
     # XXXX: is this loop a good or bad thing?
-    for i in {1.."$RANDOMTIMES"}
-    do
+    for i in {1.."$RANDOMTIMES"}; do
         openssl rand -base64 128 >> /dev/null
     done
     # http://www.commandlinefu.com/commands/view/722/generate-a-random-password-30-characters-long
@@ -177,25 +165,22 @@ function super-password-easy () {
 }
 
 
-function ssh-host-fingerprint () {
+ssh-host-fingerprint () {
     # get the sshd fingerprints of the current host
     echo `hostname`
-    if [[ -f /etc/ssh/ssh_host_ecdsa_key.pub ]]
-    then
+    if [[ -f /etc/ssh/ssh_host_ecdsa_key.pub ]]; then
         echo '---------- ECDSA fingerprint'
         ssh-keygen -lf /etc/ssh/ssh_host_ecdsa_key.pub
         echo '---------- ECDSA public key'
         cat /etc/ssh/ssh_host_ecdsa_key.pub
     fi
-    if [[ -f /etc/ssh/ssh_host_ed25519_key.pub ]]
-    then
+    if [[ -f /etc/ssh/ssh_host_ed25519_key.pub ]]; then
         echo '---------- ED25519 fingerprint'
         ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub
         echo '---------- ED25519 public key'
         cat /etc/ssh/ssh_host_ed25519_key.pub
     fi
-    if [[ -f /etc/ssh/ssh_host_rsa_key.pub ]]
-    then
+    if [[ -f /etc/ssh/ssh_host_rsa_key.pub ]]; then
         echo '---------- RSA fingerprint'
         ssh-keygen -lf /etc/ssh/ssh_host_rsa_key.pub
         echo '---------- RSA public key'

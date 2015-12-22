@@ -22,19 +22,16 @@ then
     source $(dirname "${BASH_SOURCE[0]}")/bash_env_crypt
     source $(dirname "${BASH_SOURCE[0]}")/bashrc_functions_crypt
     # test if we can decrypt, make non-interactive by linking linking pinentry to /bin/false
-    if [[ -f "${HOME}/bin/pinentry-select" ]]
-    then
+    if [[ -f "${HOME}/bin/pinentry-select" ]]; then
         rm -f "${HOME}/bin/pinentry-select"
     fi
     ln -s /bin/false "${HOME}/bin/pinentry-select"
-    if [[ -f ~/.secrets/secrets.txt.gpg ]]
-    then
+    if [[ -f ~/.secrets/secrets.txt.gpg ]]; then
         # TODO: suppress any output to avoid reveaing passwords
         # TODO: maybe incorporate dummy file
         DISPLAY= gpg2 --batch --decrypt ~/.secrets/secrets.txt.gpg >> /dev/null
     fi
-    if [[ $? != 0 ]]
-    then
+    if [[ $? != 0 ]]; then
         # reset everything properly if key for GPG profile expired or set up wrong
         echo "Resetting agents!"
         killall-agents
@@ -45,26 +42,21 @@ then
     # otherwise there is an issue with pinentry popping up on a remote
     # X11 display when logging in remotely
     # TODO: describe this issue with GnuPG in documentation
-    if [[ -f "${HOME}/bin/pinentry-select" ]]
-    then
+    if [[ -f "${HOME}/bin/pinentry-select" ]]; then
         rm -f "${HOME}/bin/pinentry-select"
     fi
-    if [[ -f /usr/bin/pinentry-curses ]]
-    then
+    if [[ -f /usr/bin/pinentry-curses ]]; then
         ln -s /usr/bin/pinentry-curses "${HOME}/bin/pinentry-select"
     fi
     # run keychain after we see if we need to kill agents
-    if type -P keychain >/dev/null 2>&1
-    then
+    if type -P keychain >/dev/null 2>&1; then
         `type -P keychain` --nogui --agents ssh
         source ${HOME}/.keychain/*-sh > /dev/null
     fi
     echo "Keychain done!"
-    while [[ -z $TOPSECRET  && "$TRYAGAIN" == "y" ]]
-    do
+    while [[ -z $TOPSECRET  && "$TRYAGAIN" == "y" ]]; do
         # TODO: check if this is an agent that I started
-        if [[ -e "$envfile" ]] && kill -0 "$(grep GPG_AGENT_INFO $envfile | cut -d: -f 2)" 2>/dev/null
-        then
+        if [[ -e "$envfile" ]] && kill -0 "$(grep GPG_AGENT_INFO $envfile | cut -d: -f 2)" 2>/dev/null; then
             # eval "$(DISPLAY= cat "$envfile")"
             echo "Sourcing envfile!"
             DISPLAY= source $envfile
@@ -73,11 +65,9 @@ then
             echo "Starting new agent!"
             eval "$(DISPLAY= gpg-agent --daemon --allow-preset-passphrase --write-env-file $envfile)"
         fi
-        if [[ -f ~/.secrets/secrets.txt.gpg ]]
-        then
+        if [[ -f ~/.secrets/secrets.txt.gpg ]]; then
             TOPSECRET="$(DISPLAY= gpg2 --decrypt --use-agent ~/.secrets/secrets.txt.gpg)"
-            if [[ $? != 0 ]]
-            then
+            if [[ $? != 0 ]]; then
                 # TODO: add option for quit
                 read -p "Error decrypting such as bad password.  Try again (y/n/q)? " TRYAGAIN
             fi
@@ -98,26 +88,23 @@ then
     # need to do with fingerprints for both main and subkeys!!!!
     # TODO: possibly need to test for gpg-preset-passphrase working properly
     #       will clearing the agent deal with sleep and hibernation issues?
-    for PRESETKEY in ${PRESETGPGKEYS}
-    do
+    for PRESETKEY in ${PRESETGPGKEYS}; do
         /usr/lib/gnupg2/gpg-preset-passphrase --verbose --passphrase "$GNUPGPWD" --preset "$PRESETKEY"
     done
-    if [[ -f "~/.gnupg/gpg-agent-info-$(hostname)" ]]
-    then
+    if [[ -f "~/.gnupg/gpg-agent-info-$(hostname)" ]]; then
         source "~/.gnupg/gpg-agent-info-$(hostname)"
         export GPG_AGENT_INFO
     fi
     ################################################################################
     ## initialize ssh keys only if agent is live
     # read in all id_*.txt.gpg
-    for PWDFILE in ~/.secrets/id_*.txt.gpg
-    do
-        if [[ -f "${PWDFILE}" ]]
-        then
+    for PWDFILE in ~/.secrets/id_*.txt.gpg; do
+        if [[ -f "${PWDFILE}" ]]; then
             KEYFILE=$(basename ${PWDFILE%.txt.gpg})
             echo "=== Adding key for ${KEYFILE} =============================================================================" | cut -c 1-80
             # TODO: suppressing text to make things quieter?
             # TODO: do not use passphrase here?
+            # TODO: put in function so information does not leak
             TOPSECRET="$(DISPLAY= gpg2 --quiet --decrypt --use-agent $PWDFILE)"
             KEYPWD=$(sed -n '1p' <<< "$TOPSECRET")
 expect << EOF

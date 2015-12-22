@@ -41,8 +41,7 @@ if [[ "$1" == "--reset" ]]
 then
     # TODO: try all of these even if some are errors
     sudo umount /mnt-snapshot
-    if [[ $(hostname) == "$BACKUPHOSTNAME" ]]
-    then
+    if [[ $(hostname) == "$BACKUPHOSTNAME" ]]; then
        sudo lvremove /dev/crypt-main/backup-snapshot
     fi
 else
@@ -50,8 +49,7 @@ else
     #       but not before here
     set -e
     # XXXX: hard coded to ensure script does not screwn anything up
-    if [[ $(hostname) == "$BACKUPHOSTNAME" ]]
-    then
+    if [[ $(hostname) == "$BACKUPHOSTNAME" ]]; then
         # TODO: is this necessary
         sync; sleep 10; sync
         sudo lvcreate --size 12G --snapshot --name backup-snapshot /dev/crypt-main/home
@@ -61,13 +59,11 @@ else
     fi
     # TODO: throw an error if this node does not exist
     BACKUPPATH="$(mount-disk-uuid ${BACKUPUUID})"
-    if [[ $? != 0 ]]
-    then
+    if [[ $? != 0 ]]; then
         echo "Disk cannot be mounted or already mounted!!!"
         exit 1
     fi
-    if ! gpg --list-keys "${CRYPTGPGUSER}"
-    then
+    if ! gpg --list-keys "${CRYPTGPGUSER}"; then
         gpg --import "${CRYPTGPGKEY}"
     fi
     pushd . >> /dev/null
@@ -76,34 +72,28 @@ else
     # http://dbahire.com/which-compression-tool-should-i-use-for-my-database-backups-part-ii-decompression/
     # http://www.krazyworks.com/multithreaded-encryption-and-compression/
     clear
-    if [[ "$2" == "--bzip2" ]]
-    then
+    if [[ "$2" == "--bzip2" ]]; then
         COMPRESSPROG="bzip2"
         COMPRESSEXT="bz2"
-    elif [[ "$2" == "--gzip" ]]
-    then
+    elif [[ "$2" == "--gzip" ]]; then
         COMPRESSPROG="gzip"
         COMPRESSEXT="gz"
-    elif [[ "$2" == "--lz4" ]]
-    then
+    elif [[ "$2" == "--lz4" ]]; then
         # TODO: possibly a good replacement for lzop
         COMPRESSPROG="lz4"
         COMPRESSEXT="lz4"
-    elif [[ "$2" == "--pigz" ]]
-    then
+    elif [[ "$2" == "--pigz" ]]; then
         # TODO: test this
         COMPRESSPROG="pigz"
         COMPRESSEXT="gz"
-    elif [[ "$2" == "--xz" ]]
-    then
+    elif [[ "$2" == "--xz" ]]; then
         COMPRESSPROG="xz"
         COMPRESSEXT="xz"
     else
         COMPRESSPROG="lzop"
         COMPRESSEXT="lzo"
     fi
-    if [[ -n "$3" ]]
-    then
+    if [[ -n "$3" ]]; then
         COMPRESSLEVEL="$3"
         time tar --create --file - "$1" | "${COMPRESSPROG}" "${COMPRESSLEVEL}" | mbuffer -m 8192M | gpg --compress-algo none --cipher-algo AES256 --recipient "${CRYPTGPGUSER}" --output - --encrypt - | mbuffer -q -m 2048M -s 64k -o ${BACKUPPATH}/$(hostname)-home--$(date +%Y%m%d%H%M%S).tar."${COMPRESSEXT}".gpg
     else
@@ -111,8 +101,7 @@ else
     fi
     popd >> /dev/null
     sudo umount /mnt-snapshot
-    if [[ $(hostname) == "$BACKUPHOSTNAME" ]]
-    then
+    if [[ $(hostname) == "$BACKUPHOSTNAME" ]]; then
        sudo lvremove /dev/crypt-main/backup-snapshot
     fi
 fi

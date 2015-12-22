@@ -3,7 +3,7 @@
 ################################################################################
 # dealing with keys and agents
 
-function crypt-create-profile () {
+crypt-create-profile () {
     # TODO: what does a crypt-profile actually look like
     #       -master, original one, used for creating subkeys
     #       -primary, contains the files that get synced
@@ -22,29 +22,26 @@ function crypt-create-profile () {
     # References:
     #   http://spin.atomicobject.com/2013/10/23/secure-gpg-keys/
     #   http://spin.atomicobject.com/2013/11/24/secure-gpg-keys-guide/
-    USAGE="crypt-create-profile <<master location>> <<primary location>> <<working location>>"
-    if [[ -z "$1" ]]
-    then
+    local USAGE="crypt-create-profile <<master location>> <<primary location>> <<working location>>"
+    if [[ -z "$1" ]]; then
         echo "Empty master location specified!"
         return 1
     fi
-    if [[ -z "$2" ]]
-    then
+    if [[ -z "$2" ]]; then
         echo "Empty primary location specified!"
         return 1
     fi
-    if [[ -z "$3" ]]
-    then
+    if [[ -z "$3" ]]; then
         echo "Empty working location specified!"
         return 1
     fi
     killall-agents
-    MASTERPROFILE="$1"
+    local MASTERPROFILE="$1"
     mkdir -p "${MASTERPROFILE}"
     fix-crypt-permissions "${MASTERPROFILE}"
     # do no make this directory because we use cp
-    PRIMARYPROFILE="$2"
-    WORKINGPROFILE="$3"
+    local PRIMARYPROFILE="$2"
+    local WORKINGPROFILE="$3"
     # generate a new gpg key first
     # first ask for a the master password
     # XXXX: this is insecure but I need to use the password further in the script?
@@ -56,13 +53,12 @@ function crypt-create-profile () {
     read GPGPASSWORD2
     echo "Enter the recipient:"
     read RECIPIENT
-    if [[ ! "$GPGPASSWORD" == "$GPGPASSWORD2" ]]
-    then
+    if [[ ! "$GPGPASSWORD" == "$GPGPASSWORD2" ]]; then
         echo "Passwords are different!!!"
         return 1
     fi
-    if true
-    then
+    # XXXX: if true for debugging purposes
+    if true; then
         echo "================================================================================"
         echo "++++ Generating initial key:"
         echo "++++ Recommend RSA (set your own capabilities), toggle until only capability is certify, 4096 bits, no expiry for now."
@@ -83,12 +79,12 @@ function crypt-create-profile () {
         # TODO: retry if fail
         DISPLAY= gpg --homedir "$MASTERPROFILE" --expert --edit-key "${RECIPIENT}"
     fi
-    if true
-    then
+    # XXXX: if true for debugging purposes
+    if true; then
         # generate ssh keys, possibly want this to be a little better
         # TODO: setup authorized keys later, maybe have a way to see who can mutually login to whom
         # generate a password for id_rsa
-        PASSWORD=$(super-password)
+        local PASSWORD=$(super-password)
         # create the ssh key
         ssh-keygen-rsa "$MASTERPROFILE" "$PASSWORD"
         # use gpg key to encrypt the password
@@ -100,8 +96,8 @@ function crypt-create-profile () {
         # use gpg key to encrypt the password
         DISPLAY= echo "$PASSWORD" | gpg --homedir "$MASTERPROFILE" --recipient ${RECIPIENT} --encrypt --passphrase "$GPGPASSWORD" --output "$MASTERPROFILE"/id_ed25519.txt.gpg -
     fi
-    if true
-    then
+    # XXXX: if true for debugging purposes
+    if true; then
         cp -r "$MASTERPROFILE" "$WORKINGPROFILE"
         fix-crypt-permissions "${WORKINGPROFILE}"
         gpg --homedir "$WORKINGPROFILE" --export-secret-subkeys "$RECIPIENT" > ~/crypt-profiles-secret-keys
@@ -128,30 +124,22 @@ function crypt-create-profile () {
         # TODO: not sure I need this or where the best place is
         # fix-gpg-ssh-permissions
     fi
-    # finally delete any environment variables to avoid leakage
-    # TODO: make sure this happens before all returns!
-    # TODO: any other variables I want to clear?
-    export GPGPASSWORD=
-    export GPGPASSWORD2=
-    export PASSWORD=
 }
 
-function crypt-replace-subkeys () {
+crypt-replace-subkeys () {
     echo "Not implemented yet!"
     false
 }
 
-function crypt-switch-profile () {
+crypt-switch-profile () {
     # switch to a new crypt-profile-
-    USAGE="Usage: crypt-switch-profile <<crypt-profile primary location>> <<crypt-profile working location>>"
-    if [[ -z "$1" ]]
-    then
+    local USAGE="Usage: crypt-switch-profile <<crypt-profile primary location>> <<crypt-profile working location>>"
+    if [[ -z "$1" ]]; then
         echo "No specified primary path!"
         echo $USAGE
         return 1
     fi
-    if [[ -z "$2" ]]
-    then
+    if [[ -z "$2" ]]; then
         echo "No specified working path!"
         echo $USAGE
         return 1
@@ -159,15 +147,14 @@ function crypt-switch-profile () {
     # need library hardcoded
     source ~/.bash_library
     # kill symlinks by default, send to all child processes
-    PRIMARYPROFILE="$1"
-    WORKINGPROFILE="$2"
+    local PRIMARYPROFILE="$1"
+    local WORKINGPROFILE="$2"
     # create crypt-profiles automatically
     mkdir -p "$WORKINGPROFILE"
     # get rid of agents
     killall-agents
     # gpg symlinks
-    if [[ -e ~/.gnupg ]]
-    then
+    if [[ -e ~/.gnupg ]]; then
         \mv --backup=t -- ~/.gnupg ~/.gnupg.backup
     fi
     # make sure things are synced
@@ -197,50 +184,43 @@ function crypt-switch-profile () {
     fix-gpg-ssh-permissions
 }
 
-function crypt-profile-backup () {
+crypt-profile-backup () {
     true
 }
 
-function crypt-profile-printable () {
+crypt-profile-printable () {
     # TODO: need actual "$1" argument and to sort out whether master,primary,working
-
+    # TODO: not $KEYSLOCATION variable
     # create a printable version of the profile, only print appropriate things
-    if [[ -f "${KEYSLOCATION}"/pubring.gpg ]]
-    then
-        NAMES=()
+    if [[ -f "${KEYSLOCATION}"/pubring.gpg ]]; then
+        local NAMES=()
         # get all gpg public keys ids
-        while read LINE
-        do
-            regex='uid[[:space:]](.*)'
-            if [[ "${LINE}" =~ $regex ]]
-            then
+        while read LINE; do
+            local REGEX='uid[[:space:]](.*)'
+            if [[ "${LINE}" =~ $REGEX ]]; then
                 NAMES+=( "${BASH_REMATCH[1]}" )
             fi
         done < <(gpg --list-keys --keyid-format 0xlong --no-default-keyring --keyring ${KEYSLOCATION}/pubring.gpg)
         # now get name and fingerprint for all keyids
-        for NAME in "${NAMES[@]}"
-        do
+        for NAME in "${NAMES[@]}"; do
             # echo "here"
             # echo "${NAME}"
             # echo $(gpg --list-keys --fingerprint --keyid-format 0xlong --no-default-keyring --keyring ${KEYSLOCATION}/pubring.gpg "${NAME}")
             # echo "there"
-            STRIPNAME=`echo "$NAME" | sed -e 's/^ *//g' -e 's/ *$//g' `
-            KEYIDS=()
-            while read LINE
-            do
-                regexid='0x([0-9A-Z]{16})'
-                regexfinger='Key fingerprint = (.*)'
-                if [[ "$LINE" =~ $regexid ]]
-                then
+            local STRIPNAME=`echo "$NAME" | sed -e 's/^ *//g' -e 's/ *$//g' `
+            local KEYIDS=()
+            while read LINE; do
+                local REGEXID='0x([0-9A-Z]{16})'
+                local REGEXFINGER='Key fingerprint = (.*)'
+                if [[ "$LINE" =~ $REGEXID ]]; then
                     KEYIDS+=( "${BASH_REMATCH[1]}" )
-                elif [[ "$LINE" =~ $regexfinger ]]
-                then
-                    KEYFINGERPRINT="${BASH_REMATCH[1]}"
+                elif [[ "$LINE" =~ $REGEXFINGER ]]; then
+                    # TODO: does this line always run?
+                    local KEYFINGERPRINT="${BASH_REMATCH[1]}"
                 fi
             done < <(gpg --list-keys --fingerprint --keyid-format 0xlong --no-default-keyring --keyring ${KEYSLOCATION}/pubring.gpg "${NAME}")
             # get the ascii representation of the key
-            for KEYID in ${KEYIDS[@]}
-            do
+            for KEYID in ${KEYIDS[@]}; do
                 # output printable versions of the keys
                 # TODO any reason to output just fingerprints... useful without public key?
                 echo -n "" > "${KEYSLOCATION}"/"${STRIPNAME}"--"${KEYID}"--public.txt
@@ -271,10 +251,9 @@ function crypt-profile-printable () {
     fi
 }
 
-function fix-crypt-permissions () {
+fix-crypt-permissions () {
     # fix the permissions on a cryptography-relevant directory
-    if [[ -z "$1" ]]
-    then
+    if [[ -z "$1" ]]; then
         echo "Must have a directory to fix!"
     fi
     chmod -R g-rwx "$1"
@@ -282,13 +261,13 @@ function fix-crypt-permissions () {
     chmod u+rwX --recursive "$1"
 }
 
-function fix-gpg-ssh-permissions () {
+fix-gpg-ssh-permissions () {
     # fix the permissions on the standard gpg and ssh directory
     fix-crypt-permissions "${HOME}"/.gnupg
     fix-crypt-permissions "${HOME}"/.ssh
 }
 
-function killall-agents () {
+killall-agents () {
     # kill all the agents and remove identifying information
     # XXXX: this is an incredibly crude way to reset, but works when nothing else does
     pkill -9 -f gpg-agent
@@ -296,77 +275,67 @@ function killall-agents () {
     # XXXX: not completely desirable, but kill gnome keychain because it often interferes
     pkill -9 -f gnome-keyring-daemon
     # this is hopefully enough to purge it
-    if [[ -e ~/.gnupg/gpg-agent-info-$(hostname) ]]
-    then
+    if [[ -e ~/.gnupg/gpg-agent-info-$(hostname) ]]; then
         rm ~/.gnupg/gpg-agent-info-$(hostname)
     fi
     # TODO: not sure if I ever need this?
-    if [[ -e ~/.gpg-agent-info ]]
-    then
+    if [[ -e ~/.gpg-agent-info ]]; then
         rm ~/.gpg-agent-info
     fi
     # TODO: delete only things I own?
-    if find /tmp -iname "gpg-*" >> /dev/null 2>&1
-    then
+    if find /tmp -iname "gpg-*" >> /dev/null 2>&1; then
         rm /tmp/gpg-*
     fi
     find ~/.keychain -type f -delete
 }
 
-function harm-crypt () {
+harm-crypt () {
     # harm stands for harmonize and is a nice prefix I use
     # XXXX: this function is pretty brutal, but resets very well
     killall-agents
     source ~/.bash_profile
     # TODO: make this a function?
-    if ps -ef | grep "emacs --daemon" | grep -v grep > /dev/null && type -P launch-emacsclient >/dev/null 2>&1
-    then
+    if ps -ef | grep "emacs --daemon" | grep -v grep > /dev/null && type -P launch-emacsclient >/dev/null 2>&1; then
         echo "Re-initing Emacs!"
         launch-emacsclient noframe --eval "(cic:init-crypt)"
     fi
 }
 
-function ssh-keygen-ed25519 () {
+ssh-keygen-ed25519 () {
     # generate an ssh key in the current directory based on username and host
 
     # $1=full path to put the key in, current path if not specified
     # $2=password to use for key, will ask if not specified
-    if [[ -z "$1" ]]
-    then
-        KEYPATH=./id_ed25519
+    if [[ -z "$1" ]]; then
+        local KEYPATH=./id_ed25519
     else
-        KEYPATH="$1"/id_ed25519
+        local KEYPATH="$1"/id_ed25519
     fi
-    if [[ -z "$2" ]]
-    then
+    if [[ -z "$2" ]]; then
         ssh-keygen -b 521 -t ed25519 -C "$(id -un)@$(hostname)-$(date --rfc-3339=date)" -f "${KEYPATH}"
     else
-        PASSWORD="$2"
+        local PASSWORD="$2"
         ssh-keygen -b 521 -t ed25519 -C "$(id -un)@$(hostname)-$(date --rfc-3339=date)" -P "${PASSWORD}" -f "${KEYPATH}"
     fi
 }
 
-function ssh-keygen-rsa () {
+ssh-keygen-rsa () {
     # generate an ssh key using RSA in the current directory based on username and host
     # XXXX: often used on older hosts or for things like github
 
     # $1=full path to put the key in, current path if not specified
     # $2=password to use for key, will ask if not specified
-    if [[ -z "$1" ]]
-    then
-        KEYPATH=./id_rsa
+    if [[ -z "$1" ]]; then
+        local KEYPATH=./id_rsa
     else
-        KEYPATH="$1"/id_rsa
+        local KEYPATH="$1"/id_rsa
     fi
-    if [[ -z "$2" ]]
-    then
+    if [[ -z "$2" ]]; then
         ssh-keygen -b 4096 -t rsa -C "$(id -un)@$(hostname)-$(date --rfc-3339=date)" -f "${KEYPATH}"
     else
-        PASSWORD="$2"
+        local PASSWORD="$2"
         ssh-keygen -b 4096 -t rsa -C "$(id -un)@$(hostname)-$(date --rfc-3339=date)" -P "${PASSWORD}" -f "${KEYPATH}"
     fi
-    # clean up
-    export PASSWORD=
 }
 
 ################################################################################
@@ -375,9 +344,8 @@ function ssh-keygen-rsa () {
 
 # TOOD: test before documenting
 
-function bootstrap-temporary-ssh () {
-    if [[ -z "$1" ]]
-    then
+bootstrap-temporary-ssh () {
+    if [[ -z "$1" ]]; then
         echo "No host specified!"
         return 1
     fi
@@ -393,12 +361,11 @@ function bootstrap-temporary-ssh () {
     cat ~/.ssh/id_rsa_temp.pub >> ~/.ssh/authorized_keys
 }
 
-function bootstrap-temporary-ssh-remove () {
+bootstrap-temporary-ssh-remove () {
     # delete specific one on specific host?
     # TODO: I should ask nicely before I do this
     # TODO: give some options for hosts?
-    if [[ -z "$1" ]]
-    then
+    if [[ -z "$1" ]]; then
         echo "No host specified!"
         return 1
     fi
@@ -412,7 +379,7 @@ function bootstrap-temporary-ssh-remove () {
     rm ~/.ssh/id_rsa_temp ~/.ssh/id_rsa_temp.pub
 }
 
-function bootstrap-temporary-ssh-remove-all () {
+bootstrap-temporary-ssh-remove-all () {
     # delete public and authorized keys on this machine
     # fix up authorized keys
     # TODO: I should ask nicely before I do this
@@ -424,7 +391,7 @@ function bootstrap-temporary-ssh-remove-all () {
     home-trash ~/.ssh/id_rsa_temp.pub
 }
 
-function bootstrap-nuke-crypt-home () {
+bootstrap-nuke-crypt-home () {
     # deletes (backs up?) any stuff hanging around
     home-trash ~/.ssh/config
 }
@@ -432,24 +399,23 @@ function bootstrap-nuke-crypt-home () {
 ################################################################################
 # encrypt and decrypt files
 
-function encrypt-file () {
+encrypt-file () {
     # encrypt a file using gpg, checks with user to ensure there are no errors before deleting original
     #
     # $1=file to encrypt
     # TODO: should this be moved to bashrc_functions_crypt_external?
-    if [[ ! -e "$1" ]]
-    then
+    if [[ ! -e "$1" ]]; then
         echo "Must specify an actual file to encrypt!!!"
         return 1
     fi
-    newname="$(generate-uid)"
-    tar -cvzf - "$1" | gpg --recipient "$CRYPTGPGUSER" --output "$newname".tgz.gpg --encrypt -
+    local NEWNAME="$(generate-uid)"
+    tar -cvzf - "$1" | gpg --recipient "$CRYPTGPGUSER" --output "$NEWNAME".tgz.gpg --encrypt -
     echo "Exit status: $? || Pipe status: ${PIPESTATUS[*]}"
     # TODO: is this a good way of verifying shredded file?
     verify-operation "Encrypt OK? do you wish to delete the original? (y/n) " "Really keep original? (y/n) " "$1"
 }
 
-function encrypt-file-password () {
+encrypt-file-password () {
     # encrypt a file with a password (to be put through
     # another channel) get the psk in plain text
     #
@@ -460,51 +426,44 @@ function encrypt-file-password () {
     # this methodlogy is used because one can take precautions to be
     # relatively confident that any comprimise of paper would be
     # suspected
-    export TOPSECRET=
-    export TOPSECRET1=
-    TOPSECRET=$(super-password-easy)
+    local TOPSECRET=$(super-password-easy)
     echo "Password is: $TOPSECRET"
     read -p "Please write down the password and press enter to continue... "
     export TRYAGAIN=
-    while [[ $TRYAGAIN != "y" ]]
-    do
+    while [[ $TRYAGAIN != "y" ]]; do
         clear
         # TODO: not sure if I should really do this twice
         read -p "Re-enter password: " TOPSECRET1
-        if [[ $TOPSECRET != $TOPSECRET1 ]]
-        then
+        if [[ $TOPSECRET != $TOPSECRET1 ]]; then
             # TODO: try again
             echo "Password does not match!!! Write down again!!!"
             echo "Password is: $TOPSECRET"
             read -p "Press enter to continue... "
-            TRYAGAIN="n"
+            local TRYAGAIN="n"
             continue
         fi
-        TRYAGAIN=y
+        local TRYAGAIN=y
     done
     echo "Passwords recorded successfully!"
-    FILEUID="$(generate-uid)"
+    local FILEUID="$(generate-uid)"
     echo "The file UID is: $FILEUID"
     tar -cvzf - "$1" | gpg2 --batch --cipher-algo AES256 --passphrase "$TOPSECRET" --output "$FILEUID".tgz.gpg --symmetric -
-    export TOPSECRET=
-    export TOPSECRET1=
     echo "Encryption finished!!! "
 }
 
-function decrypt-file () {
+decrypt-file () {
     # decrypt a file encrypted using gpg into a temporary path and then move to the current path
     # uses the backup feature of mv to ensure files are never clobbered and operation is verified
     # by the user before deleting the original file
     #
     # $1=path of file to decrypt
     echo "================================================================================"
-    if [[ ! -e "$1" ]]
-    then
+    if [[ ! -e "$1" ]]; then
         echo "$1 is not a real file to decrypt!!!"
         return 1
     fi
     # create random tmp directory here
-    TMPPATH=$(mktemp -d -p .)
+    local TMPPATH=$(mktemp -d -p .)
     echo "Decrypting $1 into ${TMPPATH}"
     # XXXX: assuming successful
     gpg --decrypt "$1" | tar -xvzf - --directory "${TMPPATH}"
@@ -515,14 +474,13 @@ function decrypt-file () {
     verify-operation "Decrypt OK? Do you wish to delete the encrypted file? (y/n) " "Really keep encrypted? (y/n) " "$1"
 }
 
-function decrypt-file-password () {
+decrypt-file-password () {
     echo "================================================================================"
-    if [[ ! -e "$1" ]]
-    then
+    if [[ ! -e "$1" ]]; then
         echo "$1 is not a real file to decrypt!!!"
         return 1
     fi
-    TMPPATH=$(mktemp -d -p .)
+    local TMPPATH=$(mktemp -d -p .)
     echo "Decrypting $1 into ${TMPPATH}"
     gpg2 --decrypt "$1" | tar -xvzf - --directory "${TMPPATH}"
     echo "Exit status: $? || Pipe status: ${PIPESTATUS[*]}"
@@ -531,13 +489,11 @@ function decrypt-file-password () {
     rmdir "${TMPPATH}"
 }
 
-function decrypt-flatten () {
+decrypt-flatten () {
     # go over all files in a directory and decrypt them into the current directory
     # TODO: this function in particular should also mv everything from subdirectories into current directory
-    for fname in $PWD/*
-    do
-        if [[ "$fname" =~ tgz.gpg$ ]]
-        then
+    for fname in $PWD/*; do
+        if [[ "$fname" =~ tgz.gpg$ ]]; then
             # decrypt file and delete (or trash)
             decrypt-file "$fname"
         fi
@@ -547,34 +503,30 @@ function decrypt-flatten () {
 ################################################################################
 # containers
 
-function mount-container () {
+mount-container () {
     # mount an encrypted luks container on an appropiate mount point
     #
-    USAGE="Usage: mount-container <<luks container path>> <<mount point>>
+    local USAGE="Usage: mount-container <<luks container path>> <<mount point>>
 
   <<luks container path>> the path to the luks container, the filename
     of the container is the same name used for the mapping in /dev/mapper
 
   <<mount point>> mount point to create and use"
-    if [[ -z "$1" || -z "$2" ]]
-    then
+    if [[ -z "$1" || -z "$2" ]]; then
         echo "$USAGE"
         return 1
     fi
-    if [[ ! -e /dev/mapper/"$(basename $1)" ]]
-    then
+    if [[ ! -e /dev/mapper/"$(basename $1)" ]]; then
         sudo cryptsetup luksOpen "$1" "$(basename $1)"
     else
         echo "Container $(basename $1) is already mapped!"
         true
     fi
     # TODO: add more error checking?
-    if [[ $? != 4 ]]
-    then
+    if [[ $? != 4 ]]; then
         sudo mkdir -p "$2"
         # TODO: do better than this
-        if ! grep -qs "$2" /proc/mounts
-        then
+        if ! grep -qs "$2" /proc/mounts; then
             sudo mount /dev/mapper/"$(basename $1)" "$2"
             # TODO: should this be default
             sudo chown -R ${USER}:${USER} "$2"
@@ -586,26 +538,24 @@ function mount-container () {
     fi
 }
 
-function umount-container () {
+umount-container () {
     # unmount an encrypted luks container by using exactly the same
     # arguments as mount-container
     #
     # $1=the path to the luks container, the filename of the container
     #    is the same name used for the mapping in /dev/mapper
     # $2=mount point, deleted after unmounting
-    USAGE="Usage: umount-container <<luks container path>> <<mount point>>
+    local USAGE="Usage: umount-container <<luks container path>> <<mount point>>
 
   <<luks container path>> the path to the luks container, the filename
     of the container is the same name used for the mapping in /dev/mapper
 
   <<mount point>> mount point to create and use"
-    if [[ -z "$1" || -z "$2" ]]
-    then
+    if [[ -z "$1" || -z "$2" ]]; then
         echo "$USAGE"
         return 1
     fi
-    if [[ -d "$2" ]]
-    then
+    if [[ -d "$2" ]]; then
         if grep -qs "$2" /proc/mounts; then
             sudo umount "$2"
         else
@@ -616,31 +566,27 @@ function umount-container () {
     else
         echo "Mount point $2 does not exist!"
     fi
-    if [[ -e /dev/mapper/"$(basename $1)" ]]
-    then
+    if [[ -e /dev/mapper/"$(basename $1)" ]]; then
         sudo cryptsetup luksClose "$(basename $1)"
     else
         echo "Container "$(basename $1)" not mapped!"
     fi
 }
 
-function open-vg () {
+open-vg () {
     # open a LVM volume group from an encrypted luks container
-    USAGE="Usage: open-vg <<luks container path>> <<volume group>>
+    local USAGE="Usage: open-vg <<luks container path>> <<volume group>>
 
   <<luks container path>> the path to the luks container, the filename of the container
     is the same name used for the mapping in /dev/mapper
 
   <<volume group>> the name of the volume group"
-    if [[ -z "$1" || -z "$2" ]]
-    then
+    if [[ -z "$1" || -z "$2" ]]; then
         echo "$USAGE"
         return 1
     fi
-    if [[ -e "$1" ]]
-    then
-        if [[ ! -e /dev/mapper/$(basename "$1") ]]
-        then
+    if [[ -e "$1" ]]; then
+        if [[ ! -e /dev/mapper/$(basename "$1") ]]; then
             sudo cryptsetup luksOpen "$1" $(basename "$1")
         else
             echo "Device /dev/mapper/$(basename "$1") already mapped!"
@@ -652,22 +598,20 @@ function open-vg () {
     fi
 }
 
-function close-vg () {
+close-vg () {
     # close a LVM volume group from an encrypted luks container
     # uses the same set of arguments as open-vg
-    USAGE="Usage: close-vg <<luks container path>> <<volume group>>
+    local USAGE="Usage: close-vg <<luks container path>> <<volume group>>
 
   <<luks container path>> the path to the luks container, the filename of the container
     is the same name used for the mapping in /dev/mapper
 
   <<volume group>> the name of the volume group"
-    if [[ -z "$1" || -z "$2" ]]
-    then
+    if [[ -z "$1" || -z "$2" ]]; then
         echo "$USAGE"
         return 1
     fi
-    if [[ -e /dev/mapper/$(basename "$1") ]]
-    then
+    if [[ -e /dev/mapper/$(basename "$1") ]]; then
         sudo vgchange -a n "$2"
         sudo cryptsetup luksClose $(basename "$1")
     else
@@ -675,20 +619,18 @@ function close-vg () {
     fi
 }
 
-function mount-vg-img () {
+mount-vg-img () {
     # mount an encrypted luks container from an encrypted luks LVM image
-    USAGE="Usage: mount-vg-img <<volume group>> <<mount point>>
+    local USAGE="Usage: mount-vg-img <<volume group>> <<mount point>>
 
   <<volume group>> name of the volume group
 
   <<mount point>>  mount point to create and use"
-    if [[ -z "$1" || -z "$2" ]]
-    then
+    if [[ -z "$1" || -z "$2" ]]; then
         echo "$USAGE"
         return 1
     fi
-    if [[ -e /dev/mapper/"$1" ]]
-    then
+    if [[ -e /dev/mapper/"$1" ]]; then
         sudo cryptsetup luksOpen /dev/mapper/"$1" $(basename "$2")
     else
         echo "Device /dev/mapper/$1 already mapped!"
@@ -702,21 +644,19 @@ function mount-vg-img () {
     fi
 }
 
-function umount-vg-img () {
+umount-vg-img () {
     # unmount an encrypted luks container from an encrypted luks LVM
     # image by using exactly the same arguments as mount-vg-img
-    USAGE="Usage: umount-vg-img <<volume group>> <<mount point>>
+    local USAGE="Usage: umount-vg-img <<volume group>> <<mount point>>
 
   <<volume group>> name of the volume group
 
   <<mount point>>  mount point that is deleted after unmounting"
-    if [[ -z "$1" || -z "$2" ]]
-    then
+    if [[ -z "$1" || -z "$2" ]]; then
         echo "$USAGE"
         return 1
     fi
-    if [[ -d "$2" ]]
-    then
+    if [[ -d "$2" ]]; then
         # TODO: seperate function?
         if grep -qs "$2" /proc/mounts; then
             sudo umount "$2"
@@ -726,8 +666,7 @@ function umount-vg-img () {
         # XXXX: get rid of directory anyways
         rmdir "$2"
     fi
-    if [[ -e /dev/mapper/$(basename "$2") ]]
-    then
+    if [[ -e /dev/mapper/$(basename "$2") ]]; then
         sudo cryptsetup luksClose "$(basename $2)"
     else
         echo "Container "$(basename $2)" not mapped!"
@@ -737,16 +676,15 @@ function umount-vg-img () {
 ################################################################################
 # system maintenance functions
 
-function kill-recent-files-line () {
+kill-recent-files-line () {
     # XXXX: dangerous functions for convenience in batch mode
     # TODO: want to make this more general
-    if [[ -f "$1" ]]
-    then
+    if [[ -f "$1" ]]; then
         sed -i '/\[Recent Files\]/,/^\s*$/{d}' "$1"
     fi
 }
 
-function master-privacy () {
+master-privacy () {
     # TODO: reset so gnome does not give errors
     echo "================================================================================"
     echo "Bleachbit browsers"
@@ -817,13 +755,11 @@ function master-privacy () {
     # clear my personal trash
     # TODO: have a non-interactive version of this function
     # TODO: only kills dotfiles(dirs) if a normal file exists
-    if [[ -d ~/tmp/trash ]] && ls -A ~/tmp/trash/* >> /dev/null 2>&1
-    then
+    if [[ -d ~/tmp/trash ]] && ls -A ~/tmp/trash/* >> /dev/null 2>&1; then
         echo "Contents of ~/tmp/trash:"
         ls -A ~/tmp/trash/*
         read -p "Do you want to delete ~/tmp/trash? " yn
-        if [[ "$yn" =~ y ]]
-        then
+        if [[ "$yn" =~ y ]]; then
             # TODO: add a countdown here
             kill-directory-contents ~/tmp/trash
         fi
@@ -831,21 +767,17 @@ function master-privacy () {
         echo "Nothing in ~/tmp/trash"
     fi
     # if emacs daemon is not running, kill it's tmp files
-    if ! check-emacs-daemon
-    then
-        if [[ -d ~/.emacs.d/tmp ]]
-        then
+    if ! check-emacs-daemon; then
+        if [[ -d ~/.emacs.d/tmp ]]; then
             kill-directory-contents ~/.emacs.d/tmp
         fi
     fi
-    if [[ -d ~/.local/share/Trash/files ]] && ls -A -d ~/.local/share/Trash/files/* >> /dev/null 2>&1
-    then
+    if [[ -d ~/.local/share/Trash/files ]] && ls -A -d ~/.local/share/Trash/files/* >> /dev/null 2>&1; then
         echo "Contents of ~/.local/share/Trash/files:"
         ls -A ~/.local/share/Trash/files
         # TODO: check if empty?
         read -p "Do you want to delete ~/.local/share/Trash/files? " yn
-        if [[ "$yn" =~ y ]]
-        then
+        if [[ "$yn" =~ y ]]; then
             bleachbit --overwrite --clean system.trash
             # TODO: add a countdown here
             # kill-directory-contents ~/.local/share/Trash/files
@@ -859,11 +791,10 @@ function master-privacy () {
 ################################################################################
 # misc
 
-function fix-sshd-config () {
+fix-sshd-config () {
     # make /etc/sshd_config more secure
     # uses guidelines given by https://stribika.github.io/2015/01/04/secure-secure-shell.html
-    if [[ ! -e "./sshd_config" && ! -e "./bashrc_functions_crypt" ]]
-    then
+    if [[ ! -e "./sshd_config" && ! -e "./bashrc_functions_crypt" ]]; then
         echo "Must be run in crypt-profiles path."
         return 1
     fi
