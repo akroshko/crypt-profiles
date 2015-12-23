@@ -26,10 +26,10 @@ then
         rm -f "${HOME}/bin/pinentry-select"
     fi
     ln -s /bin/false "${HOME}/bin/pinentry-select"
-    if [[ -f ~/.secrets/secrets.txt.gpg ]]; then
+    if [[ -f ${HOME}/.secrets/secrets.txt.gpg ]]; then
         # TODO: suppress any output to avoid reveaing passwords
         # TODO: maybe incorporate dummy file
-        DISPLAY= gpg2 --batch --decrypt ~/.secrets/secrets.txt.gpg >> /dev/null
+        DISPLAY= gpg2 --batch --decrypt ${HOME}/.secrets/secrets.txt.gpg >> /dev/null
     fi
     if [[ $? != 0 ]]; then
         # reset everything properly if key for GPG profile expired or set up wrong
@@ -65,8 +65,8 @@ then
             echo "Starting new agent!"
             eval "$(DISPLAY= gpg-agent --daemon --allow-preset-passphrase --write-env-file $envfile)"
         fi
-        if [[ -f ~/.secrets/secrets.txt.gpg ]]; then
-            TOPSECRET="$(DISPLAY= gpg2 --decrypt --use-agent ~/.secrets/secrets.txt.gpg)"
+        if [[ -f ${HOME}/.secrets/secrets.txt.gpg ]]; then
+            TOPSECRET="$(DISPLAY= gpg2 --decrypt --use-agent ${HOME}/.secrets/secrets.txt.gpg)"
             if [[ $? != 0 ]]; then
                 # TODO: add option for quit
                 read -p "Error decrypting such as bad password.  Try again (y/n/q)? " TRYAGAIN
@@ -91,14 +91,14 @@ then
     for PRESETKEY in ${PRESETGPGKEYS}; do
         /usr/lib/gnupg2/gpg-preset-passphrase --verbose --passphrase "$GNUPGPWD" --preset "$PRESETKEY"
     done
-    if [[ -f "~/.gnupg/gpg-agent-info-$(hostname)" ]]; then
-        source "~/.gnupg/gpg-agent-info-$(hostname)"
+    if [[ -f "${HOME}/.gnupg/gpg-agent-info-$(hostname)" ]]; then
+        source "${HOME}/.gnupg/gpg-agent-info-$(hostname)"
         export GPG_AGENT_INFO
     fi
     ################################################################################
     ## initialize ssh keys only if agent is live
     # read in all id_*.txt.gpg
-    for PWDFILE in ~/.secrets/id_*.txt.gpg; do
+    for PWDFILE in ${HOME}/.secrets/id_*.txt.gpg; do
         if [[ -f "${PWDFILE}" ]]; then
             KEYFILE=$(basename ${PWDFILE%.txt.gpg})
             echo "=== Adding key for ${KEYFILE} =============================================================================" | cut -c 1-80

@@ -100,12 +100,12 @@ crypt-create-profile () {
     if true; then
         cp -r "$MASTERPROFILE" "$WORKINGPROFILE"
         fix-crypt-permissions "${WORKINGPROFILE}"
-        gpg --homedir "$WORKINGPROFILE" --export-secret-subkeys "$RECIPIENT" > ~/crypt-profiles-secret-keys
+        gpg --homedir "$WORKINGPROFILE" --export-secret-subkeys "$RECIPIENT" > ${HOME}/crypt-profiles-secret-keys
         echo "================================================================================"
         echo "++++ Answer (y)es to delete secret key"
         echo ""
         gpg --homedir "$WORKINGPROFILE" --delete-secret-key "$RECIPIENT"
-        gpg --homedir "$WORKINGPROFILE" --import ~/crypt-profiles-secret-keys
+        gpg --homedir "$WORKINGPROFILE" --import ${HOME}/crypt-profiles-secret-keys
         # create the actually working profile
         # TODO: add some checks here
         mkdir -p "$PRIMARYPROFILE"
@@ -145,7 +145,7 @@ crypt-switch-profile () {
         return 1
     fi
     # need library hardcoded
-    source ~/.bash_library
+    source ${HOME}/.bash_library
     # kill symlinks by default, send to all child processes
     local PRIMARYPROFILE="$1"
     local WORKINGPROFILE="$2"
@@ -154,33 +154,33 @@ crypt-switch-profile () {
     # get rid of agents
     killall-agents
     # gpg symlinks
-    if [[ -e ~/.gnupg ]]; then
-        \mv --backup=t -- ~/.gnupg ~/.gnupg.backup
+    if [[ -e ${HOME}/.gnupg ]]; then
+        \mv --backup=t -- ${HOME}/.gnupg ${HOME}/.gnupg.backup
     fi
     # make sure things are synced
     need_new_symlink "$PRIMARYPROFILE"/pubring.gpg "$WORKINGPROFILE"/pubring.gpg
     need_new_symlink "$PRIMARYPROFILE"/secring.gpg "$WORKINGPROFILE"/secring.gpg
     need_new_symlink "$PRIMARYPROFILE"/trustdb.gpg "$WORKINGPROFILE"/trustdb.gpg
-    need_new_symlink "$WORKINGPROFILE" ~/.gnupg
+    need_new_symlink "$WORKINGPROFILE" ${HOME}/.gnupg
     # link to the secrets files
-    need_new_directory ~/.secrets
-    need_new_symlink "$PRIMARYPROFILE"/secrets.txt.gpg ~/.secrets/secrets.txt.gpg
-    need_new_symlink "$PRIMARYPROFILE"/id_rsa.txt.gpg ~/.secrets/id_rsa.txt.gpg
-    need_new_symlink "$PRIMARYPROFILE"/id_ecdsa.txt.gpg ~/.secrets/id_ecdsa.txt.gpg
-    need_new_symlink "$PRIMARYPROFILE"/id_ed25519.txt.gpg ~/.secrets/id_ed25519.txt.gpg
+    need_new_directory ${HOME}/.secrets
+    need_new_symlink "$PRIMARYPROFILE"/secrets.txt.gpg ${HOME}/.secrets/secrets.txt.gpg
+    need_new_symlink "$PRIMARYPROFILE"/id_rsa.txt.gpg ${HOME}/.secrets/id_rsa.txt.gpg
+    need_new_symlink "$PRIMARYPROFILE"/id_ecdsa.txt.gpg ${HOME}/.secrets/id_ecdsa.txt.gpg
+    need_new_symlink "$PRIMARYPROFILE"/id_ed25519.txt.gpg ${HOME}/.secrets/id_ed25519.txt.gpg
     # ssh symlinks
     # TODO: what to do if something other than symlinks exists?
-    need_new_symlink "$PRIMARYPROFILE"/id_ecdsa ~/.ssh/id_ecdsa
-    need_new_symlink "$PRIMARYPROFILE"/id_ecdsa.pub ~/.ssh/id_ecdsa.pub
-    need_new_symlink "$PRIMARYPROFILE"/id_ed25519 ~/.ssh/id_ed25519
-    need_new_symlink "$PRIMARYPROFILE"/id_ed25519.pub ~/.ssh/id_ed25519.pub
-    need_new_symlink "$PRIMARYPROFILE"/id_rsa ~/.ssh/id_rsa
-    need_new_symlink "$PRIMARYPROFILE"/id_rsa.pub ~/.ssh/id_rsa.pub
+    need_new_symlink "$PRIMARYPROFILE"/id_ecdsa ${HOME}/.ssh/id_ecdsa
+    need_new_symlink "$PRIMARYPROFILE"/id_ecdsa.pub ${HOME}/.ssh/id_ecdsa.pub
+    need_new_symlink "$PRIMARYPROFILE"/id_ed25519 ${HOME}/.ssh/id_ed25519
+    need_new_symlink "$PRIMARYPROFILE"/id_ed25519.pub ${HOME}/.ssh/id_ed25519.pub
+    need_new_symlink "$PRIMARYPROFILE"/id_rsa ${HOME}/.ssh/id_rsa
+    need_new_symlink "$PRIMARYPROFILE"/id_rsa.pub ${HOME}/.ssh/id_rsa.pub
     # TODO: may be an obsolete lines
     # need_new_symlink "$PRIMARYPROFILE"/authorized_keys ~/.ssh/authorized_keys
-    need_new_symlink "$CRYPTSSHCONFIGPATH"/config ~/.ssh/config
-    need_new_symlink "$CRYPTGPGCONFIGPATH"/gpg.conf ~/.gnupg/gpg.conf
-    need_new_symlink "$CRYPTGPGCONFIGPATH"/gpg-agent.conf ~/.gnupg/gpg-agent.conf
+    need_new_symlink "$CRYPTSSHCONFIGPATH"/config ${HOME}/.ssh/config
+    need_new_symlink "$CRYPTGPGCONFIGPATH"/gpg.conf ${HOME}/.gnupg/gpg.conf
+    need_new_symlink "$CRYPTGPGCONFIGPATH"/gpg-agent.conf ${HOME}/.gnupg/gpg-agent.conf
     fix-gpg-ssh-permissions
 }
 
@@ -275,25 +275,25 @@ killall-agents () {
     # XXXX: not completely desirable, but kill gnome keychain because it often interferes
     pkill -9 -f gnome-keyring-daemon
     # this is hopefully enough to purge it
-    if [[ -e ~/.gnupg/gpg-agent-info-$(hostname) ]]; then
-        rm ~/.gnupg/gpg-agent-info-$(hostname)
+    if [[ -e ${HOME}/.gnupg/gpg-agent-info-$(hostname) ]]; then
+        rm ${HOME}/.gnupg/gpg-agent-info-$(hostname)
     fi
     # TODO: not sure if I ever need this?
-    if [[ -e ~/.gpg-agent-info ]]; then
-        rm ~/.gpg-agent-info
+    if [[ -e ${HOME}/.gpg-agent-info ]]; then
+        rm ${HOME}/.gpg-agent-info
     fi
     # TODO: delete only things I own?
     if find /tmp -iname "gpg-*" >> /dev/null 2>&1; then
         rm /tmp/gpg-*
     fi
-    find ~/.keychain -type f -delete
+    find ${HOME}/.keychain -type f -delete
 }
 
 harm-crypt () {
     # harm stands for harmonize and is a nice prefix I use
     # XXXX: this function is pretty brutal, but resets very well
     killall-agents
-    source ~/.bash_profile
+    source ${HOME}/.bash_profile
     # TODO: make this a function?
     if ps -ef | grep "emacs --daemon" | grep -v grep > /dev/null && type -P launch-emacsclient >/dev/null 2>&1; then
         echo "Re-initing Emacs!"
@@ -351,14 +351,14 @@ bootstrap-temporary-ssh () {
     fi
     # XXXX: only do this if an id_rsa does not already exist on host machine
     # create a temporary ssh key without a password, based on
-    ssh-keygen -b 4096 -t rsa -C "Temporary key to login to $(hostname)-$(date --rfc-3339=date)" -f ~/.ssh/id_rsa_temp
+    ssh-keygen -b 4096 -t rsa -C "Temporary key to login to $(hostname)-$(date --rfc-3339=date)" -f ${HOME}/.ssh/id_rsa_temp
     # copy private key to the host machine
-    ssh $(whoami)@"$1" mkdir -p ~/.ssh
-    scp ~/.ssh/id_rsa_temp $(whoami)@"$1":~/.ssh/id_rsa
-    scp ~/.ssh/id_rsa_temp.pub $(whoami)@"$1":~/.ssh/id_rsa.pub
-    chmod 600 ~/.ssh/id_rsa_temp*
+    ssh $(whoami)@"$1" mkdir -p ${HOME}/.ssh
+    scp ${HOME}/.ssh/id_rsa_temp $(whoami)@"$1":${HOME}/.ssh/id_rsa
+    scp ${HOME}/.ssh/id_rsa_temp.pub $(whoami)@"$1":${HOME}/.ssh/id_rsa.pub
+    chmod 600 ${HOME}/.ssh/id_rsa_temp*
     # copy to authorized keys
-    cat ~/.ssh/id_rsa_temp.pub >> ~/.ssh/authorized_keys
+    cat ${HOME}/.ssh/id_rsa_temp.pub >> ${HOME}/.ssh/authorized_keys
 }
 
 bootstrap-temporary-ssh-remove () {
@@ -371,12 +371,12 @@ bootstrap-temporary-ssh-remove () {
     fi
     # XXXX: only do this if an id_rsa does not already exist on host machine
     # delete on private key on host machine
-    ssh $(whoami)@"$1" rm ~/.ssh/id_rsa
+    ssh $(whoami)@"$1" rm ${HOME}/.ssh/id_rsa
     # delete public and authorized keys on this machine
     # TODO: clean up blank lines
-    sed -i '/Temporary key to login/d' ~/.ssh/authorized_keys
+    sed -i '/Temporary key to login/d' ${HOME}/.ssh/authorized_keys
     # delete the keys themselves
-    rm ~/.ssh/id_rsa_temp ~/.ssh/id_rsa_temp.pub
+    rm ${HOME}/.ssh/id_rsa_temp ${HOME}/.ssh/id_rsa_temp.pub
 }
 
 bootstrap-temporary-ssh-remove-all () {
@@ -384,16 +384,16 @@ bootstrap-temporary-ssh-remove-all () {
     # fix up authorized keys
     # TODO: I should ask nicely before I do this
     # TODO: do I want to clear up authorized keys elsewhere
-    sed -i '/Temporary key to login/d' ~/.ssh/authorized_keys
+    sed -i '/Temporary key to login/d' ${HOME}/.ssh/authorized_keys
     # delete the keys themselves
-    sed -i '/^\s*$/d' ~/.ssh/authorized_keys
-    home-trash ~/.ssh/id_rsa_temp
-    home-trash ~/.ssh/id_rsa_temp.pub
+    sed -i '/^\s*$/d' ${HOME}/.ssh/authorized_keys
+    home-trash ${HOME}/.ssh/id_rsa_temp
+    home-trash ${HOME}/.ssh/id_rsa_temp.pub
 }
 
 bootstrap-nuke-crypt-home () {
     # deletes (backs up?) any stuff hanging around
-    home-trash ~/.ssh/config
+    home-trash ${HOME}/.ssh/config
 }
 
 ################################################################################
@@ -723,21 +723,21 @@ master-privacy () {
     # TODO: do better job at this?
     # clean out recently used lists
     echo "Clearing conkeror"
-    kill-find-matching ~/.conkeror.mozdev.org/conkeror places.sqlite
-    kill-find-matching ~/.conkeror.mozdev.org/conkeror formhistory.sqlite
-    kill-find-matching ~/.conkeror.mozdev.org/conkeror downloads.json
-    kill-directory-contents ~/.kde/share/apps/RecentDocuments/*
+    kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror places.sqlite
+    kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror formhistory.sqlite
+    kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror downloads.json
+    kill-directory-contents ${HOME}/.kde/share/apps/RecentDocuments/*
     echo "Clearing recently used"
-    kill-file ~/.recently-used
+    kill-file ${HOME}/.recently-used
     # kill-file ~/.config/epiphany/ephy-history.db
-    kill-file ~/.config/gxine/playlist
+    kill-file ${HOME}/.config/gxine/playlist
     # XXXX: these are killed by bleachbit
     # kill-recursive ~/.local/share/*xbel*;
     # kill-file-contents ~/.local/share/recently-used.xbel;
-    kill-file-contents ~/.local/share/user-places.xbel;
+    kill-file-contents ${HOME}/.local/share/user-places.xbel;
     echo "Clearing tracker/indexers"
-    kill-directory-contents-preserve-structure ~/.local/share/tracker;
-    kill-directory-contents ~/.local/share/zeitgeist
+    kill-directory-contents-preserve-structure ${HOME}/.local/share/tracker;
+    kill-directory-contents ${HOME}/.local/share/zeitgeist
     # kill-directory-contents ~/.kde/share/apps/gwenview/recentfolders/*
     # bleachbit --overwrite --clean thumbnails.cache
     # TODO: clear .cache much better
@@ -747,44 +747,44 @@ master-privacy () {
     # ~/.kde/share/config/dragonplayerrc
     # https://unix.stackexchange.com/questions/192465/remove-paragraph-from-file
     # TODO: need a delete paragraph function
-    kill-recent-files-line '/\[Recent Files\]/,/^\s*$/{d}' ~/.kde/share/config/arkrc
-    kill-matching-line '/Recent Urls/d' ~/.kde/share/config/dragonplayerrc
+    kill-recent-files-line '/\[Recent Files\]/,/^\s*$/{d}' ${HOME}/.kde/share/config/arkrc
+    kill-matching-line '/Recent Urls/d' ${HOME}/.kde/share/config/dragonplayerrc
     # kill-recent-files-line ~/.kde/share/config/gwenviewrc
-    kill-recent-files-line ~/.kde/share/config/katerc
-    kill-recent-files-line ~/.kde/share/config/okularrc
+    kill-recent-files-line ${HOME}/.kde/share/config/katerc
+    kill-recent-files-line ${HOME}/.kde/share/config/okularrc
     # clear my personal trash
     # TODO: have a non-interactive version of this function
     # TODO: only kills dotfiles(dirs) if a normal file exists
-    if [[ -d ~/tmp/trash ]] && ls -A ~/tmp/trash/* >> /dev/null 2>&1; then
+    if [[ -d ${HOME}/tmp/trash ]] && ls -A ${HOME}/tmp/trash/* >> /dev/null 2>&1; then
         echo "Contents of ~/tmp/trash:"
-        ls -A ~/tmp/trash/*
+        ls -A ${HOME}/tmp/trash/*
         read -p "Do you want to delete ~/tmp/trash? " yn
         if [[ "$yn" =~ y ]]; then
             # TODO: add a countdown here
-            kill-directory-contents ~/tmp/trash
+            kill-directory-contents ${HOME}/tmp/trash
         fi
     else
         echo "Nothing in ~/tmp/trash"
     fi
     # if emacs daemon is not running, kill it's tmp files
     if ! check-emacs-daemon; then
-        if [[ -d ~/.emacs.d/tmp ]]; then
-            kill-directory-contents ~/.emacs.d/tmp
+        if [[ -d ${HOME}/.emacs.d/tmp ]]; then
+            kill-directory-contents ${HOME}/.emacs.d/tmp
         fi
     fi
-    if [[ -d ~/.local/share/Trash/files ]] && ls -A -d ~/.local/share/Trash/files/* >> /dev/null 2>&1; then
+    if [[ -d ${HOME}/.local/share/Trash/files ]] && ls -A -d ${HOME}/.local/share/Trash/files/* >> /dev/null 2>&1; then
         echo "Contents of ~/.local/share/Trash/files:"
-        ls -A ~/.local/share/Trash/files
+        ls -A ${HOME}/.local/share/Trash/files
         # TODO: check if empty?
         read -p "Do you want to delete ~/.local/share/Trash/files? " yn
         if [[ "$yn" =~ y ]]; then
             bleachbit --overwrite --clean system.trash
             # TODO: add a countdown here
-            # kill-directory-contents ~/.local/share/Trash/files
-            # kill-directory-contents ~/.local/share/Trash/info
+            # kill-directory-contents ${HOME}/.local/share/Trash/files
+            # kill-directory-contents ${HOME}/.local/share/Trash/info
         fi
     else
-        echo "Nothing in ~/.local/share/Trash/files"
+        echo "Nothing in ${HOME}/.local/share/Trash/files"
     fi
 }
 

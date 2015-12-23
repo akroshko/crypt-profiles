@@ -1,6 +1,6 @@
 #!/bin/bash
 # XXXX: assumes ??? is instlalled, but can it be run as root?
-source ~/.bash_library
+source ${HOME}/.bash_library
 # This script backs up a directory a disk of a particular uuid.
 #
 # Required:
