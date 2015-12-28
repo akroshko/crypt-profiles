@@ -24,15 +24,15 @@ crypt-create-profile () {
     #   http://spin.atomicobject.com/2013/11/24/secure-gpg-keys-guide/
     local USAGE="crypt-create-profile <<master location>> <<primary location>> <<working location>>"
     if [[ -z "$1" ]]; then
-        echo "Empty master location specified!"
+        yell "Empty master location specified!"
         return 1
     fi
     if [[ -z "$2" ]]; then
-        echo "Empty primary location specified!"
+        yell "Empty primary location specified!"
         return 1
     fi
     if [[ -z "$3" ]]; then
-        echo "Empty working location specified!"
+        yell "Empty working location specified!"
         return 1
     fi
     killall-agents
@@ -46,22 +46,22 @@ crypt-create-profile () {
     # first ask for a the master password
     # XXXX: this is insecure but I need to use the password further in the script?
     # TODO: use pinentry to get password
-    echo "++++ WARNING: password shown in cleartext for now and must be the same as that entered into pinentry later."
-    echo "Enter the new GPG key password:"
+    msg "++++ WARNING: password shown in cleartext for now and must be the same as that entered into pinentry later."
+    msg "Enter the new GPG key password:"
     read GPGPASSWORD
-    echo "Enter the new GPG key password again:"
+    msg "Enter the new GPG key password again:"
     read GPGPASSWORD2
-    echo "Enter the recipient:"
+    msg "Enter the recipient:"
     read RECIPIENT
     if [[ ! "$GPGPASSWORD" == "$GPGPASSWORD2" ]]; then
-        echo "Passwords are different!!!"
+        warn "Passwords are different!!!"
         return 1
     fi
     # XXXX: if true for debugging purposes
     if true; then
-        echo "================================================================================"
-        echo "++++ Generating initial key:"
-        echo "++++ Recommend RSA (set your own capabilities), toggle until only capability is certify, 4096 bits, no expiry for now."
+        h1
+        h2 "Generating initial key:"
+        msg "Recommend RSA (set your own capabilities), toggle until only capability is certify, 4096 bits, no expiry for now."
         # is it useful to have a special phrase in comment?
         # echo "Comment should include phrase ..."
         echo ""
@@ -70,11 +70,11 @@ crypt-create-profile () {
         # put gpg password into the secrets file
         DISPLAY= echo ${GPGPASSWORD} | gpg --homedir "$MASTERPROFILE" --recipient ${RECIPIENT} --encrypt --passphrase "$GPGPASSWORD" --output ${KEYSLOCATION}/secrets.txt.gpg -
         # add a new subkey to the master profile
-        echo "================================================================================"
-        echo "++++ Use the addkey command twice:"
-        echo "++++ Recommend RSA (set your own capabilities), toggle until only capability is sign, 4096 bits, no expiry for now."
-        echo "++++ Recommend RSA (set your own capabilities), toggle until only capability is encrypt, 4096 bits, no expiry for now."
-        echo "++++ Use the save command to finish"
+        h1
+        msg "Use the addkey command twice:"
+        msg "Recommend RSA (set your own capabilities), toggle until only capability is sign, 4096 bits, no expiry for now."
+        msg "Recommend RSA (set your own capabilities), toggle until only capability is encrypt, 4096 bits, no expiry for now."
+        msg "Use the save command to finish"
         echo ""
         # TODO: retry if fail
         DISPLAY= gpg --homedir "$MASTERPROFILE" --expert --edit-key "${RECIPIENT}"
@@ -101,8 +101,8 @@ crypt-create-profile () {
         cp -r "$MASTERPROFILE" "$WORKINGPROFILE"
         fix-crypt-permissions "${WORKINGPROFILE}"
         gpg --homedir "$WORKINGPROFILE" --export-secret-subkeys "$RECIPIENT" > ${HOME}/crypt-profiles-secret-keys
-        echo "================================================================================"
-        echo "++++ Answer (y)es to delete secret key"
+        h1
+        msg "Answer (y)es to delete secret key"
         echo ""
         gpg --homedir "$WORKINGPROFILE" --delete-secret-key "$RECIPIENT"
         gpg --homedir "$WORKINGPROFILE" --import ${HOME}/crypt-profiles-secret-keys
@@ -127,7 +127,7 @@ crypt-create-profile () {
 }
 
 crypt-replace-subkeys () {
-    echo "Not implemented yet!"
+    yell "Not implemented yet!"
     false
 }
 
@@ -135,12 +135,12 @@ crypt-switch-profile () {
     # switch to a new crypt-profile-
     local USAGE="Usage: crypt-switch-profile <<crypt-profile primary location>> <<crypt-profile working location>>"
     if [[ -z "$1" ]]; then
-        echo "No specified primary path!"
+        yell "No specified primary path!"
         echo $USAGE
         return 1
     fi
     if [[ -z "$2" ]]; then
-        echo "No specified working path!"
+        yell "No specified working path!"
         echo $USAGE
         return 1
     fi
@@ -254,7 +254,7 @@ crypt-profile-printable () {
 fix-crypt-permissions () {
     # fix the permissions on a cryptography-relevant directory
     if [[ -z "$1" ]]; then
-        echo "Must have a directory to fix!"
+        yell "Must have a directory to fix!"
     fi
     chmod -R g-rwx "$1"
     chmod -R o-rwx "$1"
@@ -294,9 +294,9 @@ harm-crypt () {
     # XXXX: this function is pretty brutal, but resets very well
     killall-agents
     source ${HOME}/.bash_profile
-    # TODO: make this a function?
+    # TODO: decide if I really want this here like this, maybe use function?
     if ps -ef | grep "emacs --daemon" | grep -v grep > /dev/null && type -P launch-emacsclient >/dev/null 2>&1; then
-        echo "Re-initing Emacs!"
+        h2 "Re-initing Emacs!"
         launch-emacsclient noframe --eval "(cic:init-crypt)"
     fi
 }
@@ -346,7 +346,7 @@ ssh-keygen-rsa () {
 
 bootstrap-temporary-ssh () {
     if [[ -z "$1" ]]; then
-        echo "No host specified!"
+        yell "No host specified!"
         return 1
     fi
     # XXXX: only do this if an id_rsa does not already exist on host machine
@@ -366,7 +366,7 @@ bootstrap-temporary-ssh-remove () {
     # TODO: I should ask nicely before I do this
     # TODO: give some options for hosts?
     if [[ -z "$1" ]]; then
-        echo "No host specified!"
+        yell "No host specified!"
         return 1
     fi
     # XXXX: only do this if an id_rsa does not already exist on host machine
@@ -405,12 +405,12 @@ encrypt-file () {
     # $1=file to encrypt
     # TODO: should this be moved to bashrc_functions_crypt_external?
     if [[ ! -e "$1" ]]; then
-        echo "Must specify an actual file to encrypt!!!"
+        yell "Must specify an actual file to encrypt!!!"
         return 1
     fi
     local NEWNAME="$(generate-uid)"
     tar -cvzf - "$1" | gpg --recipient "$CRYPTGPGUSER" --output "$NEWNAME".tgz.gpg --encrypt -
-    echo "Exit status: $? || Pipe status: ${PIPESTATUS[*]}"
+    msg "Exit status: $? || Pipe status: ${PIPESTATUS[*]}"
     # TODO: is this a good way of verifying shredded file?
     verify-operation "Encrypt OK? do you wish to delete the original? (y/n) " "Really keep original? (y/n) " "$1"
 }
@@ -427,7 +427,7 @@ encrypt-file-password () {
     # relatively confident that any comprimise of paper would be
     # suspected
     local TOPSECRET=$(super-password-easy)
-    echo "Password is: $TOPSECRET"
+    msg "Password is: $TOPSECRET"
     read -p "Please write down the password and press enter to continue... "
     export TRYAGAIN=
     while [[ $TRYAGAIN != "y" ]]; do
@@ -436,19 +436,19 @@ encrypt-file-password () {
         read -p "Re-enter password: " TOPSECRET1
         if [[ $TOPSECRET != $TOPSECRET1 ]]; then
             # TODO: try again
-            echo "Password does not match!!! Write down again!!!"
-            echo "Password is: $TOPSECRET"
+            warn "Password does not match!!! Write down again!!!"
+            warn "Password is: $TOPSECRET"
             read -p "Press enter to continue... "
             local TRYAGAIN="n"
             continue
         fi
         local TRYAGAIN=y
     done
-    echo "Passwords recorded successfully!"
+    msg "Passwords recorded successfully!"
     local FILEUID="$(generate-uid)"
-    echo "The file UID is: $FILEUID"
+    msg "The file UID is: $FILEUID"
     tar -cvzf - "$1" | gpg2 --batch --cipher-algo AES256 --passphrase "$TOPSECRET" --output "$FILEUID".tgz.gpg --symmetric -
-    echo "Encryption finished!!! "
+    msg "Encryption finished!!! "
 }
 
 decrypt-file () {
@@ -457,17 +457,17 @@ decrypt-file () {
     # by the user before deleting the original file
     #
     # $1=path of file to decrypt
-    echo "================================================================================"
+    h1
     if [[ ! -e "$1" ]]; then
-        echo "$1 is not a real file to decrypt!!!"
+        yell "$1 is not a real file to decrypt!!!"
         return 1
     fi
     # create random tmp directory here
     local TMPPATH=$(mktemp -d -p .)
-    echo "Decrypting $1 into ${TMPPATH}"
+    msg "Decrypting $1 into ${TMPPATH}"
     # XXXX: assuming successful
     gpg --decrypt "$1" | tar -xvzf - --directory "${TMPPATH}"
-    echo "Exit status: $? || Pipe status: ${PIPESTATUS[*]}"
+    msg "Exit status: $? || Pipe status: ${PIPESTATUS[*]}"
     \mv --backup=t -- ${TMPPATH}/* .
     # TODO: want to fail completely if not able to remove?
     rmdir "${TMPPATH}"
@@ -475,15 +475,15 @@ decrypt-file () {
 }
 
 decrypt-file-password () {
-    echo "================================================================================"
+    h1
     if [[ ! -e "$1" ]]; then
-        echo "$1 is not a real file to decrypt!!!"
+        yell "$1 is not a real file to decrypt!!!"
         return 1
     fi
     local TMPPATH=$(mktemp -d -p .)
-    echo "Decrypting $1 into ${TMPPATH}"
+    msg "Decrypting $1 into ${TMPPATH}"
     gpg2 --decrypt "$1" | tar -xvzf - --directory "${TMPPATH}"
-    echo "Exit status: $? || Pipe status: ${PIPESTATUS[*]}"
+    msg "Exit status: $? || Pipe status: ${PIPESTATUS[*]}"
     \mv --backup=t -- ${TMPPATH}/* .
     # TODO: want to fail completely if not able to remove?
     rmdir "${TMPPATH}"
@@ -519,7 +519,7 @@ mount-container () {
     if [[ ! -e /dev/mapper/"$(basename $1)" ]]; then
         sudo cryptsetup luksOpen "$1" "$(basename $1)"
     else
-        echo "Container $(basename $1) is already mapped!"
+        warn "Container $(basename $1) is already mapped!"
         true
     fi
     # TODO: add more error checking?
@@ -531,10 +531,10 @@ mount-container () {
             # TODO: should this be default
             sudo chown -R ${USER}:${USER} "$2"
         else
-            echo "Mount point $2 already mounted!"
+            warn "Mount point $2 already mounted!"
         fi
     else
-        echo "Cannot find specified container"
+        yell "Cannot find specified container"
     fi
 }
 
@@ -559,17 +559,17 @@ umount-container () {
         if grep -qs "$2" /proc/mounts; then
             sudo umount "$2"
         else
-            echo "Nothing mounted!"
+            yell "Nothing mounted!"
         fi
         # XXXX: get rid of directory anyways
         rmdir "$2"
     else
-        echo "Mount point $2 does not exist!"
+        warn "Mount point $2 does not exist!"
     fi
     if [[ -e /dev/mapper/"$(basename $1)" ]]; then
         sudo cryptsetup luksClose "$(basename $1)"
     else
-        echo "Container "$(basename $1)" not mapped!"
+        warn "Container "$(basename $1)" not mapped!"
     fi
 }
 
@@ -589,12 +589,12 @@ open-vg () {
         if [[ ! -e /dev/mapper/$(basename "$1") ]]; then
             sudo cryptsetup luksOpen "$1" $(basename "$1")
         else
-            echo "Device /dev/mapper/$(basename "$1") already mapped!"
+            warn "Device /dev/mapper/$(basename "$1") already mapped!"
         fi
         # TODO: should I still activate volumes anyways, even if already mapped?
         sudo vgchange -a y "$2"
     else
-        echo "Image $1 not found!"
+        warn "Image $1 not found!"
     fi
 }
 
@@ -615,7 +615,7 @@ close-vg () {
         sudo vgchange -a n "$2"
         sudo cryptsetup luksClose $(basename "$1")
     else
-        echo "Device $1 does not exist!"
+        warn "Device $1 does not exist!"
     fi
 }
 
@@ -633,14 +633,14 @@ mount-vg-img () {
     if [[ -e /dev/mapper/"$1" ]]; then
         sudo cryptsetup luksOpen /dev/mapper/"$1" $(basename "$2")
     else
-        echo "Device /dev/mapper/$1 already mapped!"
+        warn "Device /dev/mapper/$1 already mapped!"
     fi
     if ! grep -qs "$2" /proc/mounts; then
         mkdir -p "$2"
         sudo mount /dev/mapper/$(basename "$2") "$2"
         sudo chown -R ${USER}:${USER} "$2"
     else
-        echo "Device /dev/mapper/$1 already mounted!"
+        warn "Device /dev/mapper/$1 already mounted!"
     fi
 }
 
@@ -661,7 +661,7 @@ umount-vg-img () {
         if grep -qs "$2" /proc/mounts; then
             sudo umount "$2"
         else
-            echo "Nothing mounted!"
+            warn "Nothing mounted!"
         fi
         # XXXX: get rid of directory anyways
         rmdir "$2"
@@ -669,7 +669,7 @@ umount-vg-img () {
     if [[ -e /dev/mapper/$(basename "$2") ]]; then
         sudo cryptsetup luksClose "$(basename $2)"
     else
-        echo "Container "$(basename $2)" not mapped!"
+        warn "Container "$(basename $2)" not mapped!"
     fi
 }
 
@@ -686,34 +686,37 @@ kill-recent-files-line () {
 
 master-privacy () {
     # TODO: reset so gnome does not give errors
-    echo "================================================================================"
-    echo "Bleachbit browsers"
-    echo "----------------------------------------"
-    echo "Chromium"
-    bleachbit --overwrite --clean chromium.cache chromium.form_history chromium.history chromium.vacuum
-    echo "----------------------------------------"
-    echo "Firefox"
-    bleachbit --overwrite --clean firefox.cache firefox.crash_reports firefox.forms firefox.download_history firefox.url_history firefox.vacuum
-    echo "----------------------------------------"
-    echo "Flash"
+    h1
+    msg "Bleachbit browsers"
+    h2
+    msg "Chromium"
+    bleachbit --overwrite --clean chromium.cache  chromium.history chromium.vacuum
+    # chromium.form_history
+    h2
+    msg "Firefox"
+    bleachbit --overwrite --clean firefox.cache firefox.crash_reports firefox.forms firefox.download_history firefox.vacuum
+    # TODO: ask to delete filefox places due to bug
+    # bleachbit --overwrite --clean firefox.url_history
+    h2
+    msg "Flash"
     bleachbit --overwrite --clean flash.*
-    echo "----------------------------------------"
-    echo "Google Chrome, Konqueror, and Epiphany"
+    h2
+    msg "Google Chrome, Konqueror, and Epiphany"
     bleachbit --overwrite --clean epiphany.* google_chrome.* konqueror.*
-    echo "================================================================================"
-    echo "Bleachbit system"
-    echo "----------------------------------------"
-    echo "Recent application files"
+    h1
+    msg "Bleachbit system"
+    h2
+    msg "Recent application files"
     bleachbit --overwrite --clean adobe_reader.* google_earth.* google_toolbar.* gwenview.* vlc.*
-    echo "----------------------------------------"
-    echo "Gnome"
+    h2
+    msg "Gnome"
     bleachbit --overwrite --clean gnome.* nautilus.*
-    echo "----------------------------------------"
-    echo "KDE"
+    h2
+    msg "KDE"
     bleachbit --overwrite --clean kde.*
-    echo "----------------------------------------"
+    h2
     # TODO: reinstate these
-    echo "System-wide"
+    msg  "System-wide"
     # XXXX: not system.tmp!!! interferes with many many things
     bleachbit --overwrite --clean system.cache system.clipboard system.recent_documents thumbnails.*
     # destroy files that could leak privacy data
@@ -722,12 +725,12 @@ master-privacy () {
     # TODO: replace as much as possible with bleachbit
     # TODO: do better job at this?
     # clean out recently used lists
-    echo "Clearing conkeror"
+    msg "Clearing conkeror"
     kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror places.sqlite
     kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror formhistory.sqlite
     kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror downloads.json
     kill-directory-contents ${HOME}/.kde/share/apps/RecentDocuments/*
-    echo "Clearing recently used"
+    msg "Clearing recently used"
     kill-file ${HOME}/.recently-used
     # kill-file ~/.config/epiphany/ephy-history.db
     kill-file ${HOME}/.config/gxine/playlist
@@ -735,7 +738,7 @@ master-privacy () {
     # kill-recursive ~/.local/share/*xbel*;
     # kill-file-contents ~/.local/share/recently-used.xbel;
     kill-file-contents ${HOME}/.local/share/user-places.xbel;
-    echo "Clearing tracker/indexers"
+    msg  "Clearing tracker/indexers"
     kill-directory-contents-preserve-structure ${HOME}/.local/share/tracker;
     kill-directory-contents ${HOME}/.local/share/zeitgeist
     # kill-directory-contents ~/.kde/share/apps/gwenview/recentfolders/*
@@ -756,7 +759,7 @@ master-privacy () {
     # TODO: have a non-interactive version of this function
     # TODO: only kills dotfiles(dirs) if a normal file exists
     if [[ -d ${HOME}/tmp/trash ]] && ls -A ${HOME}/tmp/trash/* >> /dev/null 2>&1; then
-        echo "Contents of ~/tmp/trash:"
+        msg  "Contents of ~/tmp/trash:"
         ls -A ${HOME}/tmp/trash/*
         read -p "Do you want to delete ~/tmp/trash? " yn
         if [[ "$yn" =~ y ]]; then
@@ -764,7 +767,7 @@ master-privacy () {
             kill-directory-contents ${HOME}/tmp/trash
         fi
     else
-        echo "Nothing in ~/tmp/trash"
+        warn "Nothing in ~/tmp/trash"
     fi
     # if emacs daemon is not running, kill it's tmp files
     if ! check-emacs-daemon; then
@@ -773,7 +776,7 @@ master-privacy () {
         fi
     fi
     if [[ -d ${HOME}/.local/share/Trash/files ]] && ls -A -d ${HOME}/.local/share/Trash/files/* >> /dev/null 2>&1; then
-        echo "Contents of ~/.local/share/Trash/files:"
+        msg "Contents of ~/.local/share/Trash/files:"
         ls -A ${HOME}/.local/share/Trash/files
         # TODO: check if empty?
         read -p "Do you want to delete ~/.local/share/Trash/files? " yn
@@ -784,7 +787,7 @@ master-privacy () {
             # kill-directory-contents ${HOME}/.local/share/Trash/info
         fi
     else
-        echo "Nothing in ${HOME}/.local/share/Trash/files"
+        warn "Nothing in ${HOME}/.local/share/Trash/files"
     fi
 }
 
@@ -795,7 +798,7 @@ fix-sshd-config () {
     # make /etc/sshd_config more secure
     # uses guidelines given by https://stribika.github.io/2015/01/04/secure-secure-shell.html
     if [[ ! -e "./sshd_config" && ! -e "./bashrc_functions_crypt" ]]; then
-        echo "Must be run in crypt-profiles path."
+        yell "Must be run in crypt-profiles path."
         return 1
     fi
     sudo cp --backup=t /etc/ssh/sshd_config /etc/ssh/sshd_config.bak

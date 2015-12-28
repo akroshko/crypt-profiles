@@ -57,7 +57,7 @@ kill-drive-random-data () {
             openssl enc -aes-256-ctr -pass pass:"$(dd if=/dev/urandom bs=128 count=1 2>/dev/null | base64)" -nosalt < /dev/zero | pv -pterb | sudo dd of="$1" bs=64k
         }
     else
-        echo "File $1 is non-existent or not a block device!!!"
+        yell "File $1 is non-existent or not a block device!!!"
         echo "$USAGE"
     fi
 }
@@ -167,6 +167,7 @@ super-password-easy () {
 
 ssh-host-fingerprint () {
     # get the sshd fingerprints of the current host
+    # TODO: no color for now
     echo `hostname`
     if [[ -f /etc/ssh/ssh_host_ecdsa_key.pub ]]; then
         echo '---------- ECDSA fingerprint'

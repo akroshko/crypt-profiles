@@ -9,121 +9,124 @@
 # from https://wiki.archlinux.org/index.php/GnuPG#gpg-agent
 
 # source ~/.bashrc that should source crypt-profile bash functions
-# make sure this is wiped for all child process
-export TOPSECRET=
-TRYAGAIN=y
-# stop this from being run as root, just in case
-if [[ $EUID -ne 0 ]]
-then
-    # XXXX: don't want something so severe in the future
-    pkill -9 -f gnome-keyring-daemon
-    pkill -9 pinentry
-    # initializes and add important functions
-    source $(dirname "${BASH_SOURCE[0]}")/bash_env_crypt
-    source $(dirname "${BASH_SOURCE[0]}")/bashrc_functions_crypt
-    # test if we can decrypt, make non-interactive by linking linking pinentry to /bin/false
-    if [[ -f "${HOME}/bin/pinentry-select" ]]; then
-        rm -f "${HOME}/bin/pinentry-select"
-    fi
-    ln -s /bin/false "${HOME}/bin/pinentry-select"
-    if [[ -f ${HOME}/.secrets/secrets.txt.gpg ]]; then
-        # TODO: suppress any output to avoid reveaing passwords
-        # TODO: maybe incorporate dummy file
-        DISPLAY= gpg2 --batch --decrypt ${HOME}/.secrets/secrets.txt.gpg >> /dev/null
-    fi
-    if [[ $? != 0 ]]; then
-        # reset everything properly if key for GPG profile expired or set up wrong
-        echo "Resetting agents!"
-        killall-agents
-    else
-        echo "Decrypt OK! Skipping resetting gpg agent!"
-    fi
-    # set up to force pinentry-curses for this particular program
-    # otherwise there is an issue with pinentry popping up on a remote
-    # X11 display when logging in remotely
-    # TODO: describe this issue with GnuPG in documentation
-    if [[ -f "${HOME}/bin/pinentry-select" ]]; then
-        rm -f "${HOME}/bin/pinentry-select"
-    fi
-    if [[ -f /usr/bin/pinentry-curses ]]; then
-        ln -s /usr/bin/pinentry-curses "${HOME}/bin/pinentry-select"
-    fi
-    # run keychain after we see if we need to kill agents
-    if type -P keychain >/dev/null 2>&1; then
-        `type -P keychain` --nogui --agents ssh
-        source ${HOME}/.keychain/*-sh > /dev/null
-    fi
-    echo "Keychain done!"
-    while [[ -z $TOPSECRET  && "$TRYAGAIN" == "y" ]]; do
-        # TODO: check if this is an agent that I started
-        if [[ -e "$envfile" ]] && kill -0 "$(grep GPG_AGENT_INFO $envfile | cut -d: -f 2)" 2>/dev/null; then
-            # eval "$(DISPLAY= cat "$envfile")"
-            echo "Sourcing envfile!"
-            DISPLAY= source $envfile
-            export GPG_AGENT_INFO
-        else
-            echo "Starting new agent!"
-            eval "$(DISPLAY= gpg-agent --daemon --allow-preset-passphrase --write-env-file $envfile)"
+main () {
+    local TRYAGAIN=y
+    local TOPSECRET=
+    # stop this from being run as root, just in case
+    h1 "Running $(basename $BASH_SOURCE)"
+    if [[ $EUID -ne 0 ]]
+    then
+        # XXXX: don't want something so severe in the future
+        pkill -9 -f gnome-keyring-daemon
+        pkill -9 pinentry
+        # initializes and add important functions
+        source $(dirname "${BASH_SOURCE[0]}")/bash_env_crypt
+        source $(dirname "${BASH_SOURCE[0]}")/bashrc_functions_crypt
+        # test if we can decrypt, make non-interactive by linking linking pinentry to /bin/false
+        if [[ -f "${HOME}/bin/pinentry-select" ]]; then
+            rm -f "${HOME}/bin/pinentry-select"
         fi
+        ln -s /bin/false "${HOME}/bin/pinentry-select"
         if [[ -f ${HOME}/.secrets/secrets.txt.gpg ]]; then
-            TOPSECRET="$(DISPLAY= gpg2 --decrypt --use-agent ${HOME}/.secrets/secrets.txt.gpg)"
-            if [[ $? != 0 ]]; then
-                # TODO: add option for quit
-                read -p "Error decrypting such as bad password.  Try again (y/n/q)? " TRYAGAIN
-            fi
-        else
-            # file not present, break by killing appropriate functions
-            export TOPSECRET=
-            export TRYAGAIN=
+            # TODO: suppress any output to avoid reveaing passwords
+            # TODO: maybe incorporate dummy file
+            DISPLAY= gpg2 --batch --decrypt ${HOME}/.secrets/secrets.txt.gpg >> /dev/null
         fi
-    done
-fi
-echo "Initializing gpg-agent done!"
-# open the top secret keyfile first
-# TODO: make a seperate function to initialize SSH
-if [[ ! -z $TOPSECRET ]]
-then
-    # add identity to gpg-agent
-    GNUPGPWD=`sed -n '1p' <<< "$TOPSECRET"`
-    # need to do with fingerprints for both main and subkeys!!!!
-    # TODO: possibly need to test for gpg-preset-passphrase working properly
-    #       will clearing the agent deal with sleep and hibernation issues?
-    for PRESETKEY in ${PRESETGPGKEYS}; do
-        /usr/lib/gnupg2/gpg-preset-passphrase --verbose --passphrase "$GNUPGPWD" --preset "$PRESETKEY"
-    done
-    if [[ -f "${HOME}/.gnupg/gpg-agent-info-$(hostname)" ]]; then
-        source "${HOME}/.gnupg/gpg-agent-info-$(hostname)"
-        export GPG_AGENT_INFO
+        if [[ $? != 0 ]]; then
+            # reset everything properly if key for GPG profile expired or set up wrong
+            msg "Resetting agents!"
+            killall-agents
+        else
+            msg "Decrypt OK! Skipping resetting gpg agent!"
+        fi
+        # set up to force pinentry-curses for this particular program
+        # otherwise there is an issue with pinentry popping up on a remote
+        # X11 display when logging in remotely
+        # TODO: describe this issue with GnuPG in documentation
+        if [[ -f "${HOME}/bin/pinentry-select" ]]; then
+            rm -f "${HOME}/bin/pinentry-select"
+        fi
+        if [[ -f /usr/bin/pinentry-curses ]]; then
+            ln -s /usr/bin/pinentry-curses "${HOME}/bin/pinentry-select"
+        fi
+        # run keychain after we see if we need to kill agents
+        if type -P keychain >/dev/null 2>&1; then
+            `type -P keychain` --nogui --agents ssh
+            source ${HOME}/.keychain/*-sh > /dev/null
+        fi
+        msg "Keychain done!"
+        while [[ -z $TOPSECRET  && "$TRYAGAIN" == "y" ]]; do
+            # TODO: check if this is an agent that I started
+            if [[ -e "$envfile" ]] && kill -0 "$(grep GPG_AGENT_INFO $envfile | cut -d: -f 2)" 2>/dev/null; then
+                # eval "$(DISPLAY= cat "$envfile")"
+                msg "Sourcing envfile!"
+                DISPLAY= source $envfile
+                export GPG_AGENT_INFO
+            else
+                msg "Starting new agent!"
+                eval "$(DISPLAY= gpg-agent --daemon --allow-preset-passphrase --write-env-file $envfile)"
+            fi
+            if [[ -f ${HOME}/.secrets/secrets.txt.gpg ]]; then
+                TOPSECRET="$(DISPLAY= gpg2 --decrypt --use-agent ${HOME}/.secrets/secrets.txt.gpg)"
+                if [[ $? != 0 ]]; then
+                    # TODO: add option for quit
+                    read -p "Error decrypting such as bad password.  Try again (y/n/q)? " TRYAGAIN
+                fi
+            else
+                # file not present, break by killing appropriate functions
+                TRYAGAIN=
+                TOPSECRET=
+            fi
+        done
     fi
-    ################################################################################
-    ## initialize ssh keys only if agent is live
-    # read in all id_*.txt.gpg
-    for PWDFILE in ${HOME}/.secrets/id_*.txt.gpg; do
-        if [[ -f "${PWDFILE}" ]]; then
-            KEYFILE=$(basename ${PWDFILE%.txt.gpg})
-            echo "=== Adding key for ${KEYFILE} =============================================================================" | cut -c 1-80
-            # TODO: suppressing text to make things quieter?
-            # TODO: do not use passphrase here?
-            # TODO: put in function so information does not leak
-            TOPSECRET="$(DISPLAY= gpg2 --quiet --decrypt --use-agent $PWDFILE)"
-            KEYPWD=$(sed -n '1p' <<< "$TOPSECRET")
+    msg "Initializing gpg-agent done!"
+    h2 "Initializing or reinitializing ssh keys"
+    # open the top secret keyfile first
+    # TODO: make a seperate function to initialize SSH
+    if [[ ! -z $TOPSECRET ]]
+    then
+        # add identity to gpg-agent
+        GNUPGPWD=`sed -n '1p' <<< "$TOPSECRET"`
+        # need to do with fingerprints for both main and subkeys!!!!
+        # TODO: possibly need to test for gpg-preset-passphrase working properly
+        #       will clearing the agent deal with sleep and hibernation issues?
+        for PRESETKEY in ${PRESETGPGKEYS}; do
+            /usr/lib/gnupg2/gpg-preset-passphrase --verbose --passphrase "$GNUPGPWD" --preset "$PRESETKEY"
+        done
+        if [[ -f "${HOME}/.gnupg/gpg-agent-info-$(hostname)" ]]; then
+            source "${HOME}/.gnupg/gpg-agent-info-$(hostname)"
+            export GPG_AGENT_INFO
+        fi
+        ################################################################################
+        ## initialize ssh keys only if agent is live
+        # read in all id_*.txt.gpg
+        for PWDFILE in ${HOME}/.secrets/id_*.txt.gpg; do
+            if [[ -f "${PWDFILE}" ]]; then
+                KEYFILE=$(basename ${PWDFILE%.txt.gpg})
+                h2 "key for ${KEYFILE}"
+                # TODO: suppressing text to make things quieter?
+                # TODO: do not use passphrase here?
+                # TODO: put in function so information does not leak
+                TOPSECRET="$(DISPLAY= gpg2 --quiet --decrypt --use-agent $PWDFILE)"
+                KEYPWD=$(sed -n '1p' <<< "$TOPSECRET")
 expect << EOF
   spawn ssh-add -t 36000 ${HOME}/.ssh/${KEYFILE}
   expect "Enter passphrase"
   send "$KEYPWD\r"
   expect eof
 EOF
-        fi
-    done
-else
-    echo "Skipping initialization of passwords!!!"
-fi
-# XXXX: kill off any environment variables that might leak information
-export TOPSECRET=
-# reset curses pinentry for this particular program
-if [[ -f "${HOME}/bin/pinentry-select" &&  -f /usr/bin/pinentry-gtk-2 ]]
-then
-    rm -f "${HOME}/bin/pinentry-select"
-    # TODO: pinentry-x11 is cool too
-    ln -s /usr/bin/pinentry-gtk-2 "${HOME}/bin/pinentry-select"
-fi
+            fi
+        done
+    else
+        warn "Skipping initialization of passwords!!!"
+    fi
+    # reset curses pinentry for this particular program
+    if [[ -f "${HOME}/bin/pinentry-select" &&  -f /usr/bin/pinentry-gtk-2 ]]
+    then
+        rm -f "${HOME}/bin/pinentry-select"
+        # TODO: pinentry-x11 is cool too
+        ln -s /usr/bin/pinentry-gtk-2 "${HOME}/bin/pinentry-select"
+    fi
+    h1-end "Finishing $(basename $BASH_SOURCE)"
+}
+main
