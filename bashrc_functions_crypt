@@ -251,22 +251,6 @@ crypt-profile-printable () {
     fi
 }
 
-fix-crypt-permissions () {
-    # fix the permissions on a cryptography-relevant directory
-    if [[ -z "$1" ]]; then
-        yell "Must have a directory to fix!"
-    fi
-    chmod -R g-rwx "$1"
-    chmod -R o-rwx "$1"
-    chmod u+rwX --recursive "$1"
-}
-
-fix-gpg-ssh-permissions () {
-    # fix the permissions on the standard gpg and ssh directory
-    fix-crypt-permissions "${HOME}"/.gnupg
-    fix-crypt-permissions "${HOME}"/.ssh
-}
-
 killall-agents () {
     # kill all the agents and remove identifying information
     # XXXX: this is an incredibly crude way to reset, but works when nothing else does
@@ -517,6 +501,7 @@ mount-container () {
         return 1
     fi
     if [[ ! -e /dev/mapper/"$(basename $1)" ]]; then
+        msg "Opening $(basename "$1")!"
         sudo cryptsetup luksOpen "$1" "$(basename $1)"
     else
         warn "Container $(basename $1) is already mapped!"
@@ -557,6 +542,7 @@ umount-container () {
     fi
     if [[ -d "$2" ]]; then
         if grep -qs "$2" /proc/mounts; then
+            msg "Unmounting $2!"
             sudo umount "$2"
         else
             yell "Nothing mounted!"
@@ -567,6 +553,7 @@ umount-container () {
         warn "Mount point $2 does not exist!"
     fi
     if [[ -e /dev/mapper/"$(basename $1)" ]]; then
+        msg "Closing $(basename $1)!"
         sudo cryptsetup luksClose "$(basename $1)"
     else
         warn "Container "$(basename $1)" not mapped!"
@@ -587,6 +574,7 @@ open-vg () {
     fi
     if [[ -e "$1" ]]; then
         if [[ ! -e /dev/mapper/$(basename "$1") ]]; then
+            msg "Opening $(basename "$1")!"
             sudo cryptsetup luksOpen "$1" $(basename "$1")
         else
             warn "Device /dev/mapper/$(basename "$1") already mapped!"
@@ -613,6 +601,7 @@ close-vg () {
     fi
     if [[ -e /dev/mapper/$(basename "$1") ]]; then
         sudo vgchange -a n "$2"
+        msg "Closing $(basename $1)!"
         sudo cryptsetup luksClose $(basename "$1")
     else
         warn "Device $1 does not exist!"
@@ -631,6 +620,7 @@ mount-vg-img () {
         return 1
     fi
     if [[ -e /dev/mapper/"$1" ]]; then
+        msg "Opening $(basename "$2")!"
         sudo cryptsetup luksOpen /dev/mapper/"$1" $(basename "$2")
     else
         warn "Device /dev/mapper/$1 already mapped!"
@@ -659,6 +649,7 @@ umount-vg-img () {
     if [[ -d "$2" ]]; then
         # TODO: seperate function?
         if grep -qs "$2" /proc/mounts; then
+            msg "Unmounting $2!"
             sudo umount "$2"
         else
             warn "Nothing mounted!"
@@ -667,6 +658,7 @@ umount-vg-img () {
         rmdir "$2"
     fi
     if [[ -e /dev/mapper/$(basename "$2") ]]; then
+        msg "Closing $(basename $2)!"
         sudo cryptsetup luksClose "$(basename $2)"
     else
         warn "Container "$(basename $2)" not mapped!"
@@ -685,110 +677,108 @@ kill-recent-files-line () {
 }
 
 master-privacy () {
-    # TODO: reset so gnome does not give errors
-    h1
-    msg "Bleachbit browsers"
-    h2
-    msg "Chromium"
-    bleachbit --overwrite --clean chromium.cache  chromium.history chromium.vacuum
-    # chromium.form_history
-    h2
-    msg "Firefox"
-    bleachbit --overwrite --clean firefox.cache firefox.crash_reports firefox.forms firefox.download_history firefox.vacuum
-    # TODO: ask to delete filefox places due to bug
-    # bleachbit --overwrite --clean firefox.url_history
-    h2
-    msg "Flash"
-    bleachbit --overwrite --clean flash.*
-    h2
-    msg "Google Chrome, Konqueror, and Epiphany"
-    bleachbit --overwrite --clean epiphany.* google_chrome.* konqueror.*
-    h1
-    msg "Bleachbit system"
-    h2
-    msg "Recent application files"
-    bleachbit --overwrite --clean adobe_reader.* google_earth.* google_toolbar.* gwenview.* vlc.*
-    h2
-    msg "Gnome"
-    bleachbit --overwrite --clean gnome.* nautilus.*
-    h2
-    msg "KDE"
-    bleachbit --overwrite --clean kde.*
-    h2
-    # TODO: reinstate these
-    msg  "System-wide"
-    # XXXX: not system.tmp!!! interferes with many many things
-    bleachbit --overwrite --clean system.cache system.clipboard system.recent_documents thumbnails.*
-    # destroy files that could leak privacy data
-    # XXXX: this is a dangerous function that really nukes everything!!!
-    # TODO: do I want umount-all type-function here?
-    # TODO: replace as much as possible with bleachbit
-    # TODO: do better job at this?
-    # clean out recently used lists
-    msg "Clearing conkeror"
-    kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror places.sqlite
-    kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror formhistory.sqlite
-    kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror downloads.json
-    kill-directory-contents ${HOME}/.kde/share/apps/RecentDocuments/*
-    msg "Clearing recently used"
-    kill-file ${HOME}/.recently-used
-    # kill-file ~/.config/epiphany/ephy-history.db
-    kill-file ${HOME}/.config/gxine/playlist
-    # XXXX: these are killed by bleachbit
-    # kill-recursive ~/.local/share/*xbel*;
-    # kill-file-contents ~/.local/share/recently-used.xbel;
-    kill-file-contents ${HOME}/.local/share/user-places.xbel;
-    msg  "Clearing tracker/indexers"
-    kill-directory-contents-preserve-structure ${HOME}/.local/share/tracker;
-    kill-directory-contents ${HOME}/.local/share/zeitgeist
-    # kill-directory-contents ~/.kde/share/apps/gwenview/recentfolders/*
-    # bleachbit --overwrite --clean thumbnails.cache
-    # TODO: clear .cache much better
-    # kill-directory-contents-preserve-structure ~/.cache/thumbnails
-    # TODO: interferes with Firefox sync!!!
-    # dragonplayer
-    # ~/.kde/share/config/dragonplayerrc
-    # https://unix.stackexchange.com/questions/192465/remove-paragraph-from-file
-    # TODO: need a delete paragraph function
-    kill-recent-files-line '/\[Recent Files\]/,/^\s*$/{d}' ${HOME}/.kde/share/config/arkrc
-    kill-matching-line '/Recent Urls/d' ${HOME}/.kde/share/config/dragonplayerrc
-    # kill-recent-files-line ~/.kde/share/config/gwenviewrc
-    kill-recent-files-line ${HOME}/.kde/share/config/katerc
-    kill-recent-files-line ${HOME}/.kde/share/config/okularrc
-    # clear my personal trash
-    # TODO: have a non-interactive version of this function
-    # TODO: only kills dotfiles(dirs) if a normal file exists
-    if [[ -d ${HOME}/tmp/trash ]] && ls -A ${HOME}/tmp/trash/* >> /dev/null 2>&1; then
-        msg  "Contents of ~/tmp/trash:"
-        ls -A ${HOME}/tmp/trash/*
-        read -p "Do you want to delete ~/tmp/trash? " yn
-        if [[ "$yn" =~ y ]]; then
-            # TODO: add a countdown here
-            kill-directory-contents ${HOME}/tmp/trash
+    time {
+        h1 "Delete things that need user input"
+        read -p "Do you want to delete all Firefox places.sqllite? (y/n) " ynfirefox
+        h2 "Clearing trash"
+        if [[ -d ${HOME}/tmp/trash ]] && ls -A ${HOME}/tmp/trash/* >> /dev/null 2>&1; then
+            msg  "Contents of ~/tmp/trash:"
+            ls -A ${HOME}/tmp/trash/*
+            read -p "Do you want to delete ~/tmp/trash? (y/n) " yn
+            if [[ "$yn" =~ y ]]; then
+                # TODO: add a countdown here
+                kill-directory-contents ${HOME}/tmp/trash
+            fi
+        else
+            warn "Nothing in ~/tmp/trash"
         fi
-    else
-        warn "Nothing in ~/tmp/trash"
-    fi
-    # if emacs daemon is not running, kill it's tmp files
-    if ! check-emacs-daemon; then
-        if [[ -d ${HOME}/.emacs.d/tmp ]]; then
-            kill-directory-contents ${HOME}/.emacs.d/tmp
+        if [[ -d ${HOME}/.local/share/Trash/files ]] && ls -A -d ${HOME}/.local/share/Trash/files/* >> /dev/null 2>&1; then
+            msg "Contents of ~/.local/share/Trash/files:"
+            ls -A ${HOME}/.local/share/Trash/files
+            # TODO: check if empty?
+            read -p "Do you want to delete ~/.local/share/Trash/files? (y/n) " yn
+            if [[ "$yn" =~ y ]]; then
+                bleachbit --overwrite --clean system.trash
+                # TODO: add a countdown here
+                # kill-directory-contents ${HOME}/.local/share/Trash/files
+                # kill-directory-contents ${HOME}/.local/share/Trash/info
+            fi
+        else
+            warn "Nothing in ${HOME}/.local/share/Trash/files"
         fi
-    fi
-    if [[ -d ${HOME}/.local/share/Trash/files ]] && ls -A -d ${HOME}/.local/share/Trash/files/* >> /dev/null 2>&1; then
-        msg "Contents of ~/.local/share/Trash/files:"
-        ls -A ${HOME}/.local/share/Trash/files
-        # TODO: check if empty?
-        read -p "Do you want to delete ~/.local/share/Trash/files? " yn
-        if [[ "$yn" =~ y ]]; then
-            bleachbit --overwrite --clean system.trash
-            # TODO: add a countdown here
-            # kill-directory-contents ${HOME}/.local/share/Trash/files
-            # kill-directory-contents ${HOME}/.local/share/Trash/info
+        # TODO: reset so gnome does not give errors
+        h1 "Bleachbit browsers"
+        h2 "Chromium"
+        bleachbit --overwrite --clean chromium.cache  chromium.history chromium.vacuum
+        # chromium.form_history
+        h2 "Firefox"
+        bleachbit --overwrite --clean firefox.cache firefox.crash_reports firefox.forms firefox.download_history firefox.vacuum
+        if [[ "$ynfirefox" =~ y ]]; then
+            kill-find-matching ${HOME}/.mozilla/firefox places.sqlite
         fi
-    else
-        warn "Nothing in ${HOME}/.local/share/Trash/files"
-    fi
+        # TODO: ask to delete filefox places due to bug
+        # bleachbit --overwrite --clean firefox.url_history
+        h2 "Flash"
+        bleachbit --overwrite --clean flash.*
+        h2 "Google Chrome, Konqueror, and Epiphany"
+        bleachbit --overwrite --clean epiphany.* google_chrome.* konqueror.*
+        h2 "Conkeror"
+        kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror places.sqlite
+        kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror formhistory.sqlite
+        kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror downloads.json
+        kill-directory-contents ${HOME}/.kde/share/apps/RecentDocuments/*
+        h1 "Bleachbit system"
+        h2 "Recent application files"
+        bleachbit --overwrite --clean adobe_reader.* google_earth.* google_toolbar.* gwenview.* vlc.*
+        h2 "Gnome"
+        bleachbit --overwrite --clean gnome.* nautilus.*
+        h2 "KDE"
+        bleachbit --overwrite --clean kde.*
+        h2 "System-wide"
+        # TODO: reinstate these
+        # XXXX: not system.tmp!!! interferes with many many things
+        bleachbit --overwrite --clean system.cache system.clipboard system.recent_documents thumbnails.*
+        # destroy files that could leak privacy data
+        # XXXX: this is a dangerous function that really nukes everything!!!
+        # TODO: do I want umount-all type-function here?
+        # TODO: replace as much as possible with bleachbit
+        # TODO: do better job at this?
+        # clean out recently used lists
+        h2 "Clearing recently used"
+        kill-file ${HOME}/.recently-used
+        # kill-file ~/.config/epiphany/ephy-history.db
+        kill-file ${HOME}/.config/gxine/playlist
+        # XXXX: these are killed by bleachbit
+        # kill-recursive ~/.local/share/*xbel*;
+        # kill-file-contents ~/.local/share/recently-used.xbel;
+        kill-file-contents ${HOME}/.local/share/user-places.xbel;
+        kill-recent-files-line '/\[Recent Files\]/,/^\s*$/{d}' ${HOME}/.kde/share/config/arkrc
+        kill-matching-line '/Recent Urls/d' ${HOME}/.kde/share/config/dragonplayerrc
+        # kill-recent-files-line ~/.kde/share/config/gwenviewrc
+        kill-recent-files-line ${HOME}/.kde/share/config/katerc
+        kill-recent-files-line ${HOME}/.kde/share/config/okularrc
+        h2  "Clearing tracker/indexers"
+        kill-directory-contents-preserve-structure ${HOME}/.local/share/tracker;
+        kill-directory-contents ${HOME}/.local/share/zeitgeist
+        # kill-directory-contents ~/.kde/share/apps/gwenview/recentfolders/*
+        # bleachbit --overwrite --clean thumbnails.cache
+        # TODO: clear .cache much better
+        # kill-directory-contents-preserve-structure ~/.cache/thumbnails
+        # TODO: interferes with Firefox sync!!!
+        # dragonplayer
+        # ~/.kde/share/config/dragonplayerrc
+        # https://unix.stackexchange.com/questions/192465/remove-paragraph-from-file
+        # TODO: need a delete paragraph function
+        # clear my personal trash
+        # TODO: have a non-interactive version of this function
+        # TODO: only kills dotfiles(dirs) if a normal file exists
+        # if emacs daemon is not running, kill it's tmp files
+        if ! check-emacs-daemon; then
+            if [[ -d ${HOME}/.emacs.d/tmp ]]; then
+                kill-directory-contents ${HOME}/.emacs.d/tmp
+            fi
+        fi
+    }
 }
 
 ################################################################################
