@@ -586,6 +586,32 @@ open-vg () {
     fi
 }
 
+open-vg-maintenance () {
+    # open a LVM volume group from an encrypted luks container
+    # TODO: combine code?
+    local USAGE="Usage: open-vg-maintenance <<luks container path>> <<volume group>>
+
+  <<luks container path>> the path to the luks container, the filename of the container
+    is the same name used for the mapping in /dev/mapper
+
+  <<volume group>> the name of the volume group"
+    if [[ -z "$1" || -z "$2" ]]; then
+        echo "$USAGE"
+        return 1
+    fi
+    if [[ -e "$1" ]]; then
+        if [[ ! -e /dev/mapper/$(basename "$1") ]]; then
+            msg "Opening $(basename "$1")!"
+            sudo cryptsetup luksOpen "$1" $(basename "$1")
+        else
+            warn "Device /dev/mapper/$(basename "$1") already mapped!"
+        fi
+        # TODO: warn if already mapped
+    else
+        warn "Image $1 not found!"
+    fi
+}
+
 close-vg () {
     # close a LVM volume group from an encrypted luks container
     # uses the same set of arguments as open-vg
@@ -812,4 +838,21 @@ fix-sshd-config () {
     # eliminate double lines
     sudo sed -e '/^$/N;/^\n$/D' -i /etc/ssh/sshd_config
     sudo service ssh restart
+}
+
+ssh-crypt-profile-batch-cmd () {
+    # ssh into hostname without interaction by using secrets on current host
+    # ssh-crypt-profile-batch-cmd <<hostname>> <<crypt-profile name>> <<command>>
+    PWDFILE=~/.secrets/"$2".txt.gpg
+    if [[ -f "$PWDFILE" ]]; then
+        TOPSECRET=$(DISPLAY= gpg2 --quiet --batch --no-tty --decrypt --use-agent "$PWDFILE")
+        if [[ $? == 0 ]]; then
+            GPGPWD=$(sed -n '1p' <<< "$TOPSECRET")
+            B64COMMAND="$(echo "$3" | base64)"
+            ssh-batch -t $1 "source ~/.bash_profile $GPGPWD;source ~/.bash_libenv;bash -c \"$(echo ${B64COMMAND} | base64 -d)\""
+        else
+            echo "Error decrypting!!!"
+        fi
+
+    fi
 }
