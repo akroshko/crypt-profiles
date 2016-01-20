@@ -13,4 +13,10 @@ UseDNS no
 GSSAPIAuthentication no
 # Authentication:
 LoginGraceTime 30
+# add a group for sftp
+Subsystem sftp internal-sftp
+Match Group sftponly
+    Chrootdirectory %h
+    ForceCommand internal-sftp
+    AllowTcpForwarding no
 #+END crypt_profiles ssd_config block

@@ -165,6 +165,9 @@ crypt-switch-profile () {
     # link to the secrets files
     need_new_directory ${HOME}/.secrets
     need_new_symlink "$PRIMARYPROFILE"/secrets.txt.gpg ${HOME}/.secrets/secrets.txt.gpg
+    # XXXX: just use secrets for itself, use last word in directory
+    # TODO: document this and possibly make a better way to do this
+    need_new_symlink "$PRIMARYPROFILE"/secrets.txt.gpg ${HOME}/.secrets/$(basename ${PRIMARYPROFILE##*-}).txt.gpg
     need_new_symlink "$PRIMARYPROFILE"/id_rsa.txt.gpg ${HOME}/.secrets/id_rsa.txt.gpg
     need_new_symlink "$PRIMARYPROFILE"/id_ecdsa.txt.gpg ${HOME}/.secrets/id_ecdsa.txt.gpg
     need_new_symlink "$PRIMARYPROFILE"/id_ed25519.txt.gpg ${HOME}/.secrets/id_ed25519.txt.gpg
@@ -832,6 +835,7 @@ fix-sshd-config () {
     sudo sed -e '/^GSSAPIAuthentication/ s/^#*/# /' -i /etc/ssh/sshd_config
     sudo sed -e '/^LoginGraceTime/ s/^#*/# /' -i /etc/ssh/sshd_config
     sudo sed -e '/^AllowUsers/ s/^#*/# /' -i /etc/ssh/sshd_config
+    sudo sed -e '/^Subsystem/ s/^#*/# /' -i /etc/ssh/sshd_config
     # add my ssh block back
     sudo bash -c "echo '' >> /etc/ssh/sshd_config"
     sudo bash -c "cat ./sshd_config >> /etc/ssh/sshd_config"
