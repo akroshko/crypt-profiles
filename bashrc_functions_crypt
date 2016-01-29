@@ -615,12 +615,55 @@ open-vg-maintenance () {
     fi
 }
 
+vg-container-expand () {
+    # https://wiki.archlinux.org/index.php/Dm-crypt/Encrypting_a_non-root_file_system#Resizing_the_loopback_filesystem
+    # XXXX: highly recommend having a backup here and not rerunning if it fails!
+    # XXXX: not thoroughly tested!!!!
+    # TODO: would like to enter password once at beginning
+    # TODO: want better error checking ahead of time
+    local USAGE="Usage: vg-container-expand <<luks container path>> <<size to add>>
+
+  <<luks container path>> the path to the luks container, the filename of the container
+    is the same name used for the mapping in /dev/mapper
+
+  <<size to add>> the number of gb to add"
+    if [[ -z "$1" || -z "$2" ]]; then
+        echo "$USAGE"
+        return 1
+    fi
+    read -p "This is a dangerous and poorly tested function!!! Continue (y/n)? " yn
+    if [[ $yn == "y" ]]
+    then
+        CONTAINER="$1"
+        SIZEADD="$2"
+        if [[ -e "$CONTAINER" ]]; then
+            # expand the container file itself, this is irreversible
+            # TODO: 80G takes about ??? use my better functions that use openssl
+            # dd if=/dev/urandom bs=1M count="$SIZEADD" | cat - >> "$CONTAINER"
+            write-random-data-stdout "$SIZEADD" | cat - >> "$CONTAINER"
+            # mount the encrypted container to resize (does this have to happen on loopback)
+            sudo cryptsetup luksOpen "$CONTAINER" "$(basename $CONTAINER)"
+            sudo cryptsetup resize "$(basename $CONTAINER)"
+            # expand the physical volume
+            sudo /sbin/pvresize /dev/mapper/"$(basename $CONTAINER)"
+            # finally close everything down
+            # TODO: not quite working yet, how do I know archive name to close it down properly?
+            #       do I even need to do this
+            sudo vgchange -a n /dev/mapper/"$(basename $CONTAINER)"
+            sudo cryptsetup luksClose "$(basename $CONTAINER)"
+        else
+            yell "Container does not exist!!!"
+        fi
+    fi
+}
+
 close-vg () {
     # close a LVM volume group from an encrypted luks container
     # uses the same set of arguments as open-vg
     local USAGE="Usage: close-vg <<luks container path>> <<volume group>>
 
-  <<luks container path>> the path to the luks container, the filename of the container
+  <<luks container path>> the pathcase
+ to the luks container, the filename of the container
     is the same name used for the mapping in /dev/mapper
 
   <<volume group>> the name of the volume group"

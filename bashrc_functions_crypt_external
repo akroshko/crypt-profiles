@@ -76,6 +76,22 @@ write-random-data () {
     fi
 }
 
+write-random-data-stdout () {
+    # use openssl to write random data to stdout, useful for filling
+    # pipes to generate files for benchmarking and tests
+    # TODO: write usage to stderr, for everything
+    # XXXX: untested
+    local USAGE="Usage: write-random-data <<size in gb>>
+
+  <<size in gb>>      number of gigs of random data to generate"
+    # TODO: probably a better way to do this
+    if [[ ! -z $1 ]]; then
+        time openssl enc -aes-256-ctr -pass pass:"$(dd if=/dev/urandom bs=128 count=1 2>/dev/null | base64)" -nosalt < /dev/zero | pv -pterb --size "$1"g --stop-at-size
+    else
+        echo "$USAGE"
+    fi
+}
+
 # TODO: decide whether elevated privileages is necessary for these commands
 
 kill-file () {
