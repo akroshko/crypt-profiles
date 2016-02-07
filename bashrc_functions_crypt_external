@@ -97,14 +97,14 @@ write-random-data-stdout () {
 kill-file () {
     # XXXX: dangerous functions for convenience in batch mode
     if [[ -f "$1" ]]; then
-        \srm -d -l "$1"
+        bleachbit --shred "$1"
     fi
 }
 
 kill-recursive () {
     # XXXX: dangerous functions for convenience in batch mode
     if [[ -e "$1" ]]; then
-        \srm -d -l "$1"
+        bleachbit --shred "$1"
     fi
 }
 
@@ -116,14 +116,10 @@ kill-file-contents () {
 
 kill-directory-contents () {
     # XXXX: dangerous functions for convenience in batch mode
+    # TODO: find way to kill directories too for some uses, but without going haywire
     # XXXX: recursive, very dangerous!!!
     if [[ -d "$1" ]]; then
-        find "$1" -mindepth 1 -exec \srm -d -l {} \;
-        # TODO: dangerous and descructive when used, might be bug
-        #       kill-directory-contents ~/.emacs.d/tmp kills all of ~/.emacs.d
-        # \srm -r -d -l "$1"/*
-        # \srm -r -d -l "$1"/.*
-
+        find "$1" -mindepth 1 -exec bleachbit --shred {} \;
     fi
 }
 
@@ -131,14 +127,14 @@ kill-directory-contents-preserve-structure () {
     # XXXX: dangerous functions for convenience in batch mode
     if [[ -d "$1" ]]; then
         # TODO: does this go into dot directories
-        find "$1" -type f -exec \srm -d -l {} \;
+        find "$1" -type f -exec bleachbit --shred {} \;
     fi
 }
 
 kill-find-matching () {
     # XXXX: dangerous functions for convenience in batch mode
     if [[ -d "$1" ]]; then
-        find "$1" -name "$2" -exec \srm -d -l {} \;
+        find "$1" -name "$2" -exec bleachbit --shred {} \;
     fi
 }
 

@@ -798,13 +798,13 @@ master-privacy () {
         kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror places.sqlite
         kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror formhistory.sqlite
         kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror downloads.json
-        kill-directory-contents ${HOME}/.kde/share/apps/RecentDocuments/*
         h1 "Bleachbit system"
         h2 "Recent application files"
         bleachbit --overwrite --clean adobe_reader.* google_earth.* google_toolbar.* gwenview.* vlc.*
         h2 "Gnome"
         bleachbit --overwrite --clean gnome.* nautilus.*
         h2 "KDE"
+        bleachbit --shred ${HOME}/.kde/share/apps/RecentDocuments/*
         bleachbit --overwrite --clean kde.*
         h2 "System-wide"
         # TODO: reinstate these
@@ -817,9 +817,9 @@ master-privacy () {
         # TODO: do better job at this?
         # clean out recently used lists
         h2 "Clearing recently used"
-        kill-file ${HOME}/.recently-used
+        bleachbit --shred ${HOME}/.recently-used
         # kill-file ~/.config/epiphany/ephy-history.db
-        kill-file ${HOME}/.config/gxine/playlist
+        bleachbit --shred ${HOME}/.config/gxine/playlist
         # XXXX: these are killed by bleachbit
         # kill-recursive ~/.local/share/*xbel*;
         # kill-file-contents ~/.local/share/recently-used.xbel;
@@ -829,9 +829,10 @@ master-privacy () {
         # kill-recent-files-line ~/.kde/share/config/gwenviewrc
         kill-recent-files-line ${HOME}/.kde/share/config/katerc
         kill-recent-files-line ${HOME}/.kde/share/config/okularrc
-        h2  "Clearing tracker/indexers"
-        kill-directory-contents-preserve-structure ${HOME}/.local/share/tracker;
-        kill-directory-contents ${HOME}/.local/share/zeitgeist
+        # TODO: find out if these are really killed otherwise
+        # h2  "Clearing tracker/indexers"
+        # kill-directory-contents-preserve-structure ${HOME}/.local/share/tracker;
+        # kill-directory-contents ${HOME}/.local/share/zeitgeist
         # kill-directory-contents ~/.kde/share/apps/gwenview/recentfolders/*
         # bleachbit --overwrite --clean thumbnails.cache
         # TODO: clear .cache much better
@@ -847,7 +848,8 @@ master-privacy () {
         # if emacs daemon is not running, kill it's tmp files
         if ! check-emacs-daemon; then
             if [[ -d ${HOME}/.emacs.d/tmp ]]; then
-                kill-directory-contents ${HOME}/.emacs.d/tmp
+                # kill-directory-contents ${HOME}/.emacs.d/tmp
+                bleachbit --shred ${HOME}/.emacs.d/tmp/*
             fi
         fi
     }
