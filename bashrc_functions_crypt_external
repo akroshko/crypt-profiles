@@ -200,6 +200,3 @@ ssh-host-fingerprint () {
         cat /etc/ssh/ssh_host_rsa_key.pub
     fi
 }
-
-# TODO: do not want to use the wrong version
-alias srm='srm -d -l'

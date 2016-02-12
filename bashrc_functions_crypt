@@ -784,23 +784,24 @@ master-privacy () {
         bleachbit --overwrite --clean chromium.cache  chromium.history chromium.vacuum
         # chromium.form_history
         h2 "Firefox"
-        bleachbit --overwrite --clean firefox.cache firefox.crash_reports firefox.forms firefox.download_history firefox.vacuum
+        bleachbit --overwrite --clean firefox.backup firefox.cache firefox.crash_reports firefox.forms firefox.download_history firefox.session_restore firefox.vacuum
+        # firefox.url_history
         if [[ "$ynfirefox" =~ y ]]; then
             kill-find-matching ${HOME}/.mozilla/firefox places.sqlite
         fi
         # TODO: ask to delete filefox places due to bug
-        # bleachbit --overwrite --clean firefox.url_history
+        # bleachbit --overwrite --clean
         h2 "Flash"
         bleachbit --overwrite --clean flash.*
-        h2 "Google Chrome, Konqueror, and Epiphany"
-        bleachbit --overwrite --clean epiphany.* google_chrome.* konqueror.*
+        h2 "Google Chrome, Konqueror, Epiphany, and Elinks"
+        bleachbit --overwrite --clean elinks.* epiphany.* google_chrome.* konqueror.*
         h2 "Conkeror"
         kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror places.sqlite
         kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror formhistory.sqlite
         kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror downloads.json
         h1 "Bleachbit system"
         h2 "Recent application files"
-        bleachbit --overwrite --clean adobe_reader.* google_earth.* google_toolbar.* gwenview.* vlc.*
+        bleachbit --overwrite --clean adobe_reader.* audacious.* easytag.* evolution.* filezilla.* gedit.* google_chrome.* google_earth.* google_toolbar.* gwenview.* java.* openofficeorg.* realplayer.* rhythmbox.* skype.* thunderbird.* vlc.*
         h2 "Gnome"
         bleachbit --overwrite --clean gnome.* nautilus.*
         h2 "KDE"
@@ -868,7 +869,6 @@ fix-sshd-config () {
     sudo cp --backup=t /etc/ssh/sshd_config /etc/ssh/sshd_config.bak
     # edit my ssh block
     # delete my ssh block, deal with multiple copies
-    # TODO: change this name
     sudo sed -i '/#+BEGIN crypt_profiles ssd_config block/,/#+END crypt-profiles ssd_config block/d' /etc/ssh/sshd_config
     # comment out lines I will replace
     sudo sed -e '/^Protocol/ s/^#*/# /' -i /etc/ssh/sshd_config

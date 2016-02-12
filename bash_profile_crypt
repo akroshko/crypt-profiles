@@ -1,15 +1,13 @@
 #!/bin/bash
-# TODO: detect whether this is first attempt on this login
 # TODO: possibly make pinentry-select a dot file in ~
-# TODO: should keychain be done after?
 ################################################################################
 ## this section initializes the GPG key
 # start up the agents
 # from https://wiki.archlinux.org/index.php/GnuPG#gpg-agent
 
-# TODO: still some issues with running this in batch mode, but can send password everytime and it's pretty good
+# TODO: still some issues with running this in batch mode, but can just send password everytime and it's pretty good
+#       might cause efficiency issues if too much authentication/profile
 
-# source ~/.bashrc that should source crypt-profile bash functions
 main () {
     local TRYAGAIN=y
     local TOPSECRET=
@@ -35,7 +33,7 @@ main () {
         fi
         ln -s /bin/false "${HOME}/bin/pinentry-select"
         if [[ -f ${HOME}/.secrets/secrets.txt.gpg ]]; then
-            # TODO: maybe incorporate dummy file
+            # TODO: maybe incorporate dummy file instead of secrets to try
             DISPLAY= gpg2 --batch --decrypt ${HOME}/.secrets/secrets.txt.gpg >> /dev/null
         fi
         if [[ $? != 0 ]]; then
@@ -67,7 +65,7 @@ main () {
         msg "Keychain done!"
         # set up normally if no passphrase given
         while [[ -z $TOPSECRET  && "$TRYAGAIN" == "y" ]]; do
-            # TODO: check if this is an agent that I started
+            # XXXX: might be problems here without other agents started by other programs
             if [[ -e "$envfile" ]] && kill -0 "$(grep GPG_AGENT_INFO $envfile | cut -d: -f 2)" 2>/dev/null; then
                 # eval "$(DISPLAY= cat "$envfile")"
                 msg "Sourcing envfile!"
@@ -84,7 +82,7 @@ main () {
                 else
                     TOPSECRET="$(DISPLAY= gpg2 --decrypt --use-agent ${HOME}/.secrets/secrets.txt.gpg)"
                     if [[ $? != 0 ]]; then
-                        # TODO: add option for quit
+                        # TODO: add real option for quit
                         read -p "Error decrypting such as bad password.  Try again (y/n/q)? " TRYAGAIN
                     fi
                 fi
@@ -110,8 +108,6 @@ main () {
         # TODO: possibly need to test for gpg-preset-passphrase working properly
         #       will clearing the agent deal with sleep and hibernation issues?
         for PRESETKEY in ${PRESETGPGKEYS}; do
-            # TODO: run this command if passphrase provided
-            # /usr/lib/gnupg2/gpg-preset-passphrase --verbose --passphrase "$GNUPGPWD" --preset "$PRESETKEY"
             /usr/lib/gnupg2/gpg-preset-passphrase --verbose --preset "$PRESETKEY" <<< "$GNUPGPWD"
         done
         if [[ -f "${HOME}/.gnupg/gpg-agent-info-$(hostname)" ]]; then
@@ -121,7 +117,6 @@ main () {
         ################################################################################
         ## initialize ssh keys only if agent is live
         # read in all id_*.txt.gpg
-        # TODO: add appropriate errors here
         for PWDFILE in ${HOME}/.secrets/id_*.txt.gpg; do
             if [[ -f "${PWDFILE}" ]]; then
                 KEYFILE=$(basename ${PWDFILE%.txt.gpg})

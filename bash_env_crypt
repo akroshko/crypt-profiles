@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# TODO: rename to bash_env_crypt
 # source along with bashrc when doing cryptography
 if [[ -f "${HOME}/.keychain/$(hostname)-sh" ]]
 then

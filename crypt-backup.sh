@@ -10,7 +10,6 @@ source ${HOME}/.bash_library
 # - uses 12GB of memory for buffering by default, although still stalls sometimes
 #   and maximum possible memory would be good
 # - no batch mode currently, script must be started interactively
-# TODO: pigz test and help message
 # TODO: proper reset and unwind functions
 # TODO: there's an issue with needing to manually unmount disk if nautilus has mounted automatically
 
@@ -31,8 +30,7 @@ main () {
       --xz with -1 (fast) to -9 (best) with -6 (default) and -1e to -9e extreme (slow!!!) for <<compression level>>"
 
     # XXXX: run as root due to all the disk operations
-    # TODO: make this nicer
-    # TODO: these must be set externally
+    # XXXX: these must be set externally
     if [[ "$1" == "--help" || -z "$CRYPTGPGKEY" || -z "$CRYPTGPGUSER" || -z "$BACKUPHOSTNAME" || -z "$BACKUPUUID" || -z "$1" ]]
     then
         echo "${HELPTEXT}"
@@ -51,7 +49,7 @@ main () {
         set -e
         # XXXX: hard coded to ensure script does not screwn anything up
         if [[ $(hostname) == "$BACKUPHOSTNAME" ]]; then
-            # TODO: is this necessary
+            # TODO: is this necessary?
             sync; sleep 10; sync
             sudo lvcreate --size 12G --snapshot --name backup-snapshot /dev/crypt-main/home
             sudo mount /dev/crypt-main/backup-snapshot /mnt-snapshot -o ro
