@@ -200,3 +200,10 @@ ssh-host-fingerprint () {
         cat /etc/ssh/ssh_host_rsa_key.pub
     fi
 }
+
+crypt-backup-extract () {
+    # just decompress .lzo for now, allow selection
+    # TODO: decompress appropriate compression file type
+    # XXXX: do not use -v on tar, too slow
+    gpg --decrypt "$1" | mbuffer -q -m 4096M | lzop -d | mbuffer -m 4096M | tar --extract --file -
+}

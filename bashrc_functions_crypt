@@ -631,7 +631,8 @@ vg-container-expand () {
         echo "$USAGE"
         return 1
     fi
-    read -p "This is a dangerous and poorly tested function!!! Continue (y/n)? " yn
+    read -n 1 -p "This is a dangerous and poorly tested function!!! Continue (y/n)? " yn
+    echo ""
     if [[ $yn == "y" ]]
     then
         CONTAINER="$1"
@@ -751,12 +752,14 @@ kill-recent-files-line () {
 master-privacy () {
     time {
         h1 "Delete things that need user input"
-        read -p "Do you want to delete all Firefox places.sqllite? (y/n) " ynfirefox
+        read -n 1 -p "Do you want to delete all Firefox places.sqllite? (y/n) " ynfirefox
+        echo ""
         h2 "Clearing trash"
         if [[ -d ${HOME}/tmp/trash ]] && ls -A ${HOME}/tmp/trash/* >> /dev/null 2>&1; then
             msg  "Contents of ~/tmp/trash:"
             ls -A ${HOME}/tmp/trash/*
-            read -p "Do you want to delete ~/tmp/trash? (y/n) " yn
+            read -n 1 -p "Do you want to delete ~/tmp/trash? (y/n) " yn
+            echo ""
             if [[ "$yn" =~ y ]]; then
                 # TODO: add a countdown here
                 kill-directory-contents ${HOME}/tmp/trash
@@ -768,7 +771,8 @@ master-privacy () {
             msg "Contents of ~/.local/share/Trash/files:"
             ls -A ${HOME}/.local/share/Trash/files
             # TODO: check if empty?
-            read -p "Do you want to delete ~/.local/share/Trash/files? (y/n) " yn
+            read -n 1 -p "Do you want to delete ~/.local/share/Trash/files? (y/n) " yn
+            echo ""
             if [[ "$yn" =~ y ]]; then
                 bleachbit --overwrite --clean system.trash
                 # TODO: add a countdown here
