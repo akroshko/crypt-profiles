@@ -78,6 +78,7 @@ main () {
             if [[ -f ${HOME}/.secrets/secrets.txt.gpg ]]; then
                 if [[ -n "$GNUPGPWD" ]]
                 then
+                    msg "Using entered password!"
                     TOPSECRET="$(DISPLAY= gpg2 --batch --passphrase-fd 0 --decrypt --use-agent ${HOME}/.secrets/secrets.txt.gpg <<< "$GNUPGPWD")"
                 else
                     TOPSECRET="$(DISPLAY= gpg2 --decrypt --use-agent ${HOME}/.secrets/secrets.txt.gpg)"
@@ -103,12 +104,18 @@ main () {
         # add identity to gpg-agent
         if [[ -z $GNUPGPWD ]]
         then
+            msg "Retrieving master password!"
             local GNUPGPWD=`sed -n '1p' <<< "$TOPSECRET"`
         fi
         # need to do with fingerprints for both main and subkeys!!!!
         # TODO: possibly need to test for gpg-preset-passphrase working properly
         #       will clearing the agent deal with sleep and hibernation issues?
+        # TODO: not working here, PRESETGPGKEYS not being loaded
+        if [[ -z ${PRESETGPGKEYS} ]]; then
+            warn "No preset keys!"
+        fi
         for PRESETKEY in ${PRESETGPGKEYS}; do
+            msg "Presetting: $PRESETKEY"
             /usr/lib/gnupg2/gpg-preset-passphrase --verbose --preset "$PRESETKEY" <<< "$GNUPGPWD"
         done
         if [[ -f "${HOME}/.gnupg/gpg-agent-info-$(hostname)" ]]; then
