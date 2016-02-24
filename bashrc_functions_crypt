@@ -749,6 +749,14 @@ kill-recent-files-line () {
     fi
 }
 
+export-firefox-bookmarks () {
+    # http://www.commandlinefu.com/commands/view/14088/get-your-firefox-bookmarks
+    # XXXX: used before deleting places.sqlite, because that's a cool thing to do, and put any bookmarks in text file
+    # TODO: do similarily terrible things elsewhere
+    # TODO: test if there is an sqllite
+    sqlite3 ~/.mozilla/firefox/*.[dD]efault/places.sqlite "SELECT strftime('%d.%m.%Y %H:%M:%S', dateAdded/1000000, 'unixepoch', 'localtime'),url FROM moz_places, moz_bookmarks WHERE moz_places.id = moz_bookmarks.fk ORDER BY dateAdded;"
+}
+
 master-privacy () {
     time {
         h1 "Delete things that need user input"
@@ -790,7 +798,12 @@ master-privacy () {
         h2 "Firefox"
         bleachbit --overwrite --clean firefox.backup firefox.cache firefox.crash_reports firefox.forms firefox.download_history firefox.session_restore firefox.vacuum
         # firefox.url_history
+        # TODO: do I still want to ask?
         if [[ "$ynfirefox" =~ y ]]; then
+            # TODO: terrible way to do this
+            if export-firefox-bookmarks >> /dev/null; then
+                export-firefox-bookmarks >> ~/Downloads/firefox-bookmarks-$(date-time-stamp).txt
+            fi
             kill-find-matching ${HOME}/.mozilla/firefox places.sqlite
         fi
         # TODO: ask to delete filefox places due to bug
