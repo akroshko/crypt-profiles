@@ -803,6 +803,8 @@ master-privacy () {
             # TODO: terrible way to do this
             if export-firefox-bookmarks >> /dev/null; then
                 export-firefox-bookmarks >> ~/Downloads/firefox-bookmarks-$(date-time-stamp).txt
+            else
+                warn "Cannot export Firefox bookmarks, places.sqlite probably does not exist!"
             fi
             kill-find-matching ${HOME}/.mozilla/firefox places.sqlite
         fi
