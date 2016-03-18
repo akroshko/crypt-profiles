@@ -18,7 +18,7 @@ kill-freespace-random-file () {
     # http://serverfault.com/questions/6440/is-there-an-alternative-to-dev-urandom
     # time openssl enc -aes-256-ctr -pass pass:"$(dd if=/dev/urandom bs=128 count=1 2>/dev/null | base64)" -nosalt < /dev/zero | pv -pterb > ~/randomfile.bin
     if [[ -z "$1" ]]; then
-        local ROOTPATH=~
+        local ROOTPATH="${HOME}"
     else
         local ROOTPATH="$1"
     fi

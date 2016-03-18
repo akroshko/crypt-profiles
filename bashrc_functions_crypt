@@ -757,6 +757,13 @@ export-firefox-bookmarks () {
     sqlite3 ~/.mozilla/firefox/*.[dD]efault/places.sqlite "SELECT strftime('%d.%m.%Y %H:%M:%S', dateAdded/1000000, 'unixepoch', 'localtime'),url FROM moz_places, moz_bookmarks WHERE moz_places.id = moz_bookmarks.fk ORDER BY dateAdded;"
 }
 
+master-privacy-all () {
+    # XXXX: get sudo going
+    sudo true
+    master-privacy
+    kill-freespace-random-file
+}
+
 master-privacy () {
     time {
         h1 "Delete things that need user input"
