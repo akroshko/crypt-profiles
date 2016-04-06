@@ -928,6 +928,5 @@ ssh-crypt-profile-batch-cmd () {
         else
             echo "Error decrypting!!!"
         fi
-
     fi
 }
