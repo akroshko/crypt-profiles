@@ -84,6 +84,7 @@ main () {
                     TOPSECRET="$(DISPLAY= gpg2 --decrypt --use-agent ${HOME}/.secrets/secrets.txt.gpg)"
                     if [[ $? != 0 ]]; then
                         # TODO: add real option for quit
+                        while read -r -t 0;do read -r; done;
                         read -n 1 -p "Error decrypting such as bad password.  Try again (y/n/q)? " TRYAGAIN
                         echo ""
                     fi

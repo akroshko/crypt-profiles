@@ -415,16 +415,19 @@ encrypt-file-password () {
     # suspected
     local TOPSECRET=$(super-password-easy)
     msg "Password is: $TOPSECRET"
+    while read -r -t 0;do read -r; done;
     read -p "Please write down the password and press enter to continue... "
     export TRYAGAIN=
     while [[ $TRYAGAIN != "y" ]]; do
         clear
         # TODO: not sure if I should really do this twice
+        while read -r -t 0;do read -r; done;
         read -p "Re-enter password: " TOPSECRET1
         if [[ $TOPSECRET != $TOPSECRET1 ]]; then
             # TODO: try again
             warn "Password does not match!!! Write down again!!!"
             warn "Password is: $TOPSECRET"
+            while read -r -t 0;do read -r; done;
             read -p "Press enter to continue... "
             local TRYAGAIN="n"
             continue
@@ -631,6 +634,7 @@ vg-container-expand () {
         echo "$USAGE"
         return 1
     fi
+    while read -r -t 0;do read -r; done;
     read -n 1 -p "This is a dangerous and poorly tested function!!! Continue (y/n)? " yn
     echo ""
     if [[ $yn == "y" ]]
@@ -767,12 +771,14 @@ master-privacy-all () {
 master-privacy () {
     time {
         h1 "Delete things that need user input"
+        while read -r -t 0;do read -r; done;
         read -n 1 -p "Do you want to delete all Firefox places.sqllite? (y/n) " ynfirefox
         echo ""
         h2 "Clearing trash"
         if [[ -d ${HOME}/tmp/trash ]] && ls -A ${HOME}/tmp/trash/* >> /dev/null 2>&1; then
             msg  "Contents of ~/tmp/trash:"
             ls -A ${HOME}/tmp/trash/*
+            while read -r -t 0;do read -r; done;
             read -n 1 -p "Do you want to delete ~/tmp/trash? (y/n) " yn
             echo ""
             if [[ "$yn" =~ y ]]; then
@@ -786,6 +792,7 @@ master-privacy () {
             msg "Contents of ~/.local/share/Trash/files:"
             ls -A ${HOME}/.local/share/Trash/files
             # TODO: check if empty?
+            while read -r -t 0;do read -r; done;
             read -n 1 -p "Do you want to delete ~/.local/share/Trash/files? (y/n) " yn
             echo ""
             if [[ "$yn" =~ y ]]; then
