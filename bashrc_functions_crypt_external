@@ -32,9 +32,15 @@ kill-freespace-random-file () {
     # TODO: run filling as root, but optionally don't use root and/or su to current user
     # TODO: consider possibility of a small file too
     # use ${USERNAME} to ensure that things are good
+    if (( $(cat /proc/meminfo | grep --color=never MemTotal | awk '{print $2}') < "4194304" )); then
+       BUFSIZE=512M
+    else
+       BUFSIZE=2048M
+    fi
+    echo "Using buffer size $BUFSIZE!"
     sudo true
     sudo su root <<EOF
-time openssl enc -aes-256-ctr -pass pass:"$(dd if=/dev/urandom bs=128 count=1 2>/dev/null | base64)" -nosalt < /dev/zero | mbuffer -m 2048M -s 64k -A /bin/false -f -o "$ROOTPATH"/randomfile.bin
+time openssl enc -aes-256-ctr -pass pass:"$(dd if=/dev/urandom bs=128 count=1 2>/dev/null | base64)" -nosalt < /dev/zero | mbuffer -m "$BUFSIZE" -s 64k -A /bin/false -f -o "$ROOTPATH"/randomfile.bin
 sync
 sleep 60
 sync
