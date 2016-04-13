@@ -772,6 +772,7 @@ master-privacy () {
     time {
         h1 "Delete things that need user input"
         while read -r -t 0;do read -r; done;
+        # TODO: check if an sqllite exists before asking
         read -n 1 -p "Do you want to delete all Firefox places.sqllite? (y/n) " ynfirefox
         echo ""
         h2 "Clearing trash"
@@ -803,6 +804,30 @@ master-privacy () {
             fi
         else
             warn "Nothing in ${HOME}/.local/share/Trash/files"
+        fi
+        # XXXX: these are specific to other unreleased scripts I have
+        h1 "Automatically deleting temporary files"
+        for tmplocation in ${HOME}/tmp/*; do
+            [[ -d "$tmplocation" ]] || continue
+            if [[ "$tmplocation" =~ flattened ]]; then
+                # do not allow .git directories to be mirrored then shredded, causes issues with shredding hardlinks
+                if [[ -n "$(find $tmplocation -iname \"*.git\" -type d)" ]]
+                then
+                    msg "Killing $tmplocation"
+                    kill-recursive "$tmplocation"
+                else
+                    warn "The location $tmplocation appears to contain git repos!!!"
+                fi
+            fi
+        done
+        local IMAGETMP="${HOME}/tmp/image-tmp"
+        if [[ -d  "${IMAGETMP}" ]]; then
+            if [[ -n "$(find $tmplocation -iname \"*.git\" -type d)" ]]; then
+                    msg "Killing ${IMAGETMP}"
+                    kill-recursive "${IMAGETMP}"
+            else
+                warn "The location $IMAGETMP appears to contain git repos!!!"
+            fi
         fi
         # TODO: reset so gnome does not give errors
         h1 "Bleachbit browsers"
