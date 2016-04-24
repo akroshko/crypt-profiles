@@ -920,13 +920,15 @@ master-privacy () {
 fix-sshd-config () {
     # make /etc/sshd_config more secure
     # uses guidelines given by https://stribika.github.io/2015/01/04/secure-secure-shell.html
+    # XXXX: I think I just have this avoid accidental running most of the time
     if [[ ! -e "./sshd_config" && ! -e "./bashrc_functions_crypt" ]]; then
         yell "Must be run in crypt-profiles path."
         return 1
     fi
     sudo cp --backup=t /etc/ssh/sshd_config /etc/ssh/sshd_config.bak
     # edit my ssh block
-    # delete my ssh block, deal with multiple copies
+    # delete my ssh block
+    # TODO: deal with multiple copies
     sudo sed -i '/#+BEGIN crypt_profiles ssd_config block/,/#+END crypt-profiles ssd_config block/d' /etc/ssh/sshd_config
     # comment out lines I will replace
     sudo sed -e '/^Protocol/ s/^#*/# /' -i /etc/ssh/sshd_config
@@ -942,6 +944,7 @@ fix-sshd-config () {
     # add my ssh block back
     sudo bash -c "echo '' >> /etc/ssh/sshd_config"
     sudo bash -c "cat ./sshd_config >> /etc/ssh/sshd_config"
+    sudo bash -c "echo '' >> /etc/ssh/sshd_config"
     # eliminate double lines
     sudo sed -e '/^$/N;/^\n$/D' -i /etc/ssh/sshd_config
     sudo service ssh restart

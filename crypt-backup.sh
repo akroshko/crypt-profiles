@@ -12,6 +12,7 @@ source ${HOME}/.bash_library
 # - no batch mode currently, script must be started interactively
 # TODO: proper reset and unwind functions
 # TODO: there's an issue with needing to manually unmount disk if nautilus has mounted automatically
+# TODO: backup /home as default
 
 main () {
     HELPTEXT="Usage: ./backup.sh [--help] [--reset] <<path>> [<<compression option>>] [<<compression level>>]
