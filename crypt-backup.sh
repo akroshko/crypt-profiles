@@ -12,7 +12,7 @@ source ${HOME}/.bash_library
 # - no batch mode currently, script must be started interactively
 # TODO: proper reset and unwind functions
 # TODO: there's an issue with needing to manually unmount disk if nautilus has mounted automatically
-# TODO: backup /home as default
+# TODO: backup /home as default, try again... there are silly bugs here
 
 main () {
     HELPTEXT="Usage: ./backup.sh [--help] [--reset] <<path>> [<<compression option>>] [<<compression level>>]
@@ -52,6 +52,7 @@ main () {
         if [[ $(hostname) == "$BACKUPHOSTNAME" ]]; then
             # TODO: is this necessary?
             sync; sleep 10; sync
+            # TODO: make sure I backup proper directory rather than home by default
             sudo lvcreate --size 12G --snapshot --name backup-snapshot /dev/crypt-main/home
             sudo mount /dev/crypt-main/backup-snapshot /mnt-snapshot -o ro
         else
