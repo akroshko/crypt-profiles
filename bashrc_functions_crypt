@@ -3,6 +3,7 @@
 ################################################################################
 # dealing with keys and agents
 
+# TODO: don't think I need to specify working profile, can I do better? do I just need a temp working profile?
 crypt-create-profile () {
     # TODO: what does a crypt-profile actually look like
     #       -master, original one, used for creating subkeys
@@ -126,6 +127,51 @@ crypt-create-profile () {
     fi
 }
 
+# TODO: will eventually want to be able to modify secret files
+crypt-add-secret-to-current-profile () {
+    # TODO: this is kind of a standard thing
+    # TODO: add check that current profile and locations sync up
+    # TODO: check that crypt is working
+    if [[ -z "$1" ]]; then
+        yell "Empty master location specified!"
+        return 1
+    fi
+    if [[ -z "$2" ]]; then
+        yell "Empty primary location specified!"
+        return 1
+    fi
+    if [[ -z "$3" ]]; then
+        yell "Empty secret name specified!"
+        return 1
+    fi
+    # XXXX: must keep crypt active, possibly fix permissions
+    local MASTERPROFILE="$1"
+    local PRIMARYPROFILE="$2"
+    local SECRETNAME="$3"
+    # TODO: can I do this without??? maybe secrets should be symmetrically encrypted
+    local RECIPIENT="$CRYPTGPGUSER"
+    # enter secret
+    msg "++++ WARNING: secret will be shown in cleartext."
+    msg "Enter the secret on one line: "
+    read THESECRET
+    msg "Enter the secret again on one line: "
+    read THESECRET2
+    if [[ ! "$THESECRET" == "$THESECRET2" ]]; then
+        warn "The secrets are different!!!"
+        return 1
+    fi
+    # get the password from the current secrets
+    local GPGPASSPHRASE=$(gpg --quiet --decrypt ~/.secrets/secrets.txt.gpg 2>/dev/null | head -n 1)
+    # create the secret
+    if [[ -n "${THESECRET}" && -n "${RECIPIENT}" && -n "$GPGPASSPHRASE" && -n "$SECRETNAME" ]]; then
+        # TODO: there is an issue with message "You need a passphrase to unlock the secret key for "
+        #       issue temporarily solved by using --batch when decrypting
+        echo ${THESECRET} | gpg --recipient "${RECIPIENT}" --encrypt --passphrase "${GPGPASSPHRASE}" --output "$PRIMARYPROFILE"/"$SECRETNAME"-secrets.txt.gpg -
+    else
+        yell "Something went wrong before final encryption!"
+    fi
+}
+
 crypt-replace-subkeys () {
     yell "Not implemented yet!"
     false
@@ -164,7 +210,11 @@ crypt-switch-profile () {
     need_new_symlink "$WORKINGPROFILE" ${HOME}/.gnupg
     # link to the secrets files
     need_new_directory ${HOME}/.secrets
-    need_new_symlink "$PRIMARYPROFILE"/secrets.txt.gpg ${HOME}/.secrets/secrets.txt.gpg
+    # a loop to create symlinks
+    for THESECRETFILE in $PRIMARYPROFILE/*; do
+        [[ $THESECRETFILE =~ secrets ]] || continue
+        need_new_symlink "$THESECRETFILE" ${HOME}/.secrets/$(basename $THESECRETFILE)
+    done
     # XXXX: just use secrets for itself, use last word in directory
     # TODO: document this and possibly make a better way to do this
     need_new_symlink "$PRIMARYPROFILE"/secrets.txt.gpg ${HOME}/.secrets/$(basename ${PRIMARYPROFILE##*-}).txt.gpg
@@ -187,8 +237,9 @@ crypt-switch-profile () {
     fix-gpg-ssh-permissions
 }
 
+# TODO: actually do this
 crypt-profile-backup () {
-    true
+    false
 }
 
 crypt-profile-printable () {
