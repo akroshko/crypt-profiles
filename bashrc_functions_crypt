@@ -881,7 +881,9 @@ master-privacy () {
         h1 "Automatically deleting temporary files"
         for tmplocation in ${HOME}/tmp/*; do
             [[ -d "$tmplocation" ]] || continue
-            if [[ "$tmplocation" =~ flattened || "$tmplocation" =~ thumbnail ]]; then
+            # if [[ "$tmplocation" =~ flattened || "$tmplocation" =~ thumbnail ]]; then
+            # TODO: do not delete thumbnail for now, decide later
+            if [[ "$tmplocation" =~ flattened ]]; then
                 # do not allow .git directories to be mirrored then shredded, causes issues with shredding hardlinks
                 if [[ -z "$(find $tmplocation -iname \"*.git\" -type d)" ]]
                 then
