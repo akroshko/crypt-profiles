@@ -233,7 +233,7 @@ crypt-switch-profile () {
     need_new_directory ${HOME}/.secrets
     # a loop to create symlinks
     for THESECRETFILE in $PRIMARYPROFILE/*; do
-        [[ $THESECRETFILE =~ secrets ]] || continue
+        [[ $THESECRETFILE =~ secrets || $THESECRETFILE =~ openvpn ]]  || continue
         need_new_symlink "$THESECRETFILE" ${HOME}/.secrets/$(basename $THESECRETFILE)
     done
     # XXXX: just use secrets for itself, use last word in directory
