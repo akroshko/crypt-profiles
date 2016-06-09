@@ -5,7 +5,7 @@
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20160525
+# Version: 20160609
 # URL: https://github.com/akroshko/bash-stdlib
 #
 # This program is free software: you can redistribute it and/or modify
@@ -840,77 +840,96 @@ master-privacy-all () {
     kill-freespace-random-file
 }
 
+
+master-privacy-brief () {
+    # delete benign things, that shouldn't cause too much trouble
+    master-privacy --batch
+}
+
 master-privacy () {
     time {
-        h1 "Delete things that need user input"
-        while read -r -t 0;do read -r; done;
-        # TODO: check if an sqllite exists before asking
-        read -n 1 -p "Do you want to delete all Firefox places.sqllite? (y/n) " ynfirefox
-        echo ""
-        h2 "Clearing trash"
-        if [[ -d ${HOME}/tmp/trash ]] && ls -A ${HOME}/tmp/trash/* >> /dev/null 2>&1; then
-            msg  "Contents of ~/tmp/trash:"
-            ls -A ${HOME}/tmp/trash/*
+        if [[ -z "$1" ]]; then
+            h1 "Delete things that need user input"
             while read -r -t 0;do read -r; done;
-            read -n 1 -p "Do you want to delete ~/tmp/trash? (y/n) " yn
+            # TODO: check if an sqllite exists before asking
+            read -n 1 -p "Do you want to delete all Firefox places.sqllite? (y/n) " ynfirefox
             echo ""
-            if [[ "$yn" =~ y ]]; then
-                # TODO: add a countdown here
-                kill-directory-contents ${HOME}/tmp/trash
-            fi
-        else
-            warn "Nothing in ~/tmp/trash"
-        fi
-        if [[ -d ${HOME}/.local/share/Trash/files ]] && ls -A -d ${HOME}/.local/share/Trash/files/* >> /dev/null 2>&1; then
-            msg "Contents of ~/.local/share/Trash/files:"
-            ls -A ${HOME}/.local/share/Trash/files
-            # TODO: check if empty?
-            while read -r -t 0;do read -r; done;
-            read -n 1 -p "Do you want to delete ~/.local/share/Trash/files? (y/n) " yn
-            echo ""
-            if [[ "$yn" =~ y ]]; then
-                bleachbit --overwrite --clean system.trash
-                # TODO: add a countdown here
-                # kill-directory-contents ${HOME}/.local/share/Trash/files
-                # kill-directory-contents ${HOME}/.local/share/Trash/info
-            fi
-        else
-            warn "Nothing in ${HOME}/.local/share/Trash/files"
-        fi
-        # XXXX: these are specific to other unreleased scripts I have
-        h1 "Automatically deleting temporary files"
-        for tmplocation in ${HOME}/tmp/*; do
-            [[ -d "$tmplocation" ]] || continue
-            # if [[ "$tmplocation" =~ flattened || "$tmplocation" =~ thumbnail ]]; then
-            # TODO: do not delete thumbnail for now, decide later
-            if [[ "$tmplocation" =~ flattened ]]; then
-                # do not allow .git directories to be mirrored then shredded, causes issues with shredding hardlinks
-                if [[ -z "$(find $tmplocation -iname \"*.git\" -type d)" ]]
-                then
-                    msg "Killing $tmplocation"
-                    kill-recursive "$tmplocation"
-                else
-                    warn "The location $tmplocation appears to contain git repos!!!"
+            h2 "Clearing trash"
+            if [[ -d ${HOME}/tmp/trash ]] && ls -A ${HOME}/tmp/trash/* >> /dev/null 2>&1; then
+                msg  "Contents of ~/tmp/trash:"
+                ls -A ${HOME}/tmp/trash/*
+                while read -r -t 0;do read -r; done;
+                read -n 1 -p "Do you want to delete ~/tmp/trash? (y/n) " yn
+                echo ""
+                if [[ "$yn" =~ y ]]; then
+                    # TODO: add a countdown here
+                    kill-directory-contents ${HOME}/tmp/trash
                 fi
+            else
+                warn "Nothing in ~/tmp/trash"
             fi
-        done
-        local IMAGETMP="${HOME}/tmp/image-tmp"
-        if [[ -d  "${IMAGETMP}" ]]; then
-            if [[ -n "$(find $tmplocation -iname \"*.git\" -type d)" ]]; then
+            if [[ -d ${HOME}/.local/share/Trash/files ]] && ls -A -d ${HOME}/.local/share/Trash/files/* >> /dev/null 2>&1; then
+                msg "Contents of ~/.local/share/Trash/files:"
+                ls -A ${HOME}/.local/share/Trash/files
+                # TODO: check if empty?
+                while read -r -t 0;do read -r; done;
+                read -n 1 -p "Do you want to delete ~/.local/share/Trash/files? (y/n) " yn
+                echo ""
+                if [[ "$yn" =~ y ]]; then
+                    bleachbit --overwrite --clean system.trash
+                    # TODO: add a countdown here
+                    # kill-directory-contents ${HOME}/.local/share/Trash/files
+                    # kill-directory-contents ${HOME}/.local/share/Trash/info
+                fi
+            else
+                warn "Nothing in ${HOME}/.local/share/Trash/files"
+            fi
+            # XXXX: these are specific to other unreleased scripts I have
+            h1 "Automatically deleting temporary files"
+            for tmplocation in ${HOME}/tmp/*; do
+                [[ -d "$tmplocation" ]] || continue
+                # if [[ "$tmplocation" =~ flattened || "$tmplocation" =~ thumbnail ]]; then
+                # TODO: do not delete thumbnail for now, decide later
+                if [[ "$tmplocation" =~ flattened ]]; then
+                    # do not allow .git directories to be mirrored then shredded, causes issues with shredding hardlinks
+                    if [[ -z "$(find $tmplocation -iname \"*.git\" -type d)" ]]
+                    then
+                        msg "Killing $tmplocation"
+                        kill-recursive "$tmplocation"
+                    else
+                        warn "The location $tmplocation appears to contain git repos!!!"
+                    fi
+                fi
+            done
+            local IMAGETMP="${HOME}/tmp/image-tmp"
+            if [[ -d  "${IMAGETMP}" ]]; then
+                if [[ -n "$(find $tmplocation -iname \"*.git\" -type d)" ]]; then
                     msg "Killing ${IMAGETMP}"
                     kill-recursive "${IMAGETMP}"
-            else
-                warn "The location $IMAGETMP appears to contain git repos!!!"
+                else
+                    warn "The location $IMAGETMP appears to contain git repos!!!"
+                fi
+
             fi
         fi
         # TODO: reset so gnome does not give errors
         h1 "Bleachbit browsers"
         h2 "Chromium"
-        bleachbit --overwrite --clean chromium.cache  chromium.history chromium.vacuum
+        # XXXX: I only use chromium as a secondary browser
+        if ! check-chromium; then
+            bleachbit --overwrite --clean chromium.cache chromium.cookies chromium.current_session chromium.form_history chromium.passwords chromium.search_engines chromium.vacuum
+            # TODO: still doesn't work with bleachbit 1.11 beta
+            # chromium.history
+        else
+            warn "Chromium running!"
+        fi
         # chromium.form_history
         h2 "Firefox"
-        bleachbit --overwrite --clean firefox.backup firefox.cache firefox.crash_reports firefox.forms firefox.download_history firefox.session_restore firefox.vacuum
-        # firefox.url_history
+        if ! check-iceweasel; then
+            # XXXX: this preserves any bookmarks
+            bleachbit --overwrite --clean firefox.backup firefox.cache firefox.crash_reports firefox.forms firefox.download_history firefox.session_restore firefox.url_history firefox.vacuum
+        fi
+        #
         # TODO: do I still want to ask?
         if [[ "$ynfirefox" =~ y ]]; then
             # TODO: terrible way to do this
@@ -919,21 +938,31 @@ master-privacy () {
             else
                 warn "Cannot export Firefox bookmarks, places.sqlite probably does not exist!"
             fi
+            # XXXX: this kills all bookmarks
             kill-find-matching ${HOME}/.mozilla/firefox places.sqlite
+        else
+            warn "Iceweasel running!"
         fi
         # TODO: ask to delete filefox places due to bug
         # bleachbit --overwrite --clean
         h2 "Flash"
         bleachbit --overwrite --clean flash.*
+        # secondary browsers
         h2 "Google Chrome, Konqueror, Epiphany, and Elinks"
         bleachbit --overwrite --clean elinks.* epiphany.* google_chrome.* konqueror.*
+        # TODO: start killing conkeror completely once a week
         h2 "Conkeror"
-        kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror places.sqlite
-        kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror formhistory.sqlite
-        kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror downloads.json
+        if ! check-iceweasel; then
+            kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror places.sqlite
+            kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror formhistory.sqlite
+            kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror downloads.json
+        else
+            warn "Iceweasel running!"
+        fi
         h1 "Bleachbit system"
         h2 "Recent application files"
-        bleachbit --overwrite --clean adobe_reader.* audacious.* easytag.* evolution.* filezilla.* gedit.* google_chrome.* google_earth.* google_toolbar.* gwenview.* java.* openofficeorg.* realplayer.* rhythmbox.* skype.* thunderbird.* vlc.*
+        # TODO: be as severe as possible on anything I don't use
+        bleachbit --overwrite --clean adobe_reader.* amsn.* amule.* audacious.* easytag.* evolution.* filezilla.* gedit.* google_chrome.* google_earth.* google_toolbar.* gwenview.* java.* openofficeorg.* pidgin.* realplayer.* rhythmbox.* skype.* thunderbird.* vlc.*
         h2 "Gnome"
         bleachbit --overwrite --clean gnome.* nautilus.*
         h2 "KDE"
@@ -972,6 +1001,7 @@ master-privacy () {
         # kill-directory-contents-preserve-structure ~/.cache/thumbnails
         # TODO: interferes with Firefox sync!!!
         # dragonplayer
+
         # ~/.kde/share/config/dragonplayerrc
         # https://unix.stackexchange.com/questions/192465/remove-paragraph-from-file
         # TODO: need a delete paragraph function
