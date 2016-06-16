@@ -235,3 +235,11 @@ crypt-backup-extract () {
     # XXXX: do not use -v on tar, too slow
     gpg --decrypt "$1" | mbuffer -q -m 4096M | lzop -d | mbuffer -m 4096M | tar --extract --file -
 }
+
+crypt-device-image-to-here () {
+    # image a disk parition here
+    # good for quick and dirty backups of disks on secondary machines before major modifications
+    # TODO: will need to create and test a restore thing
+    #       mbuffer limtted to easily fit on machines with 1G Ram
+    dd if=/dev/"$1" bs=64k conv=noerror,sync status=progress | lz4 | mbuffer -m 256M | gpg --compress-algo none --cipher-algo AES256 --recipient "${CRYPTGPGUSER}" --output - --encrypt - | mbuffer -q -m 256M -s 64k -o ./"$HOSTNAME"-"$1"--$(date +%Y%m%d%H%M%S).lz4.gpg
+}

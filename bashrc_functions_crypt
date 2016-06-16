@@ -925,7 +925,7 @@ master-privacy () {
         fi
         # chromium.form_history
         h2 "Firefox"
-        if ! check-iceweasel; then
+        if ! check-firefox; then
             # XXXX: this preserves any bookmarks
             bleachbit --overwrite --clean firefox.backup firefox.cache firefox.crash_reports firefox.forms firefox.download_history firefox.session_restore firefox.url_history firefox.vacuum
         fi
@@ -941,7 +941,7 @@ master-privacy () {
             # XXXX: this kills all bookmarks
             kill-find-matching ${HOME}/.mozilla/firefox places.sqlite
         else
-            warn "Iceweasel running!"
+            warn "Firefox running!"
         fi
         # TODO: ask to delete filefox places due to bug
         # bleachbit --overwrite --clean
@@ -952,12 +952,12 @@ master-privacy () {
         bleachbit --overwrite --clean elinks.* epiphany.* google_chrome.* konqueror.*
         # TODO: start killing conkeror completely once a week
         h2 "Conkeror"
-        if ! check-iceweasel; then
+        if ! check-firefox; then
             kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror places.sqlite
             kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror formhistory.sqlite
             kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror downloads.json
         else
-            warn "Iceweasel running!"
+            warn "Firefox running!"
         fi
         h1 "Bleachbit system"
         h2 "Recent application files"
@@ -1011,8 +1011,10 @@ master-privacy () {
         # if emacs daemon is not running, kill it's tmp files
         if ! check-emacs-daemon; then
             if [[ -d ${HOME}/.emacs.d/tmp ]]; then
-                # kill-directory-contents ${HOME}/.emacs.d/tmp
                 bleachbit --shred ${HOME}/.emacs.d/tmp/*
+            fi
+            if [[ -d ${HOME}/.emacs.d/image-dired ]]; then
+                bleachbit --shred ${HOME}/.emacs.d/image-dired/*
             fi
         fi
     }
