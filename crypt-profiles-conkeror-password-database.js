@@ -80,7 +80,7 @@ logindata["amazoncom"] =     ["https://www.amazon.com/ap/signin?_encoding=UTF8&o
 logindata["usask"] =         ["https://pawscas.usask.ca/cas-web/login?service=https%3A%2F%2Fpaws5.usask.ca%2Fc%2Fportal%2Flogin",
                               "username",
                               "password"];
-logindata["tdcanadatrust"] = ["https://easyweb.td.com/waw/idp/login.htm?execution=e1s1",
+logindata["tdcanadatrust"] = ["https://easyweb.td.com/waw/idp/login.htm",
                               "login:AccessCard",
                               "login:Webpassword"];
 logindata["vimeo"] =         ["https://vimeo.com/log_in"];
