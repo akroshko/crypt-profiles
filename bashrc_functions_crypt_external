@@ -151,6 +151,15 @@ kill-directory-contents () {
     fi
 }
 
+kill-directory-files () {
+    # XXXX: dangerous functions for convenience in batch mode
+    # TODO: find way to kill directories too for some uses, but without going haywire
+    # XXXX: recursive, very dangerous!!!
+    if [[ -d "$1" ]]; then
+        find "$1" -mindepth 1 -maxdepth 1 -exec bleachbit --shred {} \;
+    fi
+}
+
 kill-directory-contents-preserve-structure () {
     # XXXX: dangerous functions for convenience in batch mode
     if [[ -d "$1" ]]; then
@@ -241,5 +250,5 @@ crypt-device-image-to-here () {
     # good for quick and dirty backups of disks on secondary machines before major modifications
     # TODO: will need to create and test a restore thing
     #       mbuffer limtted to easily fit on machines with 1G Ram
-    dd if=/dev/"$1" bs=64k conv=noerror,sync status=progress | lz4 | mbuffer -m 256M | gpg --compress-algo none --cipher-algo AES256 --recipient "${CRYPTGPGUSER}" --output - --encrypt - | mbuffer -q -m 256M -s 64k -o ./"$HOSTNAME"-"$1"--$(date +%Y%m%d%H%M%S).lz4.gpg
+    sudo dd if=/dev/"$1" bs=64k conv=noerror,sync | lz4 | mbuffer -m 256M | gpg --compress-algo none --cipher-algo AES256 --recipient "${CRYPTGPGUSER}" --output - --encrypt - | mbuffer -q -m 256M -s 64k -o ./"$HOSTNAME"-"$1"--$(date +%Y%m%d%H%M%S).lz4.gpg
 }

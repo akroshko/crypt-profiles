@@ -915,11 +915,10 @@ master-privacy () {
         # TODO: reset so gnome does not give errors
         h1 "Bleachbit browsers"
         h2 "Chromium"
-        # XXXX: I only use chromium as a secondary browser
+        # XXXX: I only use chromium as a secondary browser, decided to just shred everything
         if ! check-chromium; then
-            bleachbit --overwrite --clean chromium.cache chromium.cookies chromium.current_session chromium.form_history chromium.passwords chromium.search_engines chromium.vacuum
-            # TODO: still doesn't work with bleachbit 1.11 beta
-            # chromium.history
+            bleachbit --shred ${HOME}/.config/chromium/
+            bleachbit --shred ${HOME}/.cache/chromium/
         else
             warn "Chromium running!"
         fi
@@ -943,21 +942,44 @@ master-privacy () {
         else
             warn "Firefox running!"
         fi
-        # TODO: ask to delete filefox places due to bug
+         # TODO: ask to delete filefox places due to bug
         # bleachbit --overwrite --clean
         h2 "Flash"
         bleachbit --overwrite --clean flash.*
         # secondary browsers
         h2 "Google Chrome, Konqueror, Epiphany, and Elinks"
         bleachbit --overwrite --clean elinks.* epiphany.* google_chrome.* konqueror.*
-        # TODO: start killing conkeror completely once a week
         h2 "Conkeror"
+        # XXXX: I now use a password manager and just clear everything
         if ! check-firefox; then
-            kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror places.sqlite
-            kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror formhistory.sqlite
-            kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror downloads.json
+            if [[ -d ${HOME}/.conkeror.mozdev.org/ ]]; then
+                # XXXX: preserve as much as possible, like adblocker
+                # TODO: keep shredding more
+                kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror cookies.sqlite
+                kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror cookies.sqlite-shm
+                kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror cookies.sqlite-wal
+                kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror datareporting
+                kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror downloads.json
+                kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror formhistory.sqlite
+                kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror permissions.sqlite
+                kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror places.sqlite
+                kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror places.sqlite-shm
+                kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror places.sqlite-wal
+                kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror prefs.js
+                kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror sessionCheckpoints.json
+                kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror saved-telemetry-pings
+                kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror storage
+                kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror webappstore.sqlite
+                kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror webappstore.sqlite-shm
+                kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror webappstore.sqlite-wal
+                kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror xulstore.json
+                # cache files
+                bleachbit --shred ${HOME}/.cache/conkeror.mozdev.org/
+                bleachbit --shred ${HOME}/.cache/firefox/
+                bleachbit --shred ${HOME}/.cache/mozilla/
+            fi
         else
-            warn "Firefox running!"
+            warn "Firefox or similar running!"
         fi
         h1 "Bleachbit system"
         h2 "Recent application files"

@@ -16,6 +16,11 @@ practices (e.g., OpenSSH private keys without passwords) I decided to
 see if it was possible to do better by using a small amount of code
 based on commonly used tools (most shell scripting).
 
+New development includes an encrypted password database using an Emacs
+org-mode file, with automatic opening of login pages and insertion
+into the appropriate input fields in the
+[Conkeror web browser](http://conkeror.org/).
+
 WARNING: This project is an experiment in high-level usability of
 common cryptography tools for everyday use, rather than being a secure
 system for production use.  Despite being better and more convenient
@@ -225,6 +230,12 @@ Encrypted backups
 
 TODO: add instructions
 
+Conkeror/Emacs GPG encrypted password database
+==============================================
+
+TODO: add instructions
+
+
 Planned development
 ===================
 
@@ -263,7 +274,7 @@ many-computer setting.
 
 - add instructions concerning containers and volume groups
 
-- address isses for syncing a `crypte-profile`
+- address isses for syncing a `crypt-profile`
 
 - manage client certificates for web browsers
 
