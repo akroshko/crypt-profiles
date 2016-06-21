@@ -109,6 +109,10 @@ logindata["clubtread"] =     ["http://forums.clubtread.com/register.php",
 logindata["strava"] =        ["https://www.strava.com/login",
                               "email",
                               "password"];
+logindata["buyapi"] =        ["https://www.buyapi.ca/my-account/",
+                              "username",
+                              "password"];
+
 // TODO: might be an issue
 logindata["soundcloud"] =    ["https://soundcloud.com/signin"];
 
