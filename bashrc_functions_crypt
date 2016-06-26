@@ -940,7 +940,7 @@ master-privacy () {
             # XXXX: this kills all bookmarks
             kill-find-matching ${HOME}/.mozilla/firefox places.sqlite
         else
-            warn "Firefox running!"
+            warn "Firefox running or not clearing due to no input.!"
         fi
          # TODO: ask to delete filefox places due to bug
         # bleachbit --overwrite --clean
@@ -953,14 +953,17 @@ master-privacy () {
         # XXXX: I now use a password manager and just clear everything
         if ! check-firefox; then
             if [[ -d ${HOME}/.conkeror.mozdev.org/ ]]; then
+                msg "Clearing firefox-based browsers OK!"
                 # XXXX: preserve as much as possible, like adblocker
                 # TODO: keep shredding more
+                kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror content-prefs.sqlite
                 kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror cookies.sqlite
                 kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror cookies.sqlite-shm
                 kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror cookies.sqlite-wal
                 kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror datareporting
                 kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror downloads.json
                 kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror formhistory.sqlite
+                kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror mimeTypes.rdf
                 kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror permissions.sqlite
                 kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror places.sqlite
                 kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror places.sqlite-shm
@@ -969,9 +972,9 @@ master-privacy () {
                 kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror sessionCheckpoints.json
                 kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror saved-telemetry-pings
                 kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror storage
-                kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror webappstore.sqlite
-                kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror webappstore.sqlite-shm
-                kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror webappstore.sqlite-wal
+                kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror webappsstore.sqlite
+                kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror webappsstore.sqlite-shm
+                kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror webappsstore.sqlite-wal
                 kill-find-matching ${HOME}/.conkeror.mozdev.org/conkeror xulstore.json
                 # cache files
                 bleachbit --shred ${HOME}/.cache/conkeror.mozdev.org/
