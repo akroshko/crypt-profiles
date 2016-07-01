@@ -16,6 +16,8 @@ UseDNS no
 GSSAPIAuthentication no
 # Authentication:
 LoginGraceTime 30
+# I use TCP forwarding a lot now
+AllowTcpForwarding yes
 # add a group for sftp
 Subsystem sftp internal-sftp
 Match Group sftponly

@@ -5,7 +5,7 @@
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20160609
+# Version: 20160701
 # URL: https://github.com/akroshko/bash-stdlib
 #
 # This program is free software: you can redistribute it and/or modify
@@ -123,6 +123,12 @@ main () {
         else
             time tar --create --file - "$1" | "${COMPRESSPROG}" | mbuffer -m 8192M | gpg --compress-algo none --cipher-algo AES256 --recipient "${CRYPTGPGUSER}" --output - --encrypt - | mbuffer -q -m 2048M -s 64k -o ${BACKUPPATH}/$(hostname)-home--$(date +%Y%m%d%H%M%S).tar."${COMPRESSEXT}".gpg
         fi
+        # backup any luks headers here
+        # TODO: encrypt these too?
+        mkdir -p ./luks-header-backup
+        cd ./luks-header-backup
+        # TODO: assumes all functions in this repo are available
+        crypt-luks-headers-backup-here
         popd >> /dev/null
         sudo umount /mnt-snapshot
         if [[ $(hostname) == "$BACKUPHOSTNAME" ]]; then

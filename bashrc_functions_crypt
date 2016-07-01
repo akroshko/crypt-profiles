@@ -5,7 +5,7 @@
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20160609
+# Version: 20160701
 # URL: https://github.com/akroshko/bash-stdlib
 #
 # This program is free software: you can redistribute it and/or modify
@@ -1062,22 +1062,23 @@ fix-sshd-config () {
     # TODO: deal with multiple copies
     sudo sed -i '/#+BEGIN crypt_profiles ssd_config block/,/#+END crypt-profiles ssd_config block/d' /etc/ssh/sshd_config
     # comment out lines I will replace
-    sudo sed -e '/^Protocol/ s/^#*/# /' -i /etc/ssh/sshd_config
-    sudo sed -e '/^HostKey/ s/^#*/# /' -i /etc/ssh/sshd_config
-    sudo sed -e '/^Ciphers/ s/^#*/# /' -i /etc/ssh/sshd_config
-    sudo sed -e '/^MACs/ s/^#*/# /' -i /etc/ssh/sshd_config
-    sudo sed -e '/^PermitRootLogin/ s/^#*/# /' -i /etc/ssh/sshd_config
-    sudo sed -e '/^UseDNS/ s/^#*/# /' -i /etc/ssh/sshd_config
+    sudo sed -e '/^Protocol/ s/^#*/# /'             -i /etc/ssh/sshd_config
+    sudo sed -e '/^HostKey/ s/^#*/# /'              -i /etc/ssh/sshd_config
+    sudo sed -e '/^Ciphers/ s/^#*/# /'              -i /etc/ssh/sshd_config
+    sudo sed -e '/^MACs/ s/^#*/# /'                 -i /etc/ssh/sshd_config
+    sudo sed -e '/^PermitRootLogin/ s/^#*/# /'      -i /etc/ssh/sshd_config
+    sudo sed -e '/^UseDNS/ s/^#*/# /'               -i /etc/ssh/sshd_config
     sudo sed -e '/^GSSAPIAuthentication/ s/^#*/# /' -i /etc/ssh/sshd_config
-    sudo sed -e '/^LoginGraceTime/ s/^#*/# /' -i /etc/ssh/sshd_config
-    sudo sed -e '/^AllowUsers/ s/^#*/# /' -i /etc/ssh/sshd_config
-    sudo sed -e '/^Subsystem/ s/^#*/# /' -i /etc/ssh/sshd_config
+    sudo sed -e '/^LoginGraceTime/ s/^#*/# /'       -i /etc/ssh/sshd_config
+    sudo sed -e '/^AllowUsers/ s/^#*/# /'           -i /etc/ssh/sshd_config
+    sudo sed -e '/^Subsystem/ s/^#*/# /'            -i /etc/ssh/sshd_config
+    sudo sed -e '/^AllowTcpForwarding/ s/^#*/# /'            -i /etc/ssh/sshd_config
     # add my ssh block back
     sudo bash -c "echo '' >> /etc/ssh/sshd_config"
     sudo bash -c "cat ./sshd_config >> /etc/ssh/sshd_config"
     sudo bash -c "echo '' >> /etc/ssh/sshd_config"
     # eliminate double lines
-    sudo sed -e '/^$/N;/^\n$/D' -i /etc/ssh/sshd_config
+    sudo sed -e '/^$/N;/^\n$/D'                     -i /etc/ssh/sshd_config
     sudo service ssh restart
 }
 
@@ -1095,4 +1096,50 @@ ssh-crypt-profile-batch-cmd () {
             echo "Error decrypting!!!"
         fi
     fi
+}
+
+crypt-luks-headers-dump () {
+    sudo true
+    (IFS=$'\n'
+     for Z in $(lsblk -l -o name | tail -n +2); do
+         if [[ -e /dev/"$Z" ]]; then
+             OUTPUT="$(sudo cryptsetup luksDump /dev/$Z 2>&1)"
+             if [[ $? == 0 ]]; then
+                 h2 /dev/"$Z"
+                 echo "$OUTPUT"
+             fi
+         elif [[ -e /dev/mapper/"$Z" ]]; then
+             OUTPUT="$(sudo cryptsetup luksDump /dev/mapper/$Z 2>&1)"
+             if [[ $? == 0 ]]; then
+                 h2 /dev/mapper/"$Z"
+                 echo "$OUTPUT"
+             fi
+         else
+             msg "Can't find $Z!!!"
+         fi
+     done
+    )
+}
+
+# TODO: generalize with above
+crypt-luks-headers-backup-here () {
+    sudo true
+    (IFS=$'\n'
+     for Z in $(lsblk -l -o name | tail -n +2); do
+         if [[ -e /dev/"$Z" ]]; then
+             OUTPUT="$(sudo cryptsetup luksDump /dev/$Z 2>&1)"
+             if [[ $? == 0 ]]; then
+                 h2 /dev/"$Z"
+                 sudo cryptsetup luksHeaderBackup /dev/"$Z"        --header-backup-file=./luks-header-backup-${HOSTNAME}-"$Z"-$(date-time-stamp).bin
+             fi
+         elif [[ -e /dev/mapper/"$Z" ]]; then
+             OUTPUT="$(sudo cryptsetup luksDump /dev/mapper/$Z 2>&1)"
+             if [[ $? == 0 ]]; then
+                 h2 /dev/mapper/"$Z"
+                 sudo cryptsetup luksHeaderBackup /dev/mapper/"$Z" --header-backup-file=./luks-header-backup-${HOSTNAME}-"$Z"-$(date-time-stamp).bin
+             fi
+         else
+             msg "Can't find $Z!!!"
+         fi
+     done)
 }
