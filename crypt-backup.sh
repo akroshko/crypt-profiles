@@ -5,7 +5,7 @@
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20160701
+# Version: 20160716
 # URL: https://github.com/akroshko/bash-stdlib
 #
 # This program is free software: you can redistribute it and/or modify
@@ -90,7 +90,7 @@ main () {
         if ! gpg --list-keys "${CRYPTGPGUSER}"; then
             gpg --import "${CRYPTGPGKEY}"
         fi
-        pushd . >> /dev/null
+        pushd . >/dev/null
         cd /mnt-snapshot/
         # use pigz or http://compression.ca/pbzip2/
         # http://dbahire.com/which-compression-tool-should-i-use-for-my-database-backups-part-ii-decompression/
@@ -129,7 +129,7 @@ main () {
         cd ./luks-header-backup
         # TODO: assumes all functions in this repo are available
         crypt-luks-headers-backup-here
-        popd >> /dev/null
+        popd >/dev/null
         sudo umount /mnt-snapshot
         if [[ $(hostname) == "$BACKUPHOSTNAME" ]]; then
            sudo lvremove /dev/crypt-main/backup-snapshot

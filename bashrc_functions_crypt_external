@@ -5,7 +5,7 @@
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20160701
+# Version: 20160716
 # URL: https://github.com/akroshko/bash-stdlib
 #
 # This program is free software: you can redistribute it and/or modify
@@ -192,7 +192,7 @@ super-password () {
     local RANDOMTIMES=$((($RANDOM % 113) + 151))
     # XXXX: is this loop a good or bad thing?
     for i in {1.."$RANDOMTIMES"}; do
-        gpg --gen-random --armor 1 30 >> /dev/null
+        gpg --gen-random --armor 1 30 >/dev/null
     done
     gpg --gen-random --armor 1 30
 }
@@ -207,7 +207,7 @@ super-password-easy () {
     local RANDOMTIMES=$((($RANDOM % 113) + 151))
     # XXXX: is this loop a good or bad thing?
     for i in {1.."$RANDOMTIMES"}; do
-        openssl rand -base64 128 >> /dev/null
+        openssl rand -base64 128 >/dev/null
     done
     # http://www.commandlinefu.com/commands/view/722/generate-a-random-password-30-characters-long
     openssl rand -base64 128 | grep -o '[a-z]' | head -n 30 | tr -d '\n'; echo

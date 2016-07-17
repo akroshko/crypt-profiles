@@ -5,7 +5,7 @@
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20160701
+# Version: 20160716
 # URL: https://github.com/akroshko/crypt-profiles
 #
 # This program is free software: you can redistribute it and/or modify
@@ -56,7 +56,7 @@ main () {
         ln -s /bin/false "${HOME}/bin/pinentry-select"
         if [[ -f ${HOME}/.secrets/secrets.txt.gpg ]]; then
             # TODO: maybe incorporate dummy file instead of secrets to try
-            DISPLAY= gpg2 --batch --decrypt ${HOME}/.secrets/secrets.txt.gpg >> /dev/null
+            DISPLAY= gpg2 --batch --decrypt ${HOME}/.secrets/secrets.txt.gpg >/dev/null
         fi
         if [[ $? != 0 ]]; then
             # reset everything properly if key for GPG profile expired or set up wrong
@@ -82,7 +82,7 @@ main () {
         # run keychain after we see if we need to kill agents
         if type -P keychain >/dev/null 2>&1; then
             `type -P keychain` --nogui --agents ssh
-            source ${HOME}/.keychain/*-sh > /dev/null
+            source ${HOME}/.keychain/*-sh >/dev/null
         fi
         msg "Keychain done!"
         # set up normally if no passphrase given
