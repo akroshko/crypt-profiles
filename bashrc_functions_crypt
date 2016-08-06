@@ -112,7 +112,7 @@ crypt-create-profile () {
         # use gpg key to encrypt the password
         DISPLAY= echo "$PASSWORD" | gpg --homedir "$MASTERPROFILE" --recipient ${RECIPIENT} --encrypt --passphrase "$GPGPASSWORD" --output "$MASTERPROFILE"/id_rsa.txt.gpg -
         # generate a password id_ed25519
-        PASSWORD=$(super-password)
+        local PASSWORD=$(super-password)
         # create the ssh key
         ssh-keygen-ed25519 "$MASTERPROFILE" "$PASSWORD"
         # use gpg key to encrypt the password
@@ -711,8 +711,8 @@ vg-container-expand () {
     echo ""
     if [[ $yn == "y" ]]
     then
-        CONTAINER="$1"
-        SIZEADD="$2"
+        local CONTAINER="$1"
+        local SIZEADD="$2"
         if [[ -e "$CONTAINER" ]]; then
             # expand the container file itself, this is irreversible
             # TODO: 80G takes about ??? use my better functions that use openssl
@@ -837,9 +837,23 @@ master-privacy-all () {
     # XXXX: get sudo going
     sudo true
     master-privacy
+
+    # TODO: kill on root filesystem, enable eventually
+    if [[ "$(df / --output=source | grep -v ^Filesystem)" != "$(df /home --output=source | grep -v ^Filesystem)" ]]; then
+        # XXXX: this will almost run / out of space, but should be OK
+        msg "/ is not same device as /home, killing freespace!"
+        kill-freespace-random-file /
+    else
+        msg "/ is same device as /home, no need to kill freespace!"
+    fi
+    # TODO: check RAM usage <50%
+    if true; then
+        clear-swap
+    fi
+    clear-underlying-tmp
+    # kill home last (biggest and mitigates issues with sudo timing out)
     kill-freespace-random-file
 }
-
 
 master-privacy-brief () {
     # delete benign things, that shouldn't cause too much trouble
@@ -1007,6 +1021,8 @@ master-privacy () {
         bleachbit --shred ${HOME}/.recently-used
         # kill-file ~/.config/epiphany/ephy-history.db
         bleachbit --shred ${HOME}/.config/gxine/playlist
+        # causes problems on my system
+        bleachbit --shred ${HOME}/.config/mimeapps.list
         # XXXX: these are killed by bleachbit
         # kill-recursive ~/.local/share/*xbel*;
         # kill-file-contents ~/.local/share/recently-used.xbel;
@@ -1085,12 +1101,12 @@ fix-sshd-config () {
 ssh-crypt-profile-batch-cmd () {
     # ssh into hostname without interaction by using secrets on current host
     # ssh-crypt-profile-batch-cmd <<hostname>> <<crypt-profile name>> <<command>>
-    PWDFILE=~/.secrets/"$2".txt.gpg
+    local PWDFILE=~/.secrets/"$2".txt.gpg
     if [[ -f "$PWDFILE" ]]; then
-        TOPSECRET=$(DISPLAY= gpg2 --quiet --batch --no-tty --decrypt --use-agent "$PWDFILE")
+        local TOPSECRET=$(DISPLAY= gpg2 --quiet --batch --no-tty --decrypt --use-agent "$PWDFILE")
         if [[ $? == 0 ]]; then
-            GPGPWD=$(sed -n '1p' <<< "$TOPSECRET")
-            B64COMMAND="$(echo "$3" | base64)"
+            local GPGPWD=$(sed -n '1p' <<< "$TOPSECRET")
+            local B64COMMAND="$(echo "$3" | base64)"
             ssh-batch-interact $1 "source ~/.bash_profile $GPGPWD;source ~/.bash_libenv;bash -c \"$(echo ${B64COMMAND} | base64 -d)\""
         else
             echo "Error decrypting!!!"
@@ -1103,13 +1119,13 @@ crypt-luks-headers-dump () {
     (IFS=$'\n'
      for Z in $(lsblk -l -o name | tail -n +2); do
          if [[ -e /dev/"$Z" ]]; then
-             OUTPUT="$(sudo cryptsetup luksDump /dev/$Z 2>&1)"
+             local OUTPUT="$(sudo cryptsetup luksDump /dev/$Z 2>&1)"
              if [[ $? == 0 ]]; then
                  h2 /dev/"$Z"
                  echo "$OUTPUT"
              fi
          elif [[ -e /dev/mapper/"$Z" ]]; then
-             OUTPUT="$(sudo cryptsetup luksDump /dev/mapper/$Z 2>&1)"
+             local OUTPUT="$(sudo cryptsetup luksDump /dev/mapper/$Z 2>&1)"
              if [[ $? == 0 ]]; then
                  h2 /dev/mapper/"$Z"
                  echo "$OUTPUT"
@@ -1127,13 +1143,13 @@ crypt-luks-headers-backup-here () {
     (IFS=$'\n'
      for Z in $(lsblk -l -o name | tail -n +2); do
          if [[ -e /dev/"$Z" ]]; then
-             OUTPUT="$(sudo cryptsetup luksDump /dev/$Z 2>&1)"
+             local OUTPUT="$(sudo cryptsetup luksDump /dev/$Z 2>&1)"
              if [[ $? == 0 ]]; then
                  h2 /dev/"$Z"
                  sudo cryptsetup luksHeaderBackup /dev/"$Z"        --header-backup-file=./luks-header-backup-${HOSTNAME}-"$Z"-$(date-time-stamp).bin
              fi
          elif [[ -e /dev/mapper/"$Z" ]]; then
-             OUTPUT="$(sudo cryptsetup luksDump /dev/mapper/$Z 2>&1)"
+             local OUTPUT="$(sudo cryptsetup luksDump /dev/mapper/$Z 2>&1)"
              if [[ $? == 0 ]]; then
                  h2 /dev/mapper/"$Z"
                  sudo cryptsetup luksHeaderBackup /dev/mapper/"$Z" --header-backup-file=./luks-header-backup-${HOSTNAME}-"$Z"-$(date-time-stamp).bin

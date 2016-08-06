@@ -37,9 +37,9 @@ export LC_ALL=C
 
 main () {
     # all current SSH version 2 ciphers
-    ciphers="3des-cbc aes128-cbc aes192-cbc aes256-cbc aes128-ctr aes192-ctr \
-             aes256-ctr aes128-gcm@openssh.com aes256-gcm@openssh.com arcfour \
-             arcfour128 arcfour256 blowfish-cbc cast128-cbc chacha20-poly1305@openssh.com"
+    local ciphers="3des-cbc aes128-cbc aes192-cbc aes256-cbc aes128-ctr aes192-ctr \
+                   aes256-ctr aes128-gcm@openssh.com aes256-gcm@openssh.com arcfour \
+                   arcfour128 arcfour256 blowfish-cbc cast128-cbc chacha20-poly1305@openssh.com"
 
     # ciphers=$(ssh -Q cipher)
 

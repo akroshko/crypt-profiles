@@ -101,9 +101,9 @@ main () {
                 if [[ -n "$GNUPGPWD" ]]
                 then
                     msg "Using entered password!"
-                    TOPSECRET="$(DISPLAY= gpg2 --batch --passphrase-fd 0 --decrypt --use-agent ${HOME}/.secrets/secrets.txt.gpg <<< "$GNUPGPWD")"
+                    local TOPSECRET="$(DISPLAY= gpg2 --batch --passphrase-fd 0 --decrypt --use-agent ${HOME}/.secrets/secrets.txt.gpg <<< "$GNUPGPWD")"
                 else
-                    TOPSECRET="$(DISPLAY= gpg2 --decrypt --use-agent ${HOME}/.secrets/secrets.txt.gpg)"
+                    local TOPSECRET="$(DISPLAY= gpg2 --decrypt --use-agent ${HOME}/.secrets/secrets.txt.gpg)"
                     if [[ $? != 0 ]]; then
                         # TODO: add real option for quit
                         while read -r -t 0;do read -r; done;
@@ -113,8 +113,8 @@ main () {
                 fi
             else
                 # file not present, break by killing appropriate functions
-                TRYAGAIN=
-                TOPSECRET=
+                local TRYAGAIN=
+                local TOPSECRET=
             fi
         done
     fi
@@ -150,11 +150,11 @@ main () {
         # read in all id_*.txt.gpg
         for PWDFILE in ${HOME}/.secrets/id_*.txt.gpg; do
             if [[ -f "${PWDFILE}" ]]; then
-                KEYFILE=$(basename ${PWDFILE%.txt.gpg})
+                local KEYFILE=$(basename ${PWDFILE%.txt.gpg})
                 h2 "key for ${KEYFILE}"
-                TOPSECRET="$(DISPLAY= gpg2 --quiet --batch --no-tty --decrypt --use-agent $PWDFILE)"
+                local TOPSECRET="$(DISPLAY= gpg2 --quiet --batch --no-tty --decrypt --use-agent $PWDFILE)"
                 if [[ $? == 0 ]]; then
-                    KEYPWD=$(sed -n '1p' <<< "$TOPSECRET")
+                    local KEYPWD=$(sed -n '1p' <<< "$TOPSECRET")
 expect << EOF
   spawn ssh-add -t 2419200 ${HOME}/.ssh/${KEYFILE}
   expect "Enter passphrase"

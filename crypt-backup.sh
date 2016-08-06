@@ -38,7 +38,7 @@ source ${HOME}/.bash_library
 # TODO: backup /home as default, try again... there are silly bugs here
 
 main () {
-    HELPTEXT="Usage: ./backup.sh [--help] [--reset] <<path>> [<<compression option>>] [<<compression level>>]
+    local HELPTEXT="Usage: ./backup.sh [--help] [--reset] <<path>> [<<compression option>>] [<<compression level>>]
 
     Use --reset with no other options to umount and remove all logical
     volumes.
@@ -82,7 +82,7 @@ main () {
             return 1
         fi
         # TODO: throw an error if this node does not exist
-        BACKUPPATH="$(mount-disk-uuid ${BACKUPUUID})"
+        local BACKUPPATH="$(mount-disk-uuid ${BACKUPUUID})"
         if [[ $? != 0 ]]; then
             warn "Disk cannot be mounted or already mounted!!!"
             return 1
@@ -97,28 +97,28 @@ main () {
         # http://www.krazyworks.com/multithreaded-encryption-and-compression/
         clear
         if [[ "$2" == "--bzip2" ]]; then
-            COMPRESSPROG="bzip2"
-            COMPRESSEXT="bz2"
+            local COMPRESSPROG="bzip2"
+            local COMPRESSEXT="bz2"
         elif [[ "$2" == "--gzip" ]]; then
-            COMPRESSPROG="gzip"
-            COMPRESSEXT="gz"
+            local COMPRESSPROG="gzip"
+            local COMPRESSEXT="gz"
         elif [[ "$2" == "--lz4" ]]; then
             # TODO: possibly a good replacement for lzop
-            COMPRESSPROG="lz4"
-            COMPRESSEXT="lz4"
+            local COMPRESSPROG="lz4"
+            local COMPRESSEXT="lz4"
         elif [[ "$2" == "--pigz" ]]; then
             # TODO: test this
-            COMPRESSPROG="pigz"
-            COMPRESSEXT="gz"
+            local COMPRESSPROG="pigz"
+            local COMPRESSEXT="gz"
         elif [[ "$2" == "--xz" ]]; then
-            COMPRESSPROG="xz"
-            COMPRESSEXT="xz"
+            local COMPRESSPROG="xz"
+            local COMPRESSEXT="xz"
         else
-            COMPRESSPROG="lzop"
-            COMPRESSEXT="lzo"
+            local COMPRESSPROG="lzop"
+            local COMPRESSEXT="lzo"
         fi
         if [[ -n "$3" ]]; then
-            COMPRESSLEVEL="$3"
+            local COMPRESSLEVEL="$3"
             time tar --create --file - "$1" | "${COMPRESSPROG}" "${COMPRESSLEVEL}" | mbuffer -m 8192M | gpg --compress-algo none --cipher-algo AES256 --recipient "${CRYPTGPGUSER}" --output - --encrypt - | mbuffer -q -m 2048M -s 64k -o ${BACKUPPATH}/$(hostname)-home--$(date +%Y%m%d%H%M%S).tar."${COMPRESSEXT}".gpg
         else
             time tar --create --file - "$1" | "${COMPRESSPROG}" | mbuffer -m 8192M | gpg --compress-algo none --cipher-algo AES256 --recipient "${CRYPTGPGUSER}" --output - --encrypt - | mbuffer -q -m 2048M -s 64k -o ${BACKUPPATH}/$(hostname)-home--$(date +%Y%m%d%H%M%S).tar."${COMPRESSEXT}".gpg
