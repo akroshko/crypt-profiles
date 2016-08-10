@@ -846,11 +846,12 @@ master-privacy-all () {
     else
         msg "/ is same device as /home, no need to kill freespace!"
     fi
+    # TODO: placeholders for now
     # TODO: check RAM usage <50%
-    if true; then
-        clear-swap
-    fi
-    clear-underlying-tmp
+    # if true; then
+    #     clear-swap
+    # fi
+    # clear-underlying-tmp
     # kill home last (biggest and mitigates issues with sudo timing out)
     kill-freespace-random-file
 }

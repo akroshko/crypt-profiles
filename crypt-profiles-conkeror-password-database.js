@@ -116,6 +116,8 @@ logindata["buyapi"] =        ["https://www.buyapi.ca/my-account/",
 // TODO: might be an issue
 logindata["soundcloud"] =    ["https://soundcloud.com/signin"];
 
+initialstate=0
+
 define_key(content_buffer_normal_keymap, "s-p",
     "get-current-password-login");
 define_key(content_buffer_normal_keymap, "M-s-p",
@@ -145,6 +147,7 @@ interactive("get-current-password-login","Get the current password and login for
         I.window.minibuffer.message();
         browser_object_follow(I.buffer,OPEN_CURRENT_BUFFER,logindata[theloginname][0]);
         I.window.minibuffer.message(theloginname);
+        initialstate = 0;
     });
 
 interactive("get-current-password-login-alternate","Get the current password and login for particular sites but alternate ones.",
@@ -168,6 +171,7 @@ interactive("get-current-password-login-alternate","Get the current password and
         I.window.minibuffer.message();
         browser_object_follow(I.buffer,OPEN_CURRENT_BUFFER,logindata[theloginname][0]);
         I.window.minibuffer.message(theloginname);
+        initialstate = 0;
     });
 
 interactive("insert-current-password","Get the current password and login for particular sites.",
@@ -186,18 +190,22 @@ interactive("insert-current-password","Get the current password and login for pa
                 var n2 = I.buffer.document.getElementById("Passwd");
                 browser_element_focus(I.buffer, n2);
                 n2.value = theloginpassword;
+            } else {
+                browser_element_focus(I.buffer, n1);
+                n1.value = theloginuser;
             }
-            browser_element_focus(I.buffer, n1);
-            n1.value = theloginuser;
         } else if ( theloginname == "flickr" ) {
-            // TODO: broken
-            I.window.minibuffer.message(theloginuser);
+            // TODO: will have to use state
             var n1 = I.buffer.document.getElementById("login-username");
-            browser_element_focus(I.buffer, n1);
-            n1.value = theloginuser;
-            // var n2 = I.buffer.document.getElementById("login-passwd");
-            // browser_element_focus(I.buffer, n2);
-            // n2.value = theloginpassword;
+            if ( n1 == null || initialstate == 1 ) {
+                var n2 = I.buffer.document.getElementById("login-passwd");
+                browser_element_focus(I.buffer, n2);
+                n2.value = theloginpassword;
+            } else {
+                browser_element_focus(I.buffer, n1);
+                n1.value = theloginuser;
+                initialstate = 1;
+            }
         } else if ( theloginname == "vimeo" ) {
             I.window.minibuffer.message("vimeo");
         } else if ( theloginname == "mec" ) {
