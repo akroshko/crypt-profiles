@@ -149,26 +149,24 @@ crypt-create-profile () {
 }
 
 # TODO: will eventually want to be able to modify secret files
-crypt-add-secret-to-current-profile () {
+# TODO: want to be able to list and delete secrets too
+# TODO: make sure this aborts properly
+# TODO: have a more universal way of doing this
+crypt-add-secret-to-profile () {
     # TODO: this is kind of a standard thing
     # TODO: add check that current profile and locations sync up
     # TODO: check that crypt is working
     if [[ -z "$1" ]]; then
-        yell "Empty master location specified!"
-        return 1
-    fi
-    if [[ -z "$2" ]]; then
         yell "Empty primary location specified!"
         return 1
     fi
-    if [[ -z "$3" ]]; then
+    if [[ -z "$2" ]]; then
         yell "Empty secret name specified!"
         return 1
     fi
     # XXXX: must keep crypt active, possibly fix permissions
-    local MASTERPROFILE="$1"
-    local PRIMARYPROFILE="$2"
-    local SECRETNAME="$3"
+    local PRIMARYPROFILE="$1"
+    local SECRETNAME="$2"
     # TODO: can I do this without??? maybe secrets should be symmetrically encrypted
     local RECIPIENT="$CRYPTGPGUSER"
     # enter secret
@@ -863,6 +861,7 @@ master-privacy-brief () {
 
 master-privacy () {
     time {
+        # TODO: any argument will do, not just --batch
         if [[ -z "$1" ]]; then
             h1 "Delete things that need user input"
             while read -r -t 0;do read -r; done;
