@@ -91,7 +91,8 @@ main () {
             gpg --import "${CRYPTGPGKEY}"
         fi
         pushd . >/dev/null
-        cd /mnt-snapshot/
+        # TODO: make this more flexible
+        cd /mnt-snapshot/"${USER}"
         # use pigz or http://compression.ca/pbzip2/
         # http://dbahire.com/which-compression-tool-should-i-use-for-my-database-backups-part-ii-decompression/
         # http://www.krazyworks.com/multithreaded-encryption-and-compression/
@@ -117,11 +118,12 @@ main () {
             local COMPRESSPROG="lzop"
             local COMPRESSEXT="lzo"
         fi
+        # XXXX: . used, expect to change to directory in /mnt-snapshot/
         if [[ -n "$3" ]]; then
             local COMPRESSLEVEL="$3"
-            time tar --create --file - "$1" | "${COMPRESSPROG}" "${COMPRESSLEVEL}" | mbuffer -m 8192M | gpg --compress-algo none --cipher-algo AES256 --recipient "${CRYPTGPGUSER}" --output - --encrypt - | mbuffer -q -m 2048M -s 64k -o ${BACKUPPATH}/$(hostname)-home--$(date +%Y%m%d%H%M%S).tar."${COMPRESSEXT}".gpg
+            time tar --create --file - . | "${COMPRESSPROG}" "${COMPRESSLEVEL}" | mbuffer -m 8192M | gpg --compress-algo none --cipher-algo AES256 --recipient "${CRYPTGPGUSER}" --output - --encrypt - | mbuffer -q -m 2048M -s 64k -o ${BACKUPPATH}/$(hostname)-home--$(date +%Y%m%d%H%M%S).tar."${COMPRESSEXT}".gpg
         else
-            time tar --create --file - "$1" | "${COMPRESSPROG}" | mbuffer -m 8192M | gpg --compress-algo none --cipher-algo AES256 --recipient "${CRYPTGPGUSER}" --output - --encrypt - | mbuffer -q -m 2048M -s 64k -o ${BACKUPPATH}/$(hostname)-home--$(date +%Y%m%d%H%M%S).tar."${COMPRESSEXT}".gpg
+            time tar --create --file - . | "${COMPRESSPROG}" | mbuffer -m 8192M | gpg --compress-algo none --cipher-algo AES256 --recipient "${CRYPTGPGUSER}" --output - --encrypt - | mbuffer -q -m 2048M -s 64k -o ${BACKUPPATH}/$(hostname)-home--$(date +%Y%m%d%H%M%S).tar."${COMPRESSEXT}".gpg
         fi
         # backup any luks headers here
         # TODO: encrypt these too?
