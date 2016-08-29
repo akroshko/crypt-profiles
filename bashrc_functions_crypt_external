@@ -192,9 +192,9 @@ super-password () {
     local RANDOMTIMES=$((($RANDOM % 113) + 151))
     # XXXX: is this loop a good or bad thing?
     for i in {1.."$RANDOMTIMES"}; do
-        gpg --gen-random --armor 1 30 >/dev/null
+        gpg2-batch --gen-random --armor 1 30 >/dev/null
     done
-    gpg --gen-random --armor 1 30
+    gpg2-batch --gen-random --armor 1 30
 }
 
 super-password-easy () {
@@ -242,7 +242,7 @@ crypt-backup-extract () {
     # just decompress .lzo for now, allow selection
     # TODO: decompress appropriate compression file type
     # XXXX: do not use -v on tar, too slow
-    gpg --decrypt "$1" | mbuffer -q -m 4096M | lzop -d | mbuffer -m 4096M | tar --extract --file -
+    gpg2-batch --decrypt "$1" | mbuffer -q -m 4096M | lzop -d | mbuffer -m 4096M | tar --extract --file -
 }
 
 crypt-device-image-to-here () {
@@ -250,5 +250,5 @@ crypt-device-image-to-here () {
     # good for quick and dirty backups of disks on secondary machines before major modifications
     # TODO: will need to create and test a restore thing
     #       mbuffer limtted to easily fit on machines with 1G Ram
-    sudo dd if=/dev/"$1" bs=64k conv=noerror,sync | lz4 | mbuffer -m 256M | gpg --compress-algo none --cipher-algo AES256 --recipient "${CRYPTGPGUSER}" --output - --encrypt - | mbuffer -q -m 256M -s 64k -o ./"$HOSTNAME"-"$1"--$(date +%Y%m%d%H%M%S).lz4.gpg
+    sudo dd if=/dev/"$1" bs=64k conv=noerror,sync | lz4 | mbuffer -m 256M | gpg2-batch --compress-algo none --cipher-algo AES256 --recipient "${CRYPTGPGUSER}" --output - --encrypt - | mbuffer -q -m 256M -s 64k -o ./"$HOSTNAME"-"$1"--$(date +%Y%m%d%H%M%S).lz4.gpg
 }

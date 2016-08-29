@@ -88,9 +88,9 @@ crypt-create-profile () {
         # echo "Comment should include phrase ..."
         echo ""
         # TODO: retry if fail to build public key, e.g., password is bad
-        DISPLAY= gpg --homedir "$MASTERPROFILE" --expert --gen-key
+        DISPLAY= gpg2-batch --homedir "$MASTERPROFILE" --expert --gen-key
         # put gpg password into the secrets file
-        DISPLAY= echo ${GPGPASSWORD} | gpg --homedir "$MASTERPROFILE" --recipient ${RECIPIENT} --encrypt --passphrase "$GPGPASSWORD" --output ${KEYSLOCATION}/secrets.txt.gpg -
+        DISPLAY= echo ${GPGPASSWORD} | gpg2-batch --homedir "$MASTERPROFILE" --recipient ${RECIPIENT} --encrypt --passphrase "$GPGPASSWORD" --output ${KEYSLOCATION}/secrets.txt.gpg -
         # add a new subkey to the master profile
         h1
         msg "Use the addkey command twice:"
@@ -99,7 +99,7 @@ crypt-create-profile () {
         msg "Use the save command to finish"
         echo ""
         # TODO: retry if fail
-        DISPLAY= gpg --homedir "$MASTERPROFILE" --expert --edit-key "${RECIPIENT}"
+        DISPLAY= gpg2-batch --homedir "$MASTERPROFILE" --expert --edit-key "${RECIPIENT}"
     fi
     # XXXX: if true for debugging purposes
     if true; then
@@ -110,24 +110,24 @@ crypt-create-profile () {
         # create the ssh key
         ssh-keygen-rsa "$MASTERPROFILE" "$PASSWORD"
         # use gpg key to encrypt the password
-        DISPLAY= echo "$PASSWORD" | gpg --homedir "$MASTERPROFILE" --recipient ${RECIPIENT} --encrypt --passphrase "$GPGPASSWORD" --output "$MASTERPROFILE"/id_rsa.txt.gpg -
+        DISPLAY= echo "$PASSWORD" | gpg2-batch --homedir "$MASTERPROFILE" --recipient ${RECIPIENT} --encrypt --passphrase "$GPGPASSWORD" --output "$MASTERPROFILE"/id_rsa.txt.gpg -
         # generate a password id_ed25519
         local PASSWORD=$(super-password)
         # create the ssh key
         ssh-keygen-ed25519 "$MASTERPROFILE" "$PASSWORD"
         # use gpg key to encrypt the password
-        DISPLAY= echo "$PASSWORD" | gpg --homedir "$MASTERPROFILE" --recipient ${RECIPIENT} --encrypt --passphrase "$GPGPASSWORD" --output "$MASTERPROFILE"/id_ed25519.txt.gpg -
+        DISPLAY= echo "$PASSWORD" | gpg2-batch --homedir "$MASTERPROFILE" --recipient ${RECIPIENT} --encrypt --passphrase "$GPGPASSWORD" --output "$MASTERPROFILE"/id_ed25519.txt.gpg -
     fi
     # XXXX: if true for debugging purposes
     if true; then
         cp -r "$MASTERPROFILE" "$WORKINGPROFILE"
         fix-crypt-permissions "${WORKINGPROFILE}"
-        gpg --homedir "$WORKINGPROFILE" --export-secret-subkeys "$RECIPIENT" > ${HOME}/crypt-profiles-secret-keys
+        gpg2-batch --homedir "$WORKINGPROFILE" --export-secret-subkeys "$RECIPIENT" > ${HOME}/crypt-profiles-secret-keys
         h1
         msg "Answer (y)es to delete secret key"
         echo ""
-        gpg --homedir "$WORKINGPROFILE" --delete-secret-key "$RECIPIENT"
-        gpg --homedir "$WORKINGPROFILE" --import ${HOME}/crypt-profiles-secret-keys
+        gpg2 --homedir "$WORKINGPROFILE" --delete-secret-key "$RECIPIENT"
+        gpg2 --homedir "$WORKINGPROFILE" --import ${HOME}/crypt-profiles-secret-keys
         # create the actually working profile
         # TODO: add some checks here
         mkdir -p "$PRIMARYPROFILE"
@@ -180,12 +180,12 @@ crypt-add-secret-to-profile () {
         return 1
     fi
     # get the password from the current secrets
-    local GPGPASSPHRASE=$(gpg --quiet --decrypt ~/.secrets/secrets.txt.gpg 2>/dev/null | head -n 1)
+    local GPGPASSPHRASE=$(gpg2-batch --decrypt ~/.secrets/secrets.txt.gpg 2>/dev/null | head -n 1)
     # create the secret
     if [[ -n "${THESECRET}" && -n "${RECIPIENT}" && -n "$GPGPASSPHRASE" && -n "$SECRETNAME" ]]; then
         # TODO: there is an issue with message "You need a passphrase to unlock the secret key for "
         #       issue temporarily solved by using --batch when decrypting
-        echo ${THESECRET} | gpg --recipient "${RECIPIENT}" --encrypt --passphrase "${GPGPASSPHRASE}" --output "$PRIMARYPROFILE"/"$SECRETNAME"-secrets.txt.gpg -
+        echo ${THESECRET} | gpg2 --recipient "${RECIPIENT}" --encrypt --passphrase "${GPGPASSPHRASE}" --output "$PRIMARYPROFILE"/"$SECRETNAME"-secrets.txt.gpg -
     else
         yell "Something went wrong before final encryption!"
     fi
@@ -310,8 +310,8 @@ crypt-profile-printable () {
                 echo ${KEYFINGERPRINT} >> "${KEYSLOCATION}"/"${STRIPNAME}"--"${KEYID}"--private.txt
                 echo "" >> "${KEYSLOCATION}"/"${STRIPNAME}"--"${KEYID}"--public.txt
                 echo "" >> "${KEYSLOCATION}"/"${STRIPNAME}"--"${KEYID}"--private.txt
-                gpg --export -a "${KEYID}" >> "${KEYSLOCATION}"/"${STRIPNAME}"--"${KEYID}"--public.txt
-                gpg --export-secret-keys -a "${KEYID}" >> "${KEYSLOCATION}"/"${STRIPNAME}"--"${KEYID}"--private.txt
+                gpg2 --export -a "${KEYID}" >> "${KEYSLOCATION}"/"${STRIPNAME}"--"${KEYID}"--public.txt
+                gpg2 --export-secret-keys -a "${KEYID}" >> "${KEYSLOCATION}"/"${STRIPNAME}"--"${KEYID}"--private.txt
             done
 
             # echo "${NAME}"
@@ -466,7 +466,7 @@ encrypt-file () {
         return 1
     fi
     local NEWNAME="$(generate-uid)"
-    tar -cvzf - "$1" | gpg --recipient "$CRYPTGPGUSER" --output "$NEWNAME".tgz.gpg --encrypt -
+    tar -cvzf - "$1" | gpg2 --recipient "$CRYPTGPGUSER" --output "$NEWNAME".tgz.gpg --encrypt -
     msg "Exit status: $? || Pipe status: ${PIPESTATUS[*]}"
     # TODO: is this a good way of verifying shredded file?
     verify-operation "Encrypt OK? do you wish to delete the original? (y/n) " "Really keep original? (y/n) " "$1"
@@ -507,7 +507,7 @@ encrypt-file-password () {
     msg "Passwords recorded successfully!"
     local FILEUID="$(generate-uid)"
     msg "The file UID is: $FILEUID"
-    tar -cvzf - "$1" | gpg2 --batch --cipher-algo AES256 --passphrase "$TOPSECRET" --output "$FILEUID".tgz.gpg --symmetric -
+    tar -cvzf - "$1" | gpg2 --cipher-algo AES256 --passphrase "$TOPSECRET" --output "$FILEUID".tgz.gpg --symmetric -
     msg "Encryption finished!!! "
 }
 
@@ -526,7 +526,7 @@ decrypt-file () {
     local TMPPATH=$(mktemp -d -p .)
     msg "Decrypting $1 into ${TMPPATH}"
     # XXXX: assuming successful
-    gpg --decrypt "$1" | tar -xvzf - --directory "${TMPPATH}"
+    gpg2-batch --decrypt "$1" | tar -xvzf - --directory "${TMPPATH}"
     msg "Exit status: $? || Pipe status: ${PIPESTATUS[*]}"
     \mv --backup=t -- ${TMPPATH}/* .
     # TODO: want to fail completely if not able to remove?
@@ -542,7 +542,7 @@ decrypt-file-password () {
     fi
     local TMPPATH=$(mktemp -d -p .)
     msg "Decrypting $1 into ${TMPPATH}"
-    gpg2 --decrypt "$1" | tar -xvzf - --directory "${TMPPATH}"
+    gpg2-batch --decrypt "$1" | tar -xvzf - --directory "${TMPPATH}"
     msg "Exit status: $? || Pipe status: ${PIPESTATUS[*]}"
     \mv --backup=t -- ${TMPPATH}/* .
     # TODO: want to fail completely if not able to remove?
@@ -1103,7 +1103,7 @@ ssh-crypt-profile-batch-cmd () {
     # ssh-crypt-profile-batch-cmd <<hostname>> <<crypt-profile name>> <<command>>
     local PWDFILE=~/.secrets/"$2".txt.gpg
     if [[ -f "$PWDFILE" ]]; then
-        local TOPSECRET=$(DISPLAY= gpg2 --quiet --batch --no-tty --decrypt --use-agent "$PWDFILE")
+        local TOPSECRET=$(DISPLAY= gpg2-batch --no-tty --decrypt --use-agent "$PWDFILE")
         if [[ $? == 0 ]]; then
             local GPGPWD=$(sed -n '1p' <<< "$TOPSECRET")
             local B64COMMAND="$(echo "$3" | base64)"
