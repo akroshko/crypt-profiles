@@ -30,6 +30,8 @@
 # TODO: still some issues with running this in batch mode, but can just send password everytime and it's pretty good
 #       might cause efficiency issues if too much authentication/profile
 
+# TODO: can I source something that gives me this first?
+alias gpg2-batch='gpg2 --no-verbose --quiet --batch --yes'
 main () {
     local TRYAGAIN=y
     local TOPSECRET=
