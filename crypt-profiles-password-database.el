@@ -38,7 +38,6 @@
 
 (defun crypt-profiles-get-matching-password (base64-url &optional alternate)
   ;; TODO make sure file decrypts before proceeding
-  (mpp base64-url)
   ;; TODO: hard coding is bad
   (with-current-file crypt-profiles-password-database-path
     (goto-char (point-min))
@@ -55,7 +54,6 @@
       (dolist (lisp-row the-lisp-table)
         (let ((name (cic:strip-full (elt lisp-row 1)))
               (autourl (cic:strip-full (elt lisp-row 2))))
-          (mpp autourl)
           (when (and (not (equal autourl "")) (string-match autourl url))
             (setq return-value (list name (elt lisp-row 4) (elt lisp-row 5))))))
       ;; make things command line safe
