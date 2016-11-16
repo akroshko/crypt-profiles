@@ -71,7 +71,7 @@ main () {
         # XXXX: this is a dangerous script, make sure it always fails on error
         #       but not before here
         set -e
-        # XXXX: hard coded to ensure script does not screwn anything up
+        # XXXX: hard coded to ensure script does not screw anything up
         if [[ $(hostname) == "$BACKUPHOSTNAME" ]]; then
             # TODO: is this necessary?
             sync; sleep 10; sync
@@ -119,6 +119,7 @@ main () {
             local COMPRESSEXT="lzo"
         fi
         # XXXX: . used, expect to change to directory in /mnt-snapshot/
+        # TODO: quote backuppath?
         if [[ -n "$3" ]]; then
             local COMPRESSLEVEL="$3"
             time tar --create --file - . | "${COMPRESSPROG}" "${COMPRESSLEVEL}" | mbuffer -m 8192M | gpg-batch --compress-algo none --cipher-algo AES256 --recipient "${CRYPTGPGUSER}" --output - --encrypt - | mbuffer -q -m 2048M -s 64k -o ${BACKUPPATH}/$(hostname)-home--$(date +%Y%m%d%H%M%S).tar."${COMPRESSEXT}".gpg
@@ -126,11 +127,16 @@ main () {
             time tar --create --file - . | "${COMPRESSPROG}" | mbuffer -m 8192M | gpg-batch --compress-algo none --cipher-algo AES256 --recipient "${CRYPTGPGUSER}" --output - --encrypt - | mbuffer -q -m 2048M -s 64k -o ${BACKUPPATH}/$(hostname)-home--$(date +%Y%m%d%H%M%S).tar."${COMPRESSEXT}".gpg
         fi
         # backup any luks headers here
-        # TODO: encrypt these too?
+        # make sure headers are backed up plaintext to backup drive for now
+        pushd . >/dev/null
+        # TODO: there's no way this would be on the snapshot if I put it here
+        #       should have user access to backup drive, right?
+        cd "${BACKUPPATH}"
         mkdir -p ./luks-header-backup
         cd ./luks-header-backup
         # TODO: assumes all functions in this repo are available
         crypt-luks-headers-backup-here
+        popd >/dev/null
         popd >/dev/null
         sudo umount /mnt-snapshot
         if [[ $(hostname) == "$BACKUPHOSTNAME" ]]; then

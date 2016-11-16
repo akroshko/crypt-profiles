@@ -835,7 +835,6 @@ master-privacy-all () {
     # XXXX: get sudo going
     sudo true
     master-privacy
-
     # TODO: kill on root filesystem, enable eventually
     if [[ "$(df / --output=source | grep -v ^Filesystem)" != "$(df /home --output=source | grep -v ^Filesystem)" ]]; then
         # XXXX: this will almost run / out of space, but should be OK
@@ -1050,6 +1049,7 @@ master-privacy () {
         # TODO: have a non-interactive version of this function
         # TODO: only kills dotfiles(dirs) if a normal file exists
         # if emacs daemon is not running, kill it's tmp files
+        # TODO: shred emacs tmp even when running, but only in interactive
         if ! check-emacs-daemon; then
             if [[ -d ${HOME}/.emacs.d/tmp ]]; then
                 bleachbit --shred ${HOME}/.emacs.d/tmp/*
