@@ -838,10 +838,13 @@ master-privacy-all () {
     # TODO: kill on root filesystem, enable eventually
     if [[ "$(df / --output=source | grep -v ^Filesystem)" != "$(df /home --output=source | grep -v ^Filesystem)" ]]; then
         # XXXX: this will almost run / out of space, but should be OK
-        msg "/ is not same device as /home, killing freespace!"
+        h3 "/ is not same device as /home, killing freespace on / first!"
         kill-freespace-random-file /
+        h3 "/ is not same device as /home, killing freespace on /home now!"
+        kill-freespace-random-file
     else
-        msg "/ is same device as /home, no need to kill freespace!"
+        h3 "/ is same device as /home, no need to kill freespace on / seperately!"
+        kill-freespace-random-file
     fi
     # TODO: placeholders for now
     # TODO: check RAM usage <50%
@@ -850,7 +853,6 @@ master-privacy-all () {
     # fi
     # clear-underlying-tmp
     # kill home last (biggest and mitigates issues with sudo timing out)
-    kill-freespace-random-file
 }
 
 master-privacy-brief () {
