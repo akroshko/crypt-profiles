@@ -21,7 +21,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 
-
 # XXXX: assumes my bash-stdlib library is installed, but can it be run as root?
 source ${HOME}/.bash_library
 # This script backs up a directory a disk of a particular uuid.
@@ -36,9 +35,10 @@ source ${HOME}/.bash_library
 # TODO: proper reset and unwind functions
 # TODO: there's an issue with needing to manually unmount disk if nautilus has mounted automatically
 # TODO: backup /home as default, try again... there are silly bugs here
+# TODO: still issue with best way to manage root
 
 main () {
-    local HELPTEXT="Usage: ./backup.sh [--help] [--reset] <<path>> [<<compression option>>] [<<compression level>>]
+    local HELPTEXT="Usage: ./crypt-backup.sh [--help] [--reset] <<path>> [<<compression option>>] [<<compression level>>]
 
     Use --reset with no other options to umount and remove all logical
     volumes.
@@ -51,17 +51,17 @@ main () {
       --lz4 with -1 (fast) to -9 (best) for <<compression level>>
       --lzop or empty <<compression option>>, with -1 (equiv fast) -3 to -6 (equiv default) -7 to -9 (equiv slow) for <<compression level>>
       --pigz with -1 (fast) -6 (default) -9 (best) for <<compression level>>
-      --xz with -1 (fast) to -9 (best) with -6 (default) and -1e to -9e extreme (slow!!!) for <<compression level>>"
+      --lzip with -1 (fast) to -9 (best) with -6 (default) for <<compression level>>
 
-    # XXXX: run as root due to all the disk operations
+    Note that environment variables \$CRYPTGPGKEY \$CRYPTGPGUSER \$BACKUPHOSTNAME \$BACKUPUUID must be set.
+"
+
     # XXXX: these must be set externally
-    if [[ "$1" == "--help" || -z "$CRYPTGPGKEY" || -z "$CRYPTGPGUSER" || -z "$BACKUPHOSTNAME" || -z "$BACKUPUUID" || -z "$1" ]]
-    then
+    if [[ "$1" == "--help" || -z "$CRYPTGPGKEY" || -z "$CRYPTGPGUSER" || -z "$BACKUPHOSTNAME" || -z "$BACKUPUUID" ]]; then
         echo "${HELPTEXT}"
         return 1
     fi
-    if [[ "$1" == "--reset" ]]
-    then
+    if [[ "$1" == "--reset" ]]; then
         # TODO: try all of these even if some are errors
         sudo umount /mnt-snapshot
         if [[ $(hostname) == "$BACKUPHOSTNAME" ]]; then
@@ -81,7 +81,6 @@ main () {
         else
             return 1
         fi
-        # TODO: throw an error if this node does not exist
         local BACKUPPATH="$(mount-disk-uuid ${BACKUPUUID})"
         if [[ $? != 0 ]]; then
             warn "Disk cannot be mounted or already mounted!!!"
@@ -97,47 +96,48 @@ main () {
         # http://dbahire.com/which-compression-tool-should-i-use-for-my-database-backups-part-ii-decompression/
         # http://www.krazyworks.com/multithreaded-encryption-and-compression/
         clear
-        if [[ "$2" == "--bzip2" ]]; then
+        if [[ "$1" == "--bzip2" ]]; then
             local COMPRESSPROG="bzip2"
             local COMPRESSEXT="bz2"
-        elif [[ "$2" == "--gzip" ]]; then
+        elif [[ "$1" == "--gzip" ]]; then
             local COMPRESSPROG="gzip"
             local COMPRESSEXT="gz"
-        elif [[ "$2" == "--lz4" ]]; then
+        elif [[ "$1" == "--lz4" ]]; then
             # TODO: possibly a good replacement for lzop
             local COMPRESSPROG="lz4"
             local COMPRESSEXT="lz4"
-        elif [[ "$2" == "--pigz" ]]; then
+        elif [[ "$1" == "--pigz" ]]; then
             # TODO: test this
             local COMPRESSPROG="pigz"
             local COMPRESSEXT="gz"
-        elif [[ "$2" == "--xz" ]]; then
-            local COMPRESSPROG="xz"
-            local COMPRESSEXT="xz"
+        elif [[ "$1" == "--lzip" ]]; then
+            # XXXX: changed xz to lzip even though the latter is slower because it is better for archiving and is being updated
+            local COMPRESSPROG="lzip"
+            local COMPRESSEXT="lzip"
         else
             local COMPRESSPROG="lzop"
             local COMPRESSEXT="lzo"
         fi
         # XXXX: . used, expect to change to directory in /mnt-snapshot/
-        # TODO: quote backuppath?
-        if [[ -n "$3" ]]; then
+        if [[ -n "$2" ]]; then
             local COMPRESSLEVEL="$3"
             time tar --create --file - . | "${COMPRESSPROG}" "${COMPRESSLEVEL}" | mbuffer -m 8192M | gpg-batch --compress-algo none --cipher-algo AES256 --recipient "${CRYPTGPGUSER}" --output - --encrypt - | mbuffer -q -m 2048M -s 64k -o ${BACKUPPATH}/$(hostname)-home--$(date +%Y%m%d%H%M%S).tar."${COMPRESSEXT}".gpg
         else
             time tar --create --file - . | "${COMPRESSPROG}" | mbuffer -m 8192M | gpg-batch --compress-algo none --cipher-algo AES256 --recipient "${CRYPTGPGUSER}" --output - --encrypt - | mbuffer -q -m 2048M -s 64k -o ${BACKUPPATH}/$(hostname)-home--$(date +%Y%m%d%H%M%S).tar."${COMPRESSEXT}".gpg
         fi
+        popd >/dev/null
         # backup any luks headers here
         # make sure headers are backed up plaintext to backup drive for now
         pushd . >/dev/null
-        # TODO: there's no way this would be on the snapshot if I put it here
-        #       should have user access to backup drive, right?
         cd "${BACKUPPATH}"
         mkdir -p ./luks-header-backup
         cd ./luks-header-backup
-        # TODO: assumes all functions in this repo are available
+        # XXXX: assumes all functions in the crypt-profiles repo are available
         crypt-luks-headers-backup-here
         popd >/dev/null
-        popd >/dev/null
+        # TODO: how to keep sudo going during this
+        #       do not want backup done as root, but need it for other operations
+        sudo true
         sudo umount /mnt-snapshot
         if [[ $(hostname) == "$BACKUPHOSTNAME" ]]; then
            sudo lvremove /dev/crypt-main/backup-snapshot

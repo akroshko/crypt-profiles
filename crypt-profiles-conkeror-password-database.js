@@ -112,6 +112,12 @@ logindata["strava"] =        ["https://www.strava.com/login",
 logindata["buyapi"] =        ["https://www.buyapi.ca/my-account/",
                               "username",
                               "password"];
+logindata["digikey"] =       ["https://www.digikey.ca/MyDigiKey/Login",
+                              "username",
+                              "password"];
+logindata["ebay"]    =       ["https://signin.ebay.ca/ws/eBayISAPI.dll?SignIn&ru=http%3A%2F%2Fwww.ebay.ca%2F",
+                              "userid",
+                              "pass"]
 
 // TODO: might be an issue
 logindata["soundcloud"] =    ["https://soundcloud.com/signin"];
@@ -176,7 +182,7 @@ interactive("get-current-password-login-alternate","Get the current password and
 
 interactive("insert-current-password","Get the current password and login for particular sites.",
     function (I) {
-        unfocus(I.window, I.buffer);
+        // unfocus(I.window, I.buffer);
         if ( theloginname == "twitter" ) {
             var n1 = I.buffer.document.getElementsByClassName("js-username-field email-input js-initial-focus");
             browser_element_focus(I.buffer, n1[0]);

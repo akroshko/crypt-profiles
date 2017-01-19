@@ -196,9 +196,9 @@ crypt-replace-subkeys () {
     false
 }
 
-crypt-switch-profile () {
+crypt-profile-switch () {
     # switch to a new crypt-profile-
-    local USAGE="Usage: crypt-switch-profile <<crypt-profile primary location>> <<crypt-profile working location>>"
+    local USAGE="Usage: crypt-profile-switch <<crypt-profile primary location>> <<crypt-profile working location>>"
     if [[ -z "$1" ]]; then
         yell "No specified primary path!"
         echo $USAGE
@@ -831,33 +831,14 @@ export-firefox-bookmarks () {
     sqlite3 ~/.mozilla/firefox/*.[dD]efault/places.sqlite "SELECT strftime('%d.%m.%Y %H:%M:%S', dateAdded/1000000, 'unixepoch', 'localtime'),url FROM moz_places, moz_bookmarks WHERE moz_places.id = moz_bookmarks.fk ORDER BY dateAdded;"
 }
 
-master-privacy-all () {
-    # XXXX: get sudo going
-    sudo true
-    master-privacy
-    # TODO: kill on root filesystem, enable eventually
-    if [[ "$(df / --output=source | grep -v ^Filesystem)" != "$(df /home --output=source | grep -v ^Filesystem)" ]]; then
-        # XXXX: this will almost run / out of space, but should be OK
-        h3 "/ is not same device as /home, killing freespace on / first!"
-        kill-freespace-random-file /
-        h3 "/ is not same device as /home, killing freespace on /home now!"
-        kill-freespace-random-file
-    else
-        h3 "/ is same device as /home, no need to kill freespace on / seperately!"
-        kill-freespace-random-file
-    fi
-    # TODO: placeholders for now
-    # TODO: check RAM usage <50%
-    # if true; then
-    #     clear-swap
-    # fi
-    # clear-underlying-tmp
-    # kill home last (biggest and mitigates issues with sudo timing out)
-}
-
 master-privacy-brief () {
     # delete benign things, that shouldn't cause too much trouble
     master-privacy --batch
+}
+
+master-privacy-all () {
+    # XXXX: requires crypt-profiles to be in path
+    sudo env "PATH=$PATH" master-privacy-all.sh "${USER}"
 }
 
 master-privacy () {
@@ -1039,26 +1020,44 @@ master-privacy () {
         # kill-directory-contents ${HOME}/.local/share/zeitgeist
         # kill-directory-contents ~/.kde/share/apps/gwenview/recentfolders/*
         # bleachbit --overwrite --clean thumbnails.cache
-        # TODO: clear .cache much better
         # kill-directory-contents-preserve-structure ~/.cache/thumbnails
-        # TODO: interferes with Firefox sync!!!
         # dragonplayer
-
         # ~/.kde/share/config/dragonplayerrc
         # https://unix.stackexchange.com/questions/192465/remove-paragraph-from-file
         # TODO: need a delete paragraph function
         # clear my personal trash
-        # TODO: have a non-interactive version of this function
         # TODO: only kills dotfiles(dirs) if a normal file exists
-        # if emacs daemon is not running, kill it's tmp files
-        # TODO: shred emacs tmp even when running, but only in interactive
-        if ! check-emacs-daemon; then
+        # only shred emacs files if interactive
+        if [[ -z "$1" ]]; then
+            # if ! check-emacs-daemon; then
+            echo "Shredding temporary emacs files!"
             if [[ -d ${HOME}/.emacs.d/tmp ]]; then
                 bleachbit --shred ${HOME}/.emacs.d/tmp/*
             fi
             if [[ -d ${HOME}/.emacs.d/image-dired ]]; then
                 bleachbit --shred ${HOME}/.emacs.d/image-dired/*
             fi
+        fi
+        h2 "Re-caching programs such as Sage and Python"
+        # rerun/recomple python and sage if they exist, to restore cached stuff
+        # TODO: should this be done elsewhere? function for this
+        if type -P sage >/dev/null 2>&1; then
+            echo "recache sage"
+            time {
+                sage -c "pass"
+            }
+        fi
+        if type -P python >/dev/null 2>&1; then
+            echo "recache python"
+            time {
+                python -c "pass"
+            }
+        fi
+        if type -P ipython >/dev/null 2>&1; then
+            time {
+                echo "recache ipython"
+                ipython -c "pass"
+            }
         fi
     }
 }
@@ -1143,7 +1142,9 @@ crypt-luks-headers-dump () {
 crypt-luks-headers-backup-here () {
     sudo true
     (IFS=$'\n'
-     for Z in $(lsblk -l -o name | tail -n +2); do
+     # XXXX: | sort | uniq means only one of a raid arry gets it's luks headers gets backed up
+     # TODO: make sure this is OK
+     for Z in $(lsblk -l -o name | tail -n +2 | sort | uniq); do
          if [[ -e /dev/"$Z" ]]; then
              local OUTPUT="$(sudo cryptsetup luksDump /dev/$Z 2>&1)"
              if [[ $? == 0 ]]; then

@@ -39,10 +39,9 @@ kill-freespace-random-file () {
     # References
     # http://serverfault.com/questions/6440/is-there-an-alternative-to-dev-urandom
     # time openssl enc -aes-256-ctr -pass pass:"$(dd if=/dev/urandom bs=128 count=1 2>/dev/null | base64)" -nosalt < /dev/zero | pv -pterb > ~/randomfile.bin
-    if [[ -z "$1" ]]; then
-        local ROOTPATH="${HOME}"
-    else
-        local ROOTPATH="$1"
+    local ROOTPATH="$1"
+    if [[ -z "$ROOTPATH" ]]; then
+        echo "Must specific directory corresponding to device to kill space on!!!"
     fi
     if [[ -e "$ROOTPATH"/randomfile.bin ]]; then
         rm "$ROOTPATH"/randomfile.bin
@@ -61,7 +60,7 @@ kill-freespace-random-file () {
     fi
     echo "Using buffer size $BUFSIZE!"
     sudo true
-    sudo su root <<EOF
+    sudo -i su root <<EOF
 time openssl enc -aes-256-ctr -pass pass:"$(dd if=/dev/urandom bs=128 count=1 2>/dev/null | base64)" -nosalt < /dev/zero | mbuffer -m "$BUFSIZE" -s 64k -A /bin/false -f -o "$ROOTPATH"/randomfile.bin
 sync
 sleep 60
@@ -251,4 +250,25 @@ crypt-device-image-to-here () {
     # TODO: will need to create and test a restore thing
     #       mbuffer limtted to easily fit on machines with 1G Ram
     sudo dd if=/dev/"$1" bs=64k conv=noerror,sync | lz4 | mbuffer -m 256M | gpg-batch --compress-algo none --cipher-algo AES256 --recipient "${CRYPTGPGUSER}" --output - --encrypt - | mbuffer -q -m 256M -s 64k -o ./"$HOSTNAME"-"$1"--$(date +%Y%m%d%H%M%S).lz4.gpg
+}
+
+ssh-clear-all-controlmaster () {
+    true
+}
+
+ssh-kill-offending-key () {
+    # TODO: backup?
+    # TODO: do this automatically if there is already a good key?
+    if [[ -n "$1" && "$1" =~ known_hosts ]]; then
+        # TODO: how to split?
+        local HOSTSFILE=$(echo "$1" | cut -d':' -f1)
+        local LINENO=$(echo "$1" | cut -d':' -f2)
+        if [[ -n "$HOSTSFILE" && -n "$LINENO" ]];then
+            # delete appropriate line
+            echo "Deleting ${LINENO} in ${HOSTSFILE}!!!"
+            sed -i -e "${LINENO}d" "$HOSTSFILE"
+        fi
+    else
+        warn "Must specific a known_hosts file and line number!"
+    fi
 }

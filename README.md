@@ -92,7 +92,7 @@ keys secure would still be good practice.
 Each `crypt-profile` resides in its own directory, that can easily be
 synced to other computers, and includes a working directory that is
 specific to the computer.  A simple bash command
-`crypt-switch-profile` can select the new directories corresponding to
+`crypt-profile-switch` can select the new directories corresponding to
 a different `crypt-profile` and reinitialize any running GnuPG or SSH
 agents.
 
@@ -180,7 +180,7 @@ To generate a profile use the command:
 
 To switch to a new profile use the command:
 
-    crypt-switch-profile <<primary>> <working>>
+    crypt-profile-switch <<primary>> <working>>
 
 Note that both of these commands kill all agents in memory in order to
 avoid interference.  Cryptography agents must be restarted with
