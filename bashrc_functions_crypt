@@ -251,6 +251,8 @@ crypt-profile-switch () {
     # TODO: may be an obsolete lines
     # need_new_symlink "$PRIMARYPROFILE"/authorized_keys ~/.ssh/authorized_keys
     need_new_symlink "$CRYPTSSHCONFIGPATH"/config ${HOME}/.ssh/config
+    # for scripts that modify .ssh/config, ensure there always an original
+    need_new_symlink "$CRYPTSSHCONFIGPATH"/config ${HOME}/.ssh/config_fallback
     need_new_symlink "$CRYPTGPGCONFIGPATH"/gpg.conf ${HOME}/.gnupg/gpg.conf
     need_new_symlink "$CRYPTGPGCONFIGPATH"/gpg-agent.conf ${HOME}/.gnupg/gpg-agent.conf
     fix-gpg-ssh-permissions
