@@ -112,9 +112,11 @@ logindata["strava"] =        ["https://www.strava.com/login",
 logindata["buyapi"] =        ["https://www.buyapi.ca/my-account/",
                               "username",
                               "password"];
+// TODO: nonfunctional
 logindata["digikey"] =       ["https://www.digikey.ca/MyDigiKey/Login",
                               "username",
                               "password"];
+// TODO: nonfunctional
 logindata["ebay"]    =       ["https://signin.ebay.ca/ws/eBayISAPI.dll?SignIn&ru=http%3A%2F%2Fwww.ebay.ca%2F",
                               "userid",
                               "pass"]
@@ -137,6 +139,7 @@ interactive("get-current-password-login","Get the current password and login for
         unfocus(I.window, I.buffer);
         // TODO: get the password here
         var base64_currenturl=btoa(unescape(I.buffer.display_uri_string));
+        /// TODO: environment variable problem with conkeror
         var cmd_str="launch-emacsclient noframe --eval \'(crypt-profiles-get-matching-password \"" + base64_currenturl + "\")\'";
         // credit where credit is due
         // http://conkeror.org/Tips#Using_an_external_password_manager
@@ -150,7 +153,7 @@ interactive("get-current-password-login","Get the current password and login for
         theloginname = thejson[0];
         theloginuser = thejson[1];
         theloginpassword = thejson[2];
-        I.window.minibuffer.message();
+        I.window.minibuffer.message("");
         browser_object_follow(I.buffer,OPEN_CURRENT_BUFFER,logindata[theloginname][0]);
         I.window.minibuffer.message(theloginname);
         initialstate = 0;
@@ -174,7 +177,7 @@ interactive("get-current-password-login-alternate","Get the current password and
         theloginname = thejson[0];
         theloginuser = thejson[1];
         theloginpassword = thejson[2];
-        I.window.minibuffer.message();
+        I.window.minibuffer.message("");
         browser_object_follow(I.buffer,OPEN_CURRENT_BUFFER,logindata[theloginname][0]);
         I.window.minibuffer.message(theloginname);
         initialstate = 0;
