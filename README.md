@@ -6,20 +6,39 @@ keypairs that are secured by GnuPG encryption in a way that allows for
 managing multiple sets of keys and easy synchronization among many
 computers.
 
-This project has its genesis from doing my graduate work on
-distributed heterogeneous computers, and finding that good security
-practices using existing tools (e.g., using OpenSSH public key
-authenication) was difficult.  I found it became increasingly
-difficult as the need to use more computers and compartmentalize
-information became necessary.  Rather than accepting insecure
-practices (e.g., OpenSSH private keys without passwords) I decided to
-see if it was possible to do better by using a small amount of code
-based on commonly used tools (most shell scripting).
+This project has its genesis from doing my graduate work that required
+running experiments on distributed heterogeneous computers, and
+finding that good security practices using existing tools (e.g., using
+OpenSSH public key authentication) was difficult and required a great
+deal of manual intervention to manage.  I found it became increasingly
+difficult because of the the need to use more computers and the
+necessity of compartmentalizing information, such as for personal,
+mobile, academic, professional, etc. settings.  Rather than accepting
+insecure practices (e.g., OpenSSH private keys without passwords) I
+decided to see if it was possible to do better by using a small amount
+of code based on commonly used tools (mostly shell scripting).
 
-New development includes an encrypted password database using an Emacs
-org-mode file, with automatic opening of login pages and insertion
-into the appropriate input fields in the
-[Conkeror web browser](http://conkeror.org/).
+New development includes an encrypted password database using an
+Emacs [org-mode](http://orgmode.org/) file, with two keystrokes to
+open login pages and insert login data into the appropriate input
+fields in the [Conkeror](http://conkeror.org/) web browser.  This
+allows fairly straightforward use of large random passwords.  The
+drawbacks are:
+
+- GPG must be installed on a device to read the password file,
+  although with some work this is readily done.
+
+- In any situation where Emacs and Conkeror are not being used it
+  requires manually entering difficult passwords.
+
+However, there are many open source password databases available.  In
+order to contribute effectively, it was felt that a password database
+that integrates with a tool for synchronization of keys across
+multiple hosts and tries to work as well as possible with the specific
+software chosen (Emacs and Conkeror) would be most worthwhile.
+Because of the small code base and used of shell script based tools,
+this project can easily be extended to other software tools or
+purposes.
 
 WARNING: This project is an experiment in high-level usability of
 common cryptography tools for everyday use, rather than being a secure
