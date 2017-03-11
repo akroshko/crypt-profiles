@@ -6,17 +6,29 @@ keypairs that are secured by GnuPG encryption in a way that allows for
 managing multiple sets of keys and easy synchronization among many
 computers.
 
-This project has its genesis from doing my graduate work that required
-running experiments on distributed heterogeneous computers, and
-finding that good security practices using existing tools (e.g., using
-OpenSSH public key authentication) was difficult and required a great
-deal of manual intervention to manage.  I found it became increasingly
-difficult because of the the need to use more computers and the
-necessity of compartmentalizing information, such as for personal,
-mobile, academic, professional, etc. settings.  Rather than accepting
-insecure practices (e.g., OpenSSH private keys without passwords) I
-decided to see if it was possible to do better by using a small amount
-of code based on commonly used tools (mostly shell scripting).
+This project had its genesis from doing graduate work that required
+running experiments on distributed heterogeneous computers.  I found
+that good security practices using existing tools (e.g., using OpenSSH
+public key authentication) was difficult to keep synchronized and
+functional, and as a result required a great deal of manual
+intervention to manage.  This became increasingly difficult once it
+become necessary to use more computers and compartmentalize
+information for different settings, such as for personal, mobile,
+academic, professional, etc.  Rather than accepting insecure practices
+(e.g., OpenSSH private keys without passwords) I set out to see if it
+was possible to do better by using a small amount of code (mostly
+shell scripting) to help manage these commonly used tools.
+
+The purpose of this package is to see if I can seamlessly integrate
+tools such as OpenSSH and GnuPG into my everyday workflow, while still
+maintaining the best possible security practices.  Secure remote
+computer use that OpenSSH provides and the public key/private
+key/password infrastructure that GnuPG provides, should be a part of
+everyday computing for everyone.  To see how this might be possible
+starts out by seeing how well particular individual can do these
+things it for myself.  Although many refinements and helper tools will
+eventually be necessary for others to use this software package
+efficiently, these goals are possible.
 
 New development includes an encrypted password database using an
 Emacs [org-mode](http://orgmode.org/) file, with two keystrokes to
@@ -36,9 +48,9 @@ order to contribute effectively, it was felt that a password database
 that integrates with a tool for synchronization of keys across
 multiple hosts and tries to work as well as possible with the specific
 software chosen (Emacs and Conkeror) would be most worthwhile.
-Because of the small code base and used of shell script based tools,
-this project can easily be extended to other software tools or
-purposes.
+Because of the small code base and the use of shell script based
+tools, this password database could easily be extended to other
+software tools or purposes.
 
 WARNING: This project is an experiment in high-level usability of
 common cryptography tools for everyday use, rather than being a secure
@@ -72,7 +84,7 @@ for all kinds of public key directories."
 [OpenSSH](http://www.openssh.com/) is a secure, trusted, and popular
 software package for remotely logging into computers that is used by
 industry, academia, and hobbyists.  In particular, I use it for
-scientific computing, for either cluster computing or when widely
+scientific simulation, for either cluster computing or when widely
 dispersed and heterogeneous computing resources are required.
 
 Automatically generating and managing multiple sets of keys targeted
@@ -82,7 +94,7 @@ keys for different purposes much easier and provide helper functions
 for working with agent-stored GnuPG and SSH private keys.  I have
 found I can easily work with a dozen different computers and set up
 new ones, while only having to enter passwords once a day (unless
-rebooting or for the initial login to a remote server).  Functions are
+rebooting or for the initial login to a remote host).  Functions are
 also provided for tasks such as file encryption and backups using only
 the GnuPG public key.
 
@@ -258,9 +270,8 @@ TODO: add instructions
 Planned development
 ===================
 
-It is widely accepted that public key-distribution a very difficult
-problem in cryptography.  This is even the case in a single-user
-many-computer setting.
+Public key and password distribution can be a very difficult problem
+even the case in a single-user many-computer setting.
 
 - allow automatic rotation and of passwords and keys between profiles
 
