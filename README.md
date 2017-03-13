@@ -13,11 +13,11 @@ public key authentication) was difficult to keep synchronized and
 functional, and as a result required a great deal of manual
 intervention to manage.  This became increasingly difficult once it
 become necessary to use more computers and compartmentalize
-information for different settings, such as for personal, mobile,
-academic, professional, etc.  Rather than accepting insecure practices
-(e.g., OpenSSH private keys without passwords) I set out to see if it
-was possible to do better by using a small amount of code (mostly
-shell scripting) to help manage these commonly used tools.
+information, such as for personal, mobile, academic, and professional,
+settings.  Rather than accepting insecure practices (e.g., OpenSSH
+private keys without passwords) I set out to see if it was possible to
+do better by using a small amount of code (mostly shell scripting) to
+help manage these commonly used tools.
 
 The purpose of this package is to see if I can seamlessly integrate
 tools such as OpenSSH and GnuPG into my everyday workflow, while still
