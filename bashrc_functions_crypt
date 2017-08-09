@@ -834,8 +834,14 @@ export-firefox-bookmarks () {
 }
 
 master-privacy-brief () {
-    # delete benign things, that shouldn't cause too much trouble
-    master-privacy --batch
+    # XXXX: suppress automatic privacy clearing if needed
+    if [[ -e "$HOME"/inhibit-privacy ]]; then
+        echo "Privacy cleanup suppressed!!!"
+    else
+        # delete benign things, that shouldn't cause too much trouble
+        # XXXX: seems to cause issues with long downloads in firefox
+        master-privacy --batch
+    fi
 }
 
 master-privacy-all () {
