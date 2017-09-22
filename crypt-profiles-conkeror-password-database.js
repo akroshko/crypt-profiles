@@ -131,7 +131,10 @@ define_key(content_buffer_normal_keymap, "s-p",
 define_key(content_buffer_normal_keymap, "M-s-p",
     "get-current-password-login-alternate");
 // TODO: add $repeat = "insert-current-password"
+// TODO: decide which one to do
 define_key(content_buffer_normal_keymap, "C-s-p",
+    "insert-current-password");
+define_key(content_buffer_normal_keymap, "s-P",
            "insert-current-password");
 // TODO: just need to update password thing now, and do search function :)
 interactive("get-current-password-login","Get the current password and login for particular sites.",
