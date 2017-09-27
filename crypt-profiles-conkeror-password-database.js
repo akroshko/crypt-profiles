@@ -88,7 +88,9 @@ logindata["pcmastercard"] =  ["https://online.pcmastercard.ca/PCB_Consumer/Login
                               "username",
                               "password"];
 // TODO: needs a special function
-logindata["mec"] =           ["https://www.mec.ca/Membership/login.jsp"];
+logindata["mec"] =           ["https://www.mec.ca/Membership/login.jsp",
+                              "j_username",
+                              "j_password"];
 logindata["telusmobility"] = ["https://telusidentity.telus.com/as/authorization.oauth2?client_id=uni_portal&response_type=code&scope=priceplaninfo+securitymgmt+usagedetails+profilemanagement+invoiceinfo+usagemanagement+accountactivity+subscriberinfo+paymentmanagement+paymentprocessing+accountinfo+devicemanagement+serviceeligibility+loyaltyandrewards+recommendationmanagement+profileinfohighdetail+usagepreferencemanagement+usagemeter+usagenotificationacceptancehistory+usageblockmanagement+tvrequisition+tvsusbscriptioninfo+internetservicemanagement+customerinfo&redirect_uri=https%3A%2F%2Fwww.telus.com%2Fmy-account%2Foauth_callback",
                               "IDToken1",
                               "IDToken2"];
@@ -220,8 +222,6 @@ interactive("insert-current-password","Get the current password and login for pa
             }
         } else if ( theloginname == "vimeo" ) {
             I.window.minibuffer.message("vimeo");
-        } else if ( theloginname == "mec" ) {
-            I.window.minibuffer.message("mec");
         } else if ( theloginname == "soundcloud" ) {
             I.window.minibuffer.message("soundcloud");
         } else {
