@@ -1012,14 +1012,13 @@ master-privacy () {
         # TODO: do better job at this?
         # clean out recently used lists
         h2 "Clearing recently used"
-        bleachbit --shred ${HOME}/.recently-used
+        kill-file ${HOME}/.recently-used
         # kill-file ~/.config/epiphany/ephy-history.db
-        bleachbit --shred ${HOME}/.config/gxine/playlist
+        kill-file ${HOME}/.config/gxine/playlist
         # causes problems on my system
-        bleachbit --shred ${HOME}/.config/mimeapps.list
+        kill-file --shred ${HOME}/.config/mimeapps.list
         # XXXX: these are killed by bleachbit
         # kill-recursive ~/.local/share/*xbel*;
-        # kill-file-contents ~/.local/share/recently-used.xbel;
         kill-file-contents ${HOME}/.local/share/user-places.xbel;
         kill-recent-files-line '/\[Recent Files\]/,/^\s*$/{d}' ${HOME}/.kde/share/config/arkrc
         kill-matching-line '/Recent Urls/d' ${HOME}/.kde/share/config/dragonplayerrc
@@ -1044,10 +1043,30 @@ master-privacy () {
             # if ! check-emacs-daemon; then
             echo "Shredding temporary emacs files!"
             if [[ -d ${HOME}/.emacs.d/tmp ]]; then
-                bleachbit --shred ${HOME}/.emacs.d/tmp/*
+                kill-directory-contents ${HOME}/.emacs.d/tmp/*
             fi
             if [[ -d ${HOME}/.emacs.d/image-dired ]]; then
-                bleachbit --shred ${HOME}/.emacs.d/image-dired/*
+                kill-directory-contents ${HOME}/.emacs.d/image-dired/*
+            fi
+            # TODO: ask before this?
+            if [[ -d ${HOME}/.local/share/zathura ]]; then
+                kill-directory-contents ${HOME}/.local/share/zathura
+            fi
+            if [[ -d ${HOME}/.local/share/data/qpdfview ]]; then
+                bleachbit --shred  ${HOME}/.local/share/data/qpdfview
+            fi
+            if [[ -d ${HOME}/.local/share/evolution ]]; then
+                bleachbit --shred ${HOME}/.local/share/evolution
+            fi
+            if [[ -d ${HOME}/.local/share/vlc ]]; then
+                bleachbit --shred ${HOME}/.local/share/evolution
+            fi
+            # TODO: do I want this in batch mode or not
+            #       can I just kill it and ones that look like it
+            kill-file-contents ~/.local/share/recently-used.xbel;
+            # TODO: want a robust kill matching files
+            if [[ -d ${HOME}/.local/share/ ]]; then
+                find ${HOME}/.local/share/ -maxdepth 1 -type f -iname "recently-used.xbel.*" -exec bleachbit --shred {} \;
             fi
         fi
         h2 "Re-caching programs such as Sage and Python"

@@ -145,11 +145,19 @@ kill-directory-contents () {
     # XXXX: dangerous functions for convenience in batch mode
     # TODO: find way to kill directories too for some uses, but without going haywire
     # XXXX: recursive, very dangerous!!!
+    # TODO: test if empty and give warning
     if [[ -d "$1" ]]; then
-        find "$1" -mindepth 1 -exec bleachbit --shred {} \;
+        # TODO: might have problem if spaces somewhere, but this commands works well anyways
+        #       runs the find command if anything appears
+        if [[ -n "$(ls -A $1)" ]]; then
+            find "$1" -mindepth 1 -exec bleachbit --shred {} \;
+        else
+            warn "Directory $1 empty and not cleared!"
+        fi
     fi
 }
 
+# TODO: give warning message, not quite same as above
 kill-directory-files () {
     # XXXX: dangerous functions for convenience in batch mode
     # TODO: find way to kill directories too for some uses, but without going haywire
