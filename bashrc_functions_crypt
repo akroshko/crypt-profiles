@@ -946,7 +946,8 @@ master-privacy () {
                 warn "Cannot export Firefox bookmarks, places.sqlite probably does not exist!"
             fi
             # XXXX: this kills all bookmarks
-            kill-find-matching ${HOME}/.mozilla/firefox places.sqlite
+            kill-find-matching "${HOME}/.mozilla/firefox places.sqlite"
+            bleachbit --shred "${HOME}/.mozilla/firefox/Crash Reports"
         else
             warn "Firefox running or not clearing due to no input.!"
         fi
