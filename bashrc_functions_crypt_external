@@ -154,6 +154,8 @@ kill-directory-contents () {
         else
             warn "Directory $1 empty and not cleared!"
         fi
+    else
+        warn "Directory $1 does not exist and not cleared!"
     fi
 }
 
