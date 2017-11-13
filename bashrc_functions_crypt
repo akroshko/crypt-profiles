@@ -488,19 +488,19 @@ encrypt-file-password () {
     local TOPSECRET=$(super-password-easy)
     msg "Password is: $TOPSECRET"
     while read -r -t 0;do read -r; done;
-    read -p "Please write down the password and press [Enter] to continue... "
+    read -s -r -p "Please write down the password and press any key to continue... "
     export TRYAGAIN=
     while [[ $TRYAGAIN != "y" ]]; do
         clear
         # TODO: not sure if I should really do this twice
         while read -r -t 0;do read -r; done;
-        read -p "Re-enter password: " TOPSECRET1
+        read -e -p "Re-enter password: " TOPSECRET1
         if [[ $TOPSECRET != $TOPSECRET1 ]]; then
             # TODO: try again
             warn "Password does not match!!! Write down again!!!"
             warn "Password is: $TOPSECRET"
             while read -r -t 0;do read -r; done;
-            read -p "Press [Enter] to continue... "
+            read -s -r -p "Press any key to continue... "
             local TRYAGAIN="n"
             continue
         fi
@@ -709,8 +709,7 @@ vg-container-expand () {
     while read -r -t 0;do read -r; done;
     read -n 1 -p "This is a dangerous and poorly tested function!!! Continue (y/n)? " yn
     echo ""
-    if [[ $yn == "y" ]]
-    then
+    if [[ $yn == "y" ]];then
         local CONTAINER="$1"
         local SIZEADD="$2"
         if [[ -e "$CONTAINER" ]]; then
