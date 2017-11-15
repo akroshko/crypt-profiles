@@ -488,7 +488,7 @@ encrypt-file-password () {
     local TOPSECRET=$(super-password-easy)
     msg "Password is: $TOPSECRET"
     while read -r -t 0;do read -r; done;
-    read -s -r -p "Please write down the password and press any key to continue... "
+    read -n 1 -s -r -p "Please write down the password and press any key to continue... "
     export TRYAGAIN=
     while [[ $TRYAGAIN != "y" ]]; do
         clear
@@ -500,7 +500,7 @@ encrypt-file-password () {
             warn "Password does not match!!! Write down again!!!"
             warn "Password is: $TOPSECRET"
             while read -r -t 0;do read -r; done;
-            read -s -r -p "Press any key to continue... "
+            read -n 1 -s -r -p "Press any key to continue... "
             local TRYAGAIN="n"
             continue
         fi
