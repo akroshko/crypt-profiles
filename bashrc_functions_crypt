@@ -1021,7 +1021,7 @@ master-privacy () {
         # kill-file ~/.config/epiphany/ephy-history.db
         kill-file "${HOME}"/.config/gxine/playlist
         # causes problems on my system
-        kill-file --shred "${HOME}"/.config/mimeapps.list
+        kill-file "${HOME}"/.config/mimeapps.list
         # XXXX: these are killed by bleachbit
         # kill-recursive ~/.local/share/*xbel*;
         kill-file-contents "${HOME}"/.local/share/user-places.xbel;

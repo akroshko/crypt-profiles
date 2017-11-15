@@ -124,7 +124,11 @@ write-random-data-stdout () {
 kill-file () {
     # XXXX: dangerous functions for convenience in batch mode
     if [[ -f "$1" ]]; then
+        msg "Killing $1"
         bleachbit --shred "$1"
+    else
+        # TODO: warn if not file
+        warn "File $1 is not a file, does not exist, and is not cleared!"
     fi
 }
 
@@ -150,7 +154,9 @@ kill-directory-contents () {
         # TODO: might have problem if spaces somewhere, but this commands works well anyways
         #       runs the find command if anything appears
         if [[ -n "$(ls -A $1)" ]]; then
+            msg "Clearing $1"
             find "$1" -mindepth 1 -exec bleachbit --shred {} \;
+
         else
             warn "Directory $1 empty and not cleared!"
         fi

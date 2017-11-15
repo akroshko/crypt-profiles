@@ -1,6 +1,11 @@
 // TODO: if true is a placeholder for more configurability later
 var startTime = new Date();
-if (true) {
+var BASIC=true
+var CRYPT=true
+var PLUGINS=true
+var MEDIA=true
+var MISC=true
+if (BASIC) {
     // security stuff
     // https://vikingvpn.com/cybersecurity-wiki/browser-security/guide-hardening-mozilla-firefox-for-privacy-and-security
     // TODO: these are not in ghacks
@@ -463,7 +468,8 @@ if (true) {
       // session_pref("permissions.memory_only", true); // (hidden pref)
     // 1012: disable resuming session from crash
     session_pref("browser.sessionstore.resume_from_crash", false);
-
+}
+if (CRYPT) {
     /*** 1200: SSL / OCSP / CERTS / ENCRYPTION / HSTS/HPKP/HTTPS
          Note that your cipher and other settings can be used server side as a fingerprint attack vector:
          see https://www.securityartwork.es/2017/02/02/tls-client-fingerprinting-with-bro/ . You can either
@@ -563,7 +569,68 @@ if (true) {
        // https://bugzilla.mozilla.org/show_bug.cgi?id=1334485 // related bug
        // https://bugzilla.mozilla.org/show_bug.cgi?id=1216882 // related bug (see comment 9)
        // session_pref("security.nocertdb", true); // (hidden pref)
-
+}
+if (PLUGINS) {
+    /*** 1800: PLUGINS ***/
+    user_pref("ghacks_user.js.parrot", "1800 syntax error: the parrot's pushing up daisies!");
+    // 1801: set default plugin state (i.e new plugins on discovery) to never activate
+       // 0=disabled, 1=ask to activate, 2=active - you can override individual plugins
+    user_pref("plugin.default.state", 0);
+    user_pref("plugin.defaultXpi.state", 0);
+    // 1802: enable click to play and set to 0 minutes
+    user_pref("plugins.click_to_play", true);
+    user_pref("plugin.sessionPermissionNow.intervalInMinutes", 0);
+    // 1802a: make sure a plugin is in a certain state: 0=deactivated 1=ask 2=enabled (Flash example)
+       // you can set all these plugin.state's via Add-ons>Plugins or search for plugin.state in about:config
+       // NOTE: you can still over-ride individual sites eg youtube via site permissions
+       // http://www.ghacks.net/2013/07/09/how-to-make-sure-that-a-firefox-plugin-never-activates-again/
+       // user_pref("plugin.state.flash", 0);
+    // 1804: disable plugins using external/untrusted scripts with XPCOM or XPConnect
+    user_pref("security.xpconnect.plugin.unrestricted", false);
+    // 1805: disable scanning for plugins
+       // http://kb.mozillazine.org/Plugin_scanning
+       // plid.all = whether to scan the directories specified in the Windows registry for PLIDs
+       // includes: RealPlayer, Next-Generation Java Plug-In, Adobe Flash, Antivirus etc
+       // WARNING: The author turned off plugins, try it one day. You are not missing much.
+    user_pref("plugin.scan.plid.all", false);
+    // 1806: Acrobat, Quicktime, WMP are handled separately from 1805 above.
+       // The string refers to min version number allowed
+    user_pref("plugin.scan.Acrobat", "99999");
+    user_pref("plugin.scan.Quicktime", "99999");
+    user_pref("plugin.scan.WindowsMediaPlayer", "99999");
+    // 1807: disable auto-play of HTML5 media
+       // WARNING: This may break youtube video playback (and probably other sites). If you block
+       // autoplay but occasionally would like a toggle button, try the following add-on
+       // https://addons.mozilla.org/en-US/firefox/addon/autoplay-toggle
+    user_pref("media.autoplay.enabled", false);
+    // 1808: disable audio auto-play in non-active tabs (FF51+)
+       // http://www.ghacks.net/2016/11/14/firefox-51-blocks-automatic-audio-playback-in-non-active-tabs/
+    user_pref("media.block-autoplay-until-in-foreground", true);
+    // 1820: disable all GMP (Gecko Media Plugins)
+       // https://wiki.mozilla.org/GeckoMediaPlugins
+    user_pref("media.gmp-provider.enabled", false);
+    user_pref("media.gmp.trial-create.enabled", false);
+    // 1825: disable widevine CDM
+    user_pref("media.gmp-widevinecdm.visible", false);
+    user_pref("media.gmp-widevinecdm.enabled", false);
+    user_pref("media.gmp-widevinecdm.autoupdate", false);
+    // 1830: disable all DRM content (EME: Encryption Media Extension)
+    user_pref("media.eme.enabled", false); // Options>Content>Play DRM Content
+    user_pref("browser.eme.ui.enabled", false); // hides "Play DRM Content" checkbox, restart required
+    user_pref("media.eme.apiVisible", false); // block websites detecting DRM is disabled
+    // 1840: disable the OpenH264 Video Codec by Cisco to "Never Activate"
+       // This is the bundled codec used for video chat in WebRTC
+       // Disable pings to the external update/download server
+    user_pref("media.gmp-gmpopenh264.enabled", false); // (hidden pref)
+    user_pref("media.gmp-gmpopenh264.autoupdate", false);
+    user_pref("media.gmp-manager.url", "data:text/plain,");
+    // 1850: disable the Adobe EME "Primetime CDM" (Content Decryption Module)
+       // https://trac.torproject.org/projects/tor/ticket/16285
+    user_pref("media.gmp-eme-adobe.enabled", false);
+    user_pref("media.gmp-eme-adobe.visible", false);
+    user_pref("media.gmp-eme-adobe.autoupdate", false);
+}
+if (MEDIA) {
     /*** 2000: MEDIA / CAMERA / MIKE ***/
     session_pref("ghacks_user.js.parrot", "2000 syntax error: the parrot's snuffed it!");
     // 2001: disable WebRTC
@@ -633,8 +700,8 @@ if (true) {
     // 2028: disable offscreen canvas
        // https://developer.mozilla.org/en-US/docs/Web/API/OffscreenCanvas
     session_pref("gfx.offscreencanvas.enabled", false);
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+}
+if (MISC) {
     /*** 2500: HARDWARE FINGERPRINTING ***/
     session_pref("ghacks_user.js.parrot", "2500 syntax error: the parrot's shuffled off 'is mortal coil!");
     // 2501: disable gamepad API - USB device ID enumeration
@@ -919,9 +986,9 @@ if (true) {
        // 0=everything 1=last hour, 2=last 2 hours, 3=last 4 hours, 4=today
     session_pref("privacy.sanitize.timeSpan", 0);
 
-    // END: internal custom pref to test for syntax errors
-    user_pref("ghacks_user.js.parrot", "No no he's not dead, he's, he's restin'! Remarkable bird, the Norwegian Blue");
 }
+// END: internal custom pref to test for syntax errors
+user_pref("ghacks_user.js.parrot", "No no he's not dead, he's, he's restin'! Remarkable bird, the Norwegian Blue");
 var endTime = new Date();
 var timeDiff = endTime - startTime;
 session_pref("ghacks_user.js.thetime",String(timeDiff) + " ms");
