@@ -2,62 +2,11 @@
 var startTime = new Date();
 var BASIC=true
 var CRYPT=true
-var PLUGINS=true
+var PLUGINS=false
 var MEDIA=true
 var MISC=true
+var PERSONAL=true
 if (BASIC) {
-    // security stuff
-    // https://vikingvpn.com/cybersecurity-wiki/browser-security/guide-hardening-mozilla-firefox-for-privacy-and-security
-    // TODO: these are not in ghacks
-    session_pref("xpinstall.signatures.required",false);
-    session_pref("security.ssl3.ecdhe_ecdsa_rc4_128_sha",false);
-    session_pref("security.ssl3.ecdhe_rsa_rc4_128_sha",false);
-    session_pref("security.ssl3.rsa_rc4_128_md5",false);
-    session_pref("security.ssl3.rsa_rc4_128_sha",false);
-    // TODO: I never use this, down below but commented
-    session_pref("browser.formfill.enable",false);
-    // TODO: check what this is...
-    session_pref("plugin.scan.plid.all",false);
-
-    // https://gist.github.com/haasn/69e19fc2fe0e25f3cff5
-    // TODO: prefetching
-    session_pref("dom.event.clipboardevents.enabled",false);
-    session_pref("dom.battery.enabled",false);
-    session_pref("loop.enabled",false);
-    // TODO: what is this, see https://gist.github.com/haasn/69e19fc2fe0e25f3cff5
-    session_pref("browser.beacen.enabled",false);
-    // TODO: go back to ghacks user.js
-    session_pref("geo.enabled",false);
-    session_pref("geo.wifi.logging.enabled",false);
-    session_pref("geo.wifi.uri","");
-    // TODO: browser.safebrowsing.enabled, why not in ghacks
-    session_pref("browser.safebrowsing.enabled",false);
-    session_pref("browser.safebrowsing.downloads.enabled",false);
-    session_pref("browser.safebrowsing.malware.enabled",false);
-    // TODO: not around...?
-    session_pref("media.block-autoplay-until-in-foreground",true);
-    session_pref("social.manifest.facebook","");
-    session_pref("device.sensors.enabled",false);
-    session_pref("camera.control.autofocus_moving_callback.enabled",false);
-    // network.http.speculative-parallel-limit=0
-    // TODO: should I add below
-    session_pref("security.tls.insecure_fallback_hosts.use_static_list",false);
-    // TOOD: hmmmm....
-    session_pref("security.tls.version.min",1);
-    // TODO: change in future when I don't need to connect to certain unsafe websites
-    // https://wiki.mozilla.org/Security:Renegotiation#security.ssl.require_safe_negotiation
-    // session_pref("security.ssl.require_safe_negotiation",true);
-    // TODO: does not seem to affect conkeror
-    // session_pref("security.ssl.treat_unsafe_negotiation_as_broken",true);
-    session_pref("security.ssl3.rsa_seed_sha",true);
-    // TODO: change below
-    session_pref("security.OCSP.enabled",1);
-    session_pref("security.OCSP.require",true);
-    // perfect forward secrecy, but muight break many things
-    // session_pref("security.ssl3.rsa_aes_256_sha",false);
-    // TODO: better, but some of my websites won't work
-    // session_pref("security.tls.version.min",3);
-
     /*** 0100: STARTUP ***/
     session_pref("ghacks_user.js.parrot", "0100 syntax error: the parrot's dead!");
     // 0101: disable "slow startup" options
@@ -154,7 +103,7 @@ if (BASIC) {
     // 0341: disable Mozilla permission to silently opt you into tests
     session_pref("network.allow-experiments", false);
     // 0374: disable "social" integration
-       // TODO: remove above in facour of this
+       // TODO: remove above in favour of this
        // https://developer.mozilla.org/en-US/docs/Mozilla/Projects/Social_API
     session_pref("social.whitelist", "");
     session_pref("social.toast-notifications.enabled", false);
@@ -312,7 +261,6 @@ if (BASIC) {
     /*** 0800: LOCATION BAR / SEARCH / AUTO SUGGESTIONS / HISTORY / FORMS etc
          Not ALL of these are strictly needed, some are for the truly paranoid, but
          included for a more comprehensive list (see comments on each one) ***/
-    // XXXX: changed to session_pref("layout.css.visited_links_enabled", true); because I use it
     session_pref("ghacks_user.js.parrot", "0800 syntax error: the parrot's ceased to be!");
     // 0801: disable location bar using search - PRIVACY
        // don't leak typos to a search engine, give an error message instead
@@ -349,8 +297,7 @@ if (BASIC) {
        // https://dbaron.org/mozilla/visited-privacy
        // https://bugzilla.mozilla.org/show_bug.cgi?id=147777
        // https://developer.mozilla.org/en-US/docs/Web/CSS/Privacy_and_the_:visited_selector
-    // session_pref("layout.css.visited_links_enabled", false);
-    session_pref("layout.css.visited_links_enabled", true);
+    session_pref("layout.css.visited_links_enabled", false);
     // 0811: disable displaying javascript in history URLs - SECURITY
     session_pref("browser.urlbar.filter.javascript", true);
     // 0812: disable search and form history
@@ -572,63 +519,63 @@ if (CRYPT) {
 }
 if (PLUGINS) {
     /*** 1800: PLUGINS ***/
-    user_pref("ghacks_user.js.parrot", "1800 syntax error: the parrot's pushing up daisies!");
+    session_pref("ghacks_user.js.parrot", "1800 syntax error: the parrot's pushing up daisies!");
     // 1801: set default plugin state (i.e new plugins on discovery) to never activate
        // 0=disabled, 1=ask to activate, 2=active - you can override individual plugins
-    user_pref("plugin.default.state", 0);
-    user_pref("plugin.defaultXpi.state", 0);
+    session_pref("plugin.default.state", 0);
+    session_pref("plugin.defaultXpi.state", 0);
     // 1802: enable click to play and set to 0 minutes
-    user_pref("plugins.click_to_play", true);
-    user_pref("plugin.sessionPermissionNow.intervalInMinutes", 0);
+    session_pref("plugins.click_to_play", true);
+    session_pref("plugin.sessionPermissionNow.intervalInMinutes", 0);
     // 1802a: make sure a plugin is in a certain state: 0=deactivated 1=ask 2=enabled (Flash example)
        // you can set all these plugin.state's via Add-ons>Plugins or search for plugin.state in about:config
        // NOTE: you can still over-ride individual sites eg youtube via site permissions
        // http://www.ghacks.net/2013/07/09/how-to-make-sure-that-a-firefox-plugin-never-activates-again/
-       // user_pref("plugin.state.flash", 0);
+       // session_pref("plugin.state.flash", 0);
     // 1804: disable plugins using external/untrusted scripts with XPCOM or XPConnect
-    user_pref("security.xpconnect.plugin.unrestricted", false);
+    session_pref("security.xpconnect.plugin.unrestricted", false);
     // 1805: disable scanning for plugins
        // http://kb.mozillazine.org/Plugin_scanning
        // plid.all = whether to scan the directories specified in the Windows registry for PLIDs
        // includes: RealPlayer, Next-Generation Java Plug-In, Adobe Flash, Antivirus etc
        // WARNING: The author turned off plugins, try it one day. You are not missing much.
-    user_pref("plugin.scan.plid.all", false);
+    session_pref("plugin.scan.plid.all", false);
     // 1806: Acrobat, Quicktime, WMP are handled separately from 1805 above.
        // The string refers to min version number allowed
-    user_pref("plugin.scan.Acrobat", "99999");
-    user_pref("plugin.scan.Quicktime", "99999");
-    user_pref("plugin.scan.WindowsMediaPlayer", "99999");
+    session_pref("plugin.scan.Acrobat", "99999");
+    session_pref("plugin.scan.Quicktime", "99999");
+    session_pref("plugin.scan.WindowsMediaPlayer", "99999");
     // 1807: disable auto-play of HTML5 media
        // WARNING: This may break youtube video playback (and probably other sites). If you block
        // autoplay but occasionally would like a toggle button, try the following add-on
        // https://addons.mozilla.org/en-US/firefox/addon/autoplay-toggle
-    user_pref("media.autoplay.enabled", false);
+    session_pref("media.autoplay.enabled", false);
     // 1808: disable audio auto-play in non-active tabs (FF51+)
        // http://www.ghacks.net/2016/11/14/firefox-51-blocks-automatic-audio-playback-in-non-active-tabs/
-    user_pref("media.block-autoplay-until-in-foreground", true);
+    session_pref("media.block-autoplay-until-in-foreground", true);
     // 1820: disable all GMP (Gecko Media Plugins)
        // https://wiki.mozilla.org/GeckoMediaPlugins
-    user_pref("media.gmp-provider.enabled", false);
-    user_pref("media.gmp.trial-create.enabled", false);
+    session_pref("media.gmp-provider.enabled", false);
+    session_pref("media.gmp.trial-create.enabled", false);
     // 1825: disable widevine CDM
-    user_pref("media.gmp-widevinecdm.visible", false);
-    user_pref("media.gmp-widevinecdm.enabled", false);
-    user_pref("media.gmp-widevinecdm.autoupdate", false);
+    session_pref("media.gmp-widevinecdm.visible", false);
+    session_pref("media.gmp-widevinecdm.enabled", false);
+    session_pref("media.gmp-widevinecdm.autoupdate", false);
     // 1830: disable all DRM content (EME: Encryption Media Extension)
-    user_pref("media.eme.enabled", false); // Options>Content>Play DRM Content
-    user_pref("browser.eme.ui.enabled", false); // hides "Play DRM Content" checkbox, restart required
-    user_pref("media.eme.apiVisible", false); // block websites detecting DRM is disabled
+    session_pref("media.eme.enabled", false); // Options>Content>Play DRM Content
+    session_pref("browser.eme.ui.enabled", false); // hides "Play DRM Content" checkbox, restart required
+    session_pref("media.eme.apiVisible", false); // block websites detecting DRM is disabled
     // 1840: disable the OpenH264 Video Codec by Cisco to "Never Activate"
        // This is the bundled codec used for video chat in WebRTC
        // Disable pings to the external update/download server
-    user_pref("media.gmp-gmpopenh264.enabled", false); // (hidden pref)
-    user_pref("media.gmp-gmpopenh264.autoupdate", false);
-    user_pref("media.gmp-manager.url", "data:text/plain,");
+    session_pref("media.gmp-gmpopenh264.enabled", false); // (hidden pref)
+    session_pref("media.gmp-gmpopenh264.autoupdate", false);
+    session_pref("media.gmp-manager.url", "data:text/plain,");
     // 1850: disable the Adobe EME "Primetime CDM" (Content Decryption Module)
        // https://trac.torproject.org/projects/tor/ticket/16285
-    user_pref("media.gmp-eme-adobe.enabled", false);
-    user_pref("media.gmp-eme-adobe.visible", false);
-    user_pref("media.gmp-eme-adobe.autoupdate", false);
+    session_pref("media.gmp-eme-adobe.enabled", false);
+    session_pref("media.gmp-eme-adobe.visible", false);
+    session_pref("media.gmp-eme-adobe.autoupdate", false);
 }
 if (MEDIA) {
     /*** 2000: MEDIA / CAMERA / MIKE ***/
@@ -987,6 +934,62 @@ if (MISC) {
     session_pref("privacy.sanitize.timeSpan", 0);
 
 }
+if (PERSONAL) {
+    // security stuff
+    // https://vikingvpn.com/cybersecurity-wiki/browser-security/guide-hardening-mozilla-firefox-for-privacy-and-security
+    // TODO: these are not in ghacks
+    session_pref("xpinstall.signatures.required",false);
+    session_pref("security.ssl3.ecdhe_ecdsa_rc4_128_sha",false);
+    session_pref("security.ssl3.ecdhe_rsa_rc4_128_sha",false);
+    session_pref("security.ssl3.rsa_rc4_128_md5",false);
+    session_pref("security.ssl3.rsa_rc4_128_sha",false);
+    // TODO: I never use this, down below but commented
+    session_pref("browser.formfill.enable",false);
+    // TODO: check what this is...
+    session_pref("plugin.scan.plid.all",false);
+
+    // https://gist.github.com/haasn/69e19fc2fe0e25f3cff5
+    // TODO: prefetching
+    session_pref("dom.event.clipboardevents.enabled",false);
+    session_pref("dom.battery.enabled",false);
+    session_pref("loop.enabled",false);
+    // TODO: what is this, see https://gist.github.com/haasn/69e19fc2fe0e25f3cff5
+    session_pref("browser.beacen.enabled",false);
+    // TODO: go back to ghacks user.js
+    session_pref("geo.enabled",false);
+    session_pref("geo.wifi.logging.enabled",false);
+    session_pref("geo.wifi.uri","");
+    // TODO: browser.safebrowsing.enabled, why not in ghacks
+    session_pref("browser.safebrowsing.enabled",false);
+    session_pref("browser.safebrowsing.downloads.enabled",false);
+    session_pref("browser.safebrowsing.malware.enabled",false);
+    // TODO: not around...?
+    session_pref("media.block-autoplay-until-in-foreground",true);
+    session_pref("social.manifest.facebook","");
+    session_pref("device.sensors.enabled",false);
+    session_pref("camera.control.autofocus_moving_callback.enabled",false);
+    // network.http.speculative-parallel-limit=0
+    // TODO: should I add below
+    session_pref("security.tls.insecure_fallback_hosts.use_static_list",false);
+    // TOOD: hmmmm....
+    session_pref("security.tls.version.min",1);
+    // TODO: change in future when I don't need to connect to certain unsafe websites
+    // https://wiki.mozilla.org/Security:Renegotiation#security.ssl.require_safe_negotiation
+    // session_pref("security.ssl.require_safe_negotiation",true);
+    // TODO: does not seem to affect conkeror
+    // session_pref("security.ssl.treat_unsafe_negotiation_as_broken",true);
+    session_pref("security.ssl3.rsa_seed_sha",true);
+    // TODO: change below
+    session_pref("security.OCSP.enabled",1);
+    session_pref("security.OCSP.require",true);
+    // perfect forward secrecy, but muight break many things
+    // session_pref("security.ssl3.rsa_aes_256_sha",false);
+    // TODO: better, but some of my websites won't work
+    // session_pref("security.tls.version.min",3);
+    // changed ghacks defaults because I use it
+    session_pref("layout.css.visited_links_enabled", true);
+}
+
 // END: internal custom pref to test for syntax errors
 user_pref("ghacks_user.js.parrot", "No no he's not dead, he's, he's restin'! Remarkable bird, the Norwegian Blue");
 var endTime = new Date();
