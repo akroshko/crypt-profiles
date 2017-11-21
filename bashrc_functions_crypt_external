@@ -136,6 +136,9 @@ kill-recursive () {
     # XXXX: dangerous functions for convenience in batch mode
     if [[ -e "$1" ]]; then
         bleachbit --shred "$1"
+        msg "Clearing directory $1"
+    else
+        warn "Directory $1 does not exist and not deleted!"
     fi
 }
 
@@ -154,7 +157,7 @@ kill-directory-contents () {
         # TODO: might have problem if spaces somewhere, but this commands works well anyways
         #       runs the find command if anything appears
         if [[ -n "$(ls -A $1)" ]]; then
-            msg "Clearing $1"
+            msg "Clearing directory contents $1"
             find "$1" -mindepth 1 -exec bleachbit --shred {} \;
 
         else
@@ -186,7 +189,14 @@ kill-directory-contents-preserve-structure () {
 kill-find-matching () {
     # XXXX: dangerous functions for convenience in batch mode
     if [[ -d "$1" ]]; then
-        find "$1" -name "$2" -exec bleachbit --shred {} \;
+        # XXXX: double find a few milliseconds slower but gives good error messages
+        if find "$1" -name "$2" | grep '.' >/dev/null; then
+            find "$1" -name "$2" -exec bleachbit --shred {} \;
+        else
+            warn "Directory $1 exists but nothing matching $2 to be cleared!"
+        fi
+    else
+        warn "Directory $1 does not exist so nothing mathcing $2 not cleared!"
     fi
 }
 

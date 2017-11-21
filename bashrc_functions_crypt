@@ -927,8 +927,8 @@ master-privacy () {
         h2 "Chromium"
         # XXXX: I only use chromium as a secondary browser, decided to just shred everything
         if ! check-chromium; then
-            bleachbit --shred "${HOME}"/.config/chromium/
-            bleachbit --shred "${HOME}"/.cache/chromium/
+            kill-directory-contents "${HOME}"/.config/chromium/
+            kill-directory-contents "${HOME}"/.cache/chromium/
         else
             warn "Chromium running!"
         fi
@@ -949,7 +949,7 @@ master-privacy () {
             fi
             # XXXX: this kills all bookmarks
             kill-find-matching ""${HOME}"/.mozilla/firefox places.sqlite"
-            bleachbit --shred ""${HOME}"/.mozilla/firefox/Crash Reports"
+            kill-recursive ""${HOME}"/.mozilla/firefox/Crash Reports"
         else
             warn "Firefox running or not clearing due to no input.!"
         fi
@@ -988,9 +988,9 @@ master-privacy () {
                 kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror webappsstore.sqlite-wal
                 kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror xulstore.json
                 # cache files
-                bleachbit --shred "${HOME}"/.cache/conkeror.mozdev.org/
-                bleachbit --shred "${HOME}"/.cache/firefox/
-                bleachbit --shred "${HOME}"/.cache/mozilla/
+                kill-directory-contents "${HOME}"/.cache/conkeror.mozdev.org/
+                kill-directory-contents "${HOME}"/.cache/firefox/
+                kill-directory-contents "${HOME}"/.cache/mozilla/
             fi
         else
             warn "Firefox or similar running!"
@@ -1002,7 +1002,7 @@ master-privacy () {
         h2 "Gnome"
         bleachbit --overwrite --clean gnome.* nautilus.*
         h2 "KDE"
-        bleachbit --shred "${HOME}"/.kde/share/apps/RecentDocuments/*
+        kill-directory-contents "${HOME}"/.kde/share/apps/RecentDocuments/*
         bleachbit --overwrite --clean kde.*
         kill-directory-contents "${HOME}"/.kde/share/apps/okular/docdata
         kill-directory-contents "${HOME}"/.kde/share/apps/kconf_update/log
@@ -1051,12 +1051,8 @@ master-privacy () {
             kill-directory-contents "${HOME}"/.emacs.d/image-dired/
             # TODO: ask before this?
             kill-directory-contents "${HOME}"/.local/share/zathura
-            if [[ -d "${HOME}"/.local/share/data/qpdfview ]]; then
-                bleachbit --shred  "${HOME}"/.local/share/data/qpdfview
-            fi
-            if [[ -d "${HOME}"/.local/share/evolution ]]; then
-                bleachbit --shred "${HOME}"/.local/share/evolution
-            fi
+            kill-recursive  "${HOME}"/.local/share/data/qpdfview
+            kill-recursive "${HOME}"/.local/share/evolution
             # TODO: possibly do less, so preserve vlc options
             kill-directory-contents "${HOME}"/.local/share/vlc
             kill-directory-contents "${HOME}"/.abobe
@@ -1064,15 +1060,15 @@ master-privacy () {
             # TODO: program I once tested, remove
             kill-directory-contents "${HOME}"/.viking
             kill-directory-contents "${HOME}"/.xine
-            # TODO: if I seriouly use this, fix
+            # TODO: if I seriously use this, fix
             kill-directory-contents "${HOME}"/.openshot
-            # TODO: if I seriouly use this, fix
+            # TODO: if I seriously use this, fix
             kill-directory-contents "${HOME}"/.mypaint
             # TODO: do I want this in batch mode or not
             #       can I just kill it and ones that look like it
             kill-file-contents "${HOME}"/.local/share/recently-used.xbel
             kill-file-contents "${HOME}"/.xsession-errors
-            # TODO: want a robust kill matching files
+            # TODO: want a robust kill matching files, see if a function I wrote works here
             if [[ -d "${HOME}"/.local/share/ ]]; then
                 find "${HOME}"/.local/share/ -maxdepth 1 -type f -iname "recently-used.xbel.*" -exec bleachbit --shred {} \;
             fi
