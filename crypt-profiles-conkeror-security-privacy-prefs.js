@@ -948,6 +948,9 @@ if (PERSONAL) {
     // TODO: check what this is...
     session_pref("plugin.scan.plid.all",false);
 
+    // TODO: this lets me go back...
+    session_pref("browser.sessionhistory.max_entries", 50);
+
     // https://gist.github.com/haasn/69e19fc2fe0e25f3cff5
     // TODO: prefetching
     session_pref("dom.event.clipboardevents.enabled",false);
