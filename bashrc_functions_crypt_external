@@ -196,7 +196,7 @@ kill-find-matching () {
             warn "Directory $1 exists but nothing matching $2 to be cleared!"
         fi
     else
-        warn "Directory $1 does not exist so nothing mathcing $2 not cleared!"
+        warn "Directory $1 does not exist so nothing matching $2 not cleared!"
     fi
 }
 
