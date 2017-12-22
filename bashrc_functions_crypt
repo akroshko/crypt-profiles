@@ -1067,7 +1067,8 @@ master-privacy () {
             # TODO: do I want this in batch mode or not
             #       can I just kill it and ones that look like it
             kill-file-contents "${HOME}"/.local/share/recently-used.xbel
-            kill-file-contents "${HOME}"/.xsession-errors
+            # TODO: clear xsession...
+            # kill-file-contents "${HOME}"/.xsession-errors
             # TODO: want a robust kill matching files, see if a function I wrote works here
             if [[ -d "${HOME}"/.local/share/ ]]; then
                 find "${HOME}"/.local/share/ -maxdepth 1 -type f -iname "recently-used.xbel.*" -exec bleachbit --shred {} \;

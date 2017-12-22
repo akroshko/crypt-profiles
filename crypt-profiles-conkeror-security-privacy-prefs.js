@@ -304,7 +304,7 @@ if (BASIC) {
        // Under Options>Privacy> if you set Firefox to "use custom settings" there will be a
        // setting called "remember search and form history".
        // You can clear formdata on exiting Firefox (see 2803)
-       // session_pref("browser.formfill.enable", false);
+       session_pref("browser.formfill.enable", false);
     // 0813: disable saving form data on secure websites - PRIVACY (shoulder surfers etc)
        // For convenience & functionality, this is best left at default true.
        // You can clear formdata on exiting Firefox (see 2803)
@@ -598,18 +598,18 @@ if (MEDIA) {
     // 2010: disable WebGL, force bare minimum feature set if used & disable WebGL extensions
        // http://www.contextis.com/resources/blog/webgl-new-dimension-browser-exploitation/
        // https://security.stackexchange.com/questions/13799/is-webgl-a-security-concern
-    session_pref("webgl.disabled", true);
+    // session_pref("webgl.disabled", true);
     session_pref("pdfjs.enableWebGL", false);
-    session_pref("webgl.min_capability_mode", true);
-    session_pref("webgl.disable-extensions", true);
-    session_pref("webgl.disable-fail-if-major-performance-caveat", true);
+    // session_pref("webgl.min_capability_mode", true);
+    // session_pref("webgl.disable-extensions", true);
+    // session_pref("webgl.disable-fail-if-major-performance-caveat", true);
     // 2011: don't make WebGL debug info available to websites
        // https://bugzilla.mozilla.org/show_bug.cgi?id=1171228
        // https://developer.mozilla.org/en-US/docs/Web/API/WEBGL_debug_renderer_info
     session_pref("webgl.enable-debug-renderer-info", false);
     // 2012: two more webgl preferences (FF51+)
-    session_pref("webgl.dxgl.enabled", false);
-    session_pref("webgl.enable-webgl2", false);
+    // session_pref("webgl.dxgl.enabled", false);
+    // session_pref("webgl.enable-webgl2", false);
     // 2021: disable speech recognition
     session_pref("media.webspeech.recognition.enable", false);
     session_pref("media.webspeech.synth.enabled", false);
@@ -701,8 +701,9 @@ if (MISC) {
        // https://wiki.mozilla.org/Platform/GFX/HardwareAcceleration
        // WARNING: This changes text rendering (fonts will look different)
        //          If you watch a lot of video, this will impact performance
-    session_pref("gfx.direct2d.disabled", true);
-    session_pref("layers.acceleration.disabled", true);
+    // session_pref("gfx.direct2d.disabled", true);
+    // TODO: this may need to be uncommented
+    // session_pref("layers.acceleration.disabled", true);
     // 2509: disable touch events
        // https://developer.mozilla.org/en-US/docs/Web/API/Touch_events
        // https://trac.torproject.org/projects/tor/ticket/10286
@@ -947,6 +948,28 @@ if (PERSONAL) {
     session_pref("browser.formfill.enable",false);
     // TODO: check what this is...
     session_pref("plugin.scan.plid.all",false);
+
+    // XXXX acceleration makes a big difference for me
+    // session_pref("layers.acceleration.disabled", false);
+    // session_pref("layers.acceleration.force-enabled", true);
+    // session_pref("layers.offmainthreadcomposition.enabled", true);
+    // XXXX make sure they are stored more permanently
+    user_pref("layers.acceleration.disabled", false);
+    user_pref("layers.acceleration.force-enabled", true);
+    user_pref("layers.offmainthreadcomposition.enabled", true);
+    // TODO https://wiki.mozilla.org/Electrolysis#Force_Enable
+    // XXXX remove if not stable, but puts each window into its own process
+    user_pref("browser.tabs.remote.force-enable",true);
+    // TODO: not working yet...
+    user_pref("media.hardware-video-decoding.enabled",true);
+    user_pref("media.hardware-video-decoding.force-enabled",true);
+
+    session_pref("webgl.disabled", false);
+    session_pref("webgl.min_capability_mode", false);
+    session_pref("webgl.disable-extensions", false);
+    session_pref("webgl.dxgl.enabled", true);
+    session_pref("webgl.enable-webgl2", true);
+    session_pref("webgl.force-enabled", true);
 
     // TODO: this lets me go back...
     session_pref("browser.sessionhistory.max_entries", 50);
