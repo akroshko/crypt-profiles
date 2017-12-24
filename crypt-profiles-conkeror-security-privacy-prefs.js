@@ -953,10 +953,15 @@ if (PERSONAL) {
     // session_pref("layers.acceleration.disabled", false);
     // session_pref("layers.acceleration.force-enabled", true);
     // session_pref("layers.offmainthreadcomposition.enabled", true);
-    // XXXX make sure they are stored more permanently
+    // XXXX: make sure they are stored more permanently
     user_pref("layers.acceleration.disabled", false);
     user_pref("layers.acceleration.force-enabled", true);
     user_pref("layers.offmainthreadcomposition.enabled", true);
+    // XXXX: hidden option enables azure acceleration
+    user_pref("gfx.canvas.azure.accelerated",true);
+    // XXXX: needs to be low on low-memory devices
+    user_pref("browser.preferences.defaultPerformanceSettings.enabled",false);
+    user_pref("dom.ipc.processCount",4);
     // TODO https://wiki.mozilla.org/Electrolysis#Force_Enable
     // XXXX remove if not stable, but puts each window into its own process
     user_pref("browser.tabs.remote.force-enable",true);
