@@ -840,7 +840,8 @@ master-privacy-brief () {
         # delete benign things, that shouldn't cause too much trouble
         # XXXX: seems to cause issues with long downloads in firefox
         # TODO: are things running that I don't want to clear privacy for
-        if ! ps -ef | grep "conkeror" | grep -v grep >/dev/null; then
+        # TODO: better test.... conkeror was bad...
+        if ! pgrep firefox-esr >/dev/null; then
             master-privacy --batch
             echo "$(date-time-stamp) Success" >> "$HOME/.myprivacy.log"
         else
