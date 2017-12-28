@@ -123,6 +123,10 @@ logindata["ebay"]    =       ["https://signin.ebay.ca/ws/eBayISAPI.dll?SignIn&ru
                               "userid",
                               "pass"]
 
+logindata["twitch"]  =       ["https://www.twitch.tv/login",
+                              "username",
+                              "password"]
+
 // TODO: might be an issue
 logindata["soundcloud"] =    ["https://soundcloud.com/signin"];
 
@@ -220,7 +224,17 @@ interactive("insert-current-password","Get the current password and login for pa
                 n1.value = theloginuser;
                 initialstate = 1;
             }
-        } else if ( theloginname == "vimeo" ) {
+        } else if ( theloginname == "twitch" ) {
+            // TODO: will have to use state
+            var n1 = I.buffer.document.getElementById("username");
+            browser_element_focus(I.buffer, n1);
+            n1.value = theloginuser;
+            var n2_wrapper = I.buffer.document.getElementById("password");
+            var n2 = n2_wrapper.getElementsByClassName("text");
+            browser_element_focus(I.buffer, n2[0]);
+            n2[0].value = theloginpassword;
+        }
+        else if ( theloginname == "vimeo" ) {
             I.window.minibuffer.message("vimeo");
         } else if ( theloginname == "soundcloud" ) {
             I.window.minibuffer.message("soundcloud");
