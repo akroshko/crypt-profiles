@@ -64,7 +64,7 @@ main () {
     if [[ "$1" == "--reset" ]]; then
         # TODO: try all of these even if some are errors
         sudo umount /mnt-snapshot
-        if [[ $(hostname) == "$BACKUPHOSTNAME" ]]; then
+        if [[ "${HOSTNAME}" == "$BACKUPHOSTNAME" ]]; then
            sudo lvremove /dev/crypt-main/backup-snapshot
         fi
     else
@@ -72,7 +72,7 @@ main () {
         #       but not before here
         set -e
         # XXXX: hard coded to ensure script does not screw anything up
-        if [[ $(hostname) == "$BACKUPHOSTNAME" ]]; then
+        if [[ "${HOSTNAME}" == "$BACKUPHOSTNAME" ]]; then
             # TODO: is this necessary?
             sync; sleep 10; sync
             # TODO: make sure I backup proper directory rather than home by default
@@ -121,9 +121,9 @@ main () {
         # XXXX: . used, expect to change to directory in /mnt-snapshot/
         if [[ -n "$2" ]]; then
             local COMPRESSLEVEL="$3"
-            time tar --create --file - . | "${COMPRESSPROG}" "${COMPRESSLEVEL}" | mbuffer -m 8192M | gpg-batch --compress-algo none --cipher-algo AES256 --recipient "${CRYPTGPGUSER}" --output - --encrypt - | mbuffer -q -m 2048M -s 64k -o ${BACKUPPATH}/$(hostname)-home--$(date +%Y%m%d%H%M%S).tar."${COMPRESSEXT}".gpg
+            time tar --create --file - . | "${COMPRESSPROG}" "${COMPRESSLEVEL}" | mbuffer -m 8192M | gpg-batch --compress-algo none --cipher-algo AES256 --recipient "${CRYPTGPGUSER}" --output - --encrypt - | mbuffer -q -m 2048M -s 64k -o ${BACKUPPATH}/"${HOSTNAME}"-home--$(date +%Y%m%d%H%M%S).tar."${COMPRESSEXT}".gpg
         else
-            time tar --create --file - . | "${COMPRESSPROG}" | mbuffer -m 8192M | gpg-batch --compress-algo none --cipher-algo AES256 --recipient "${CRYPTGPGUSER}" --output - --encrypt - | mbuffer -q -m 2048M -s 64k -o ${BACKUPPATH}/$(hostname)-home--$(date +%Y%m%d%H%M%S).tar."${COMPRESSEXT}".gpg
+            time tar --create --file - . | "${COMPRESSPROG}"                    | mbuffer -m 8192M | gpg-batch --compress-algo none --cipher-algo AES256 --recipient "${CRYPTGPGUSER}" --output - --encrypt - | mbuffer -q -m 2048M -s 64k -o ${BACKUPPATH}/"${HOSTNAME}"-home--$(date +%Y%m%d%H%M%S).tar."${COMPRESSEXT}".gpg
         fi
         popd >/dev/null
         # backup any luks headers here
@@ -139,7 +139,7 @@ main () {
         #       do not want backup done as root, but need it for other operations
         sudo true
         sudo umount /mnt-snapshot
-        if [[ $(hostname) == "$BACKUPHOSTNAME" ]]; then
+        if [[ "${HOSTNAME}" == "$BACKUPHOSTNAME" ]]; then
            sudo lvremove /dev/crypt-main/backup-snapshot
         fi
     fi

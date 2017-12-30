@@ -146,8 +146,8 @@ main () {
             msg "Presetting: $PRESETKEY"
             /usr/lib/gnupg2/gpg-preset-passphrase --verbose --preset "$PRESETKEY" <<< "$GNUPGPWD"
         done
-        if [[ -f "${HOME}/.gnupg/gpg-agent-info-$(hostname)" ]]; then
-            source "${HOME}/.gnupg/gpg-agent-info-$(hostname)"
+        if [[ -f "${HOME}/.gnupg/gpg-agent-info-${HOSTNAME}" ]]; then
+            source "${HOME}/.gnupg/gpg-agent-info-${HOSTNAME}"
             export GPG_AGENT_INFO
         fi
         ################################################################################

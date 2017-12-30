@@ -242,7 +242,7 @@ super-password-easy () {
 ssh-host-fingerprint () {
     # get the sshd fingerprints of the current host
     # TODO: no color for now
-    echo `hostname`
+    echo "${HOSTNAME}"
     if [[ -f /etc/ssh/ssh_host_ecdsa_key.pub ]]; then
         echo '---------- ECDSA fingerprint'
         ssh-keygen -lf /etc/ssh/ssh_host_ecdsa_key.pub
@@ -275,7 +275,7 @@ crypt-device-image-to-here () {
     # good for quick and dirty backups of disks on secondary machines before major modifications
     # TODO: will need to create and test a restore thing
     #       mbuffer limtted to easily fit on machines with 1G Ram
-    sudo dd if=/dev/"$1" bs=64k conv=noerror,sync | lz4 | mbuffer -m 256M | gpg-batch --compress-algo none --cipher-algo AES256 --recipient "${CRYPTGPGUSER}" --output - --encrypt - | mbuffer -q -m 256M -s 64k -o ./"$HOSTNAME"-"$1"--$(date +%Y%m%d%H%M%S).lz4.gpg
+    sudo dd if=/dev/"$1" bs=64k conv=noerror,sync | lz4 | mbuffer -m 256M | gpg-batch --compress-algo none --cipher-algo AES256 --recipient "${CRYPTGPGUSER}" --output - --encrypt - | mbuffer -q -m 256M -s 64k -o ./"${HOSTNAME}"-"$1"--$(date +%Y%m%d%H%M%S).lz4.gpg
 }
 
 ssh-clear-all-controlmaster () {

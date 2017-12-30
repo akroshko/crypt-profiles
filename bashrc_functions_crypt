@@ -334,8 +334,8 @@ killall-agents () {
     # XXXX: not completely desirable, but kill gnome keychain because it often interferes
     pkill -9 -f gnome-keyring-daemon
     # this is hopefully enough to purge it
-    if [[ -e "${HOME}"/.gnupg/gpg-agent-info-$(hostname) ]]; then
-        rm "${HOME}"/.gnupg/gpg-agent-info-$(hostname)
+    if [[ -e "${HOME}"/.gnupg/gpg-agent-info-"${HOSTNAME}" ]]; then
+        rm "${HOME}"/.gnupg/gpg-agent-info-"${HOSTNAME}"
     fi
     # TODO: not sure if I ever need this?
     if [[ -e "${HOME}"/.gpg-agent-info ]]; then
@@ -371,10 +371,10 @@ ssh-keygen-ed25519 () {
         local KEYPATH="$1"/id_ed25519
     fi
     if [[ -z "$2" ]]; then
-        ssh-keygen -b 521 -t ed25519 -C "$(id -un)@$(hostname)-$(date --rfc-3339=date)" -f "${KEYPATH}"
+        ssh-keygen -b 521 -t ed25519 -C "$(id -un)@${HOSTNAME}-$(date --rfc-3339=date)" -f "${KEYPATH}"
     else
         local PASSWORD="$2"
-        ssh-keygen -b 521 -t ed25519 -C "$(id -un)@$(hostname)-$(date --rfc-3339=date)" -P "${PASSWORD}" -f "${KEYPATH}"
+        ssh-keygen -b 521 -t ed25519 -C "$(id -un)@${HOSTNAME}-$(date --rfc-3339=date)" -P "${PASSWORD}" -f "${KEYPATH}"
     fi
 }
 
@@ -390,10 +390,10 @@ ssh-keygen-rsa () {
         local KEYPATH="$1"/id_rsa
     fi
     if [[ -z "$2" ]]; then
-        ssh-keygen -b 4096 -t rsa -C "$(id -un)@$(hostname)-$(date --rfc-3339=date)" -f "${KEYPATH}"
+        ssh-keygen -b 4096 -t rsa -C "$(id -un)@${HOSTNAME}-$(date --rfc-3339=date)" -f "${KEYPATH}"
     else
         local PASSWORD="$2"
-        ssh-keygen -b 4096 -t rsa -C "$(id -un)@$(hostname)-$(date --rfc-3339=date)" -P "${PASSWORD}" -f "${KEYPATH}"
+        ssh-keygen -b 4096 -t rsa -C "$(id -un)@${HOSTNAME}-$(date --rfc-3339=date)" -P "${PASSWORD}" -f "${KEYPATH}"
     fi
 }
 
@@ -410,7 +410,7 @@ bootstrap-temporary-ssh () {
     fi
     # XXXX: only do this if an id_rsa does not already exist on host machine
     # create a temporary ssh key without a password, based on
-    ssh-keygen -b 4096 -t rsa -C "Temporary key to login to $(hostname)-$(date --rfc-3339=date)" -f "${HOME}"/.ssh/id_rsa_temp
+    ssh-keygen -b 4096 -t rsa -C "Temporary key to login to ${HOSTNAME}-$(date --rfc-3339=date)" -f "${HOME}"/.ssh/id_rsa_temp
     # copy private key to the host machine
     ssh $(whoami)@"$1" mkdir -p "${HOME}"/.ssh
     scp "${HOME}"/.ssh/id_rsa_temp $(whoami)@"$1":"${HOME}"/.ssh/id_rsa
@@ -1187,13 +1187,13 @@ crypt-luks-headers-backup-here () {
              local OUTPUT="$(sudo cryptsetup luksDump /dev/$Z 2>&1)"
              if [[ $? == 0 ]]; then
                  h2 /dev/"$Z"
-                 sudo cryptsetup luksHeaderBackup /dev/"$Z"        --header-backup-file=./luks-header-backup-${HOSTNAME}-"$Z"-$(date-time-stamp).bin
+                 sudo cryptsetup luksHeaderBackup /dev/"$Z"        --header-backup-file=./luks-header-backup-"${HOSTNAME}"-"$Z"-$(date-time-stamp).bin
              fi
          elif [[ -e /dev/mapper/"$Z" ]]; then
              local OUTPUT="$(sudo cryptsetup luksDump /dev/mapper/$Z 2>&1)"
              if [[ $? == 0 ]]; then
                  h2 /dev/mapper/"$Z"
-                 sudo cryptsetup luksHeaderBackup /dev/mapper/"$Z" --header-backup-file=./luks-header-backup-${HOSTNAME}-"$Z"-$(date-time-stamp).bin
+                 sudo cryptsetup luksHeaderBackup /dev/mapper/"$Z" --header-backup-file=./luks-header-backup-"${HOSTNAME}"-"$Z"-$(date-time-stamp).bin
              fi
          else
              msg "Can't find $Z!!!"
