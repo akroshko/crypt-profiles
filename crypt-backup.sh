@@ -57,11 +57,11 @@ main () {
 "
 
     # XXXX: these must be set externally
-    if [[ "$1" == "--help" || -z "$CRYPTGPGKEY" || -z "$CRYPTGPGUSER" || -z "$BACKUPHOSTNAME" || -z "$BACKUPUUID" ]]; then
+    if [[ $@ == *"--help"* || -z "$CRYPTGPGKEY" || -z "$CRYPTGPGUSER" || -z "$BACKUPHOSTNAME" || -z "$BACKUPUUID" ]]; then
         echo "${HELPTEXT}"
         return 1
     fi
-    if [[ "$1" == "--reset" ]]; then
+    if [[ $@ == *"--reset"* ]]; then
         # TODO: try all of these even if some are errors
         sudo umount /mnt-snapshot
         if [[ "${HOSTNAME}" == "$BACKUPHOSTNAME" ]]; then
@@ -96,21 +96,21 @@ main () {
         # http://dbahire.com/which-compression-tool-should-i-use-for-my-database-backups-part-ii-decompression/
         # http://www.krazyworks.com/multithreaded-encryption-and-compression/
         clear
-        if [[ "$1" == "--bzip2" ]]; then
+        if [[ $@ == *"--bzip2"* ]]; then
             local COMPRESSPROG="bzip2"
             local COMPRESSEXT="bz2"
-        elif [[ "$1" == "--gzip" ]]; then
+        elif [[ $@ == *"--gzip"* ]]; then
             local COMPRESSPROG="gzip"
             local COMPRESSEXT="gz"
-        elif [[ "$1" == "--lz4" ]]; then
+        elif [[ $@ == *"--lz4"* ]]; then
             # TODO: possibly a good replacement for lzop
             local COMPRESSPROG="lz4"
             local COMPRESSEXT="lz4"
-        elif [[ "$1" == "--pigz" ]]; then
+        elif [[ $@ == *"--pigz"* ]]; then
             # TODO: test this
             local COMPRESSPROG="pigz"
             local COMPRESSEXT="gz"
-        elif [[ "$1" == "--lzip" ]]; then
+        elif [[ $@ == *"--lzip"* ]]; then
             # XXXX: changed xz to lzip even though the latter is slower because it is better for archiving and is being updated
             local COMPRESSPROG="lzip"
             local COMPRESSEXT="lzip"
