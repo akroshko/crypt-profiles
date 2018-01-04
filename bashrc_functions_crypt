@@ -1,11 +1,11 @@
 #!/bin/bash
 #
-# Copyright (C) 2016, Andrew Kroshko, all rights reserved.
+# Copyright (C) 2016-2018, Andrew Kroshko, all rights reserved.
 #
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20160716
+# Version: 20180103
 # URL: https://github.com/akroshko/bash-stdlib
 #
 # This program is free software: you can redistribute it and/or modify
@@ -856,6 +856,39 @@ master-privacy-all () {
     sudo env "PATH=$PATH" master-privacy-all.sh "${USER}"
 }
 
+master-privacy-trash () {
+    h2 "Clearing trash"
+    if [[ -d "${HOME}"/tmp/trash ]] && ls -A "${HOME}"/tmp/trash/* >/dev/null 2>&1; then
+        msg  "Contents of ~/tmp/trash:"
+        ls -A "${HOME}"/tmp/trash/*
+        while read -r -t 0;do read -r; done;
+        read -n 1 -p "Do you want to delete ~/tmp/trash? (y/n) " yn
+        echo ""
+        if [[ "$yn" =~ y ]]; then
+            # TODO: add a countdown here
+            kill-directory-contents "${HOME}"/tmp/trash
+        fi
+    else
+        warn "Nothing in ~/tmp/trash"
+    fi
+    if [[ -d "${HOME}"/.local/share/Trash/files ]] && ls -A -d "${HOME}"/.local/share/Trash/files/* >/dev/null 2>&1; then
+        msg "Contents of ~/.local/share/Trash/files:"
+        ls -A "${HOME}"/.local/share/Trash/files
+        # TODO: check if empty?
+        while read -r -t 0;do read -r; done;
+        read -n 1 -p "Do you want to delete ~/.local/share/Trash/files? (y/n) " yn
+        echo ""
+        if [[ "$yn" =~ y ]]; then
+            bleachbit --overwrite --clean system.trash
+            # TODO: add a countdown here
+            # kill-directory-contents "${HOME}"/.local/share/Trash/files
+            # kill-directory-contents "${HOME}"/.local/share/Trash/info
+        fi
+    else
+        warn "Nothing in "${HOME}"/.local/share/Trash/files"
+    fi
+}
+
 master-privacy () {
     time {
         # TODO: any argument will do, not just --batch
@@ -865,36 +898,7 @@ master-privacy () {
             # TODO: check if an sqllite exists before asking
             read -n 1 -p "Do you want to delete all Firefox places.sqllite? (y/n) " ynfirefox
             echo ""
-            h2 "Clearing trash"
-            if [[ -d "${HOME}"/tmp/trash ]] && ls -A "${HOME}"/tmp/trash/* >/dev/null 2>&1; then
-                msg  "Contents of ~/tmp/trash:"
-                ls -A "${HOME}"/tmp/trash/*
-                while read -r -t 0;do read -r; done;
-                read -n 1 -p "Do you want to delete ~/tmp/trash? (y/n) " yn
-                echo ""
-                if [[ "$yn" =~ y ]]; then
-                    # TODO: add a countdown here
-                    kill-directory-contents "${HOME}"/tmp/trash
-                fi
-            else
-                warn "Nothing in ~/tmp/trash"
-            fi
-            if [[ -d "${HOME}"/.local/share/Trash/files ]] && ls -A -d "${HOME}"/.local/share/Trash/files/* >/dev/null 2>&1; then
-                msg "Contents of ~/.local/share/Trash/files:"
-                ls -A "${HOME}"/.local/share/Trash/files
-                # TODO: check if empty?
-                while read -r -t 0;do read -r; done;
-                read -n 1 -p "Do you want to delete ~/.local/share/Trash/files? (y/n) " yn
-                echo ""
-                if [[ "$yn" =~ y ]]; then
-                    bleachbit --overwrite --clean system.trash
-                    # TODO: add a countdown here
-                    # kill-directory-contents "${HOME}"/.local/share/Trash/files
-                    # kill-directory-contents "${HOME}"/.local/share/Trash/info
-                fi
-            else
-                warn "Nothing in "${HOME}"/.local/share/Trash/files"
-            fi
+            master-privacy-trash
             # XXXX: these are specific to other unreleased scripts I have
             h1 "Automatically deleting temporary files"
             for tmplocation in "${HOME}"/tmp/*; do
