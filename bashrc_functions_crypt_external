@@ -1,12 +1,12 @@
 #!/bin/bash
 #
-# Copyright (C) 2016, Andrew Kroshko, all rights reserved.
+# Copyright (C) 2016-2018, Andrew Kroshko, all rights reserved.
 #
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20160716
-# URL: https://github.com/akroshko/bash-stdlib
+# Version: 20180307
+# URL: https://github.com/akroshko/crypt-profiles
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -124,8 +124,12 @@ write-random-data-stdout () {
 kill-file () {
     # XXXX: dangerous functions for convenience in batch mode
     if [[ -f "$1" ]]; then
-        msg "Killing $1"
-        bleachbit --shred "$1"
+        if [[ -h "$1" ]]; then
+            yell "Cannot kill-file symlink $1!!!"
+        else
+            msg "Killing $1"
+            bleachbit --shred "$1"
+        fi
     else
         # TODO: warn if not file
         warn "File $1 is not a file, does not exist, and is not cleared!"
@@ -135,8 +139,12 @@ kill-file () {
 kill-recursive () {
     # XXXX: dangerous functions for convenience in batch mode
     if [[ -e "$1" ]]; then
-        bleachbit --shred "$1"
-        msg "Clearing directory $1"
+        if [[ -h "$1" ]]; then
+            yell "Cannot kill-recursive symlink $1!!!"
+        else
+            bleachbit --shred "$1"
+            msg "Clearing directory $1"
+        fi
     else
         warn "Directory $1 does not exist and not deleted!"
     fi
@@ -153,15 +161,19 @@ kill-directory-contents () {
     # TODO: find way to kill directories too for some uses, but without going haywire
     # XXXX: recursive, very dangerous!!!
     # TODO: test if empty and give warning
+    # TODO: make sure no symlinks in directory
     if [[ -d "$1" ]]; then
-        # TODO: might have problem if spaces somewhere, but this commands works well anyways
-        #       runs the find command if anything appears
-        if [[ -n "$(ls -A $1)" ]]; then
-            msg "Clearing directory contents $1"
-            find "$1" -mindepth 1 -exec bleachbit --shred {} \;
-
+        if [[ -h "$1" ]];then
+            yell "Cannot kill-directory-conents symlink $1!!!"
         else
-            warn "Directory $1 empty and not cleared!"
+            # TODO: might have problem if spaces somewhere, but this commands works well anyways
+            #       runs the find command if anything appears
+            if [[ -n $(ls -A "$1") ]]; then
+                msg "Clearing directory contents $1"
+                find "$1" -mindepth 1 -exec bleachbit --shred {} \;
+            else
+                warn "Directory $1 empty and not cleared!"
+            fi
         fi
     else
         warn "Directory $1 does not exist and not cleared!"
@@ -174,15 +186,23 @@ kill-directory-files () {
     # TODO: find way to kill directories too for some uses, but without going haywire
     # XXXX: recursive, very dangerous!!!
     if [[ -d "$1" ]]; then
-        find "$1" -mindepth 1 -maxdepth 1 -exec bleachbit --shred {} \;
+        if [[ -h "$1" ]];then
+            yell "Cannot kill-directory-files symlink $1!!!"
+        else
+            find "$1" -mindepth 1 -maxdepth 1 -exec bleachbit --shred {} \;
+        fi
     fi
 }
 
 kill-directory-contents-preserve-structure () {
     # XXXX: dangerous functions for convenience in batch mode
     if [[ -d "$1" ]]; then
-        # TODO: does this go into dot directories
-        find "$1" -type f -exec bleachbit --shred {} \;
+        if [[ -h "$1" ]];then
+            yell "Cannot kill-directory-contents-preserve-structure symlink $1!!!"
+        else
+            # TODO: does this go into dot directories
+            find "$1" -type f -exec bleachbit --shred {} \;
+        fi
     fi
 }
 
@@ -191,7 +211,12 @@ kill-find-matching () {
     if [[ -d "$1" ]]; then
         # XXXX: double find a few milliseconds slower but gives good error messages
         if find "$1" -name "$2" | grep '.' >/dev/null; then
-            find "$1" -name "$2" -exec bleachbit --shred {} \;
+            if [[ -h "$1" ]];then
+                yell "Cannot kill-find-matching symlink $1!!!"
+            else
+                # TODO: add more safeties against symlink
+                find "$1" -name "$2" -exec bleachbit --shred {} \;
+            fi
         else
             warn "Directory $1 exists but nothing matching $2 to be cleared!"
         fi

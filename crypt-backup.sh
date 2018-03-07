@@ -1,12 +1,12 @@
 #!/bin/bash
 #
-# Copyright (C) 2016, Andrew Kroshko, all rights reserved.
+# Copyright (C) 2016-2018, Andrew Kroshko, all rights reserved.
 #
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20160716
-# URL: https://github.com/akroshko/bash-stdlib
+# Version: 20180307
+# URL: https://github.com/akroshko/crypt-profiles
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

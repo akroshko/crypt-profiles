@@ -5,8 +5,8 @@
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20180103
-# URL: https://github.com/akroshko/bash-stdlib
+# Version: 20180307
+# URL: https://github.com/akroshko/crypt-profiles
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -889,6 +889,97 @@ master-privacy-trash () {
     fi
 }
 
+master-privacy-conkeror () {
+    h2 "Conkeror"
+    # XXXX: I now use a password manager and just clear everything
+    if ! check-firefox; then
+        if [[ -d "${HOME}"/.conkeror.mozdev.org/ ]]; then
+            msg "Clearing firefox-based browsers OK!"
+            # XXXX: preserve as much as possible, like adblocker
+            # TODO: keep shredding more
+            kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror content-prefs.sqlite
+            kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror cookies.sqlite
+            kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror cookies.sqlite-shm
+            kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror cookies.sqlite-wal
+            kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror datareporting
+            kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror downloads.json
+            kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror formhistory.sqlite
+            kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror mimeTypes.rdf
+            kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror permissions.sqlite
+            kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror places.sqlite
+            kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror places.sqlite-shm
+            kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror places.sqlite-wal
+            kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror prefs.js
+            kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror sessionCheckpoints.json
+            kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror saved-telemetry-pings
+            kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror storage
+            kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror webappsstore.sqlite
+            kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror webappsstore.sqlite-shm
+            kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror webappsstore.sqlite-wal
+            kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror xulstore.json
+            # cache files
+            kill-directory-contents "${HOME}"/.cache/conkeror.mozdev.org/
+            kill-directory-contents "${HOME}"/.cache/firefox/
+            kill-directory-contents "${HOME}"/.cache/mozilla/
+        fi
+    else
+        warn "Firefox or similar running!"
+    fi
+}
+
+master-privacy-firefox () {
+    h2 "Firefox"
+    if ! check-firefox; then
+        # XXXX: this preserves any bookmarks
+        bleachbit --overwrite --clean firefox.backup firefox.cache firefox.crash_reports firefox.forms firefox.download_history firefox.session_restore firefox.url_history firefox.vacuum
+    fi
+    #
+    # TODO: do I still want to ask?
+    if [[ "$ynfirefox" =~ y ]]; then
+        # TODO: terrible way to do this
+        if export-firefox-bookmarks >/dev/null; then
+            export-firefox-bookmarks >> ~/Downloads/firefox-bookmarks-$(date-time-stamp).txt
+        else
+            warn "Cannot export Firefox bookmarks, places.sqlite probably does not exist!"
+        fi
+        # XXXX: this kills all bookmarks
+        kill-find-matching ""${HOME}"/.mozilla/firefox places.sqlite"
+        kill-recursive ""${HOME}"/.mozilla/firefox/Crash Reports"
+    else
+        warn "Firefox running or not clearing due to no input.!"
+    fi
+}
+
+master-privacy-chromium () {
+    h2 "Chromium"
+    # XXXX: I only use chromium as a secondary browser, shreding most things, but keeping adblock?
+    # TODO: can I auto-reinstall adblock after shred?
+    if ! check-chromium; then
+        kill-directory-contents "${HOME}/.config/chromium/Crash Reports"
+        kill-file               "${HOME}/.config/chromium/Default/Cookies"
+        kill-file               "${HOME}/.config/chromium/Default/Cookies-journal"
+        kill-file               "${HOME}/.config/chromium/Default/Cookies Session"
+        kill-file               "${HOME}/.config/chromium/Default/Cookies Tabs"
+        kill-file               "${HOME}/.config/chromium/Default/Favicons"
+        kill-file               "${HOME}/.config/chromium/Default/Favicons-journal"
+        kill-file               "${HOME}/.config/chromium/Default/History"
+        kill-file               "${HOME}/.config/chromium/Default/Historyjournal"
+        kill-file               "${HOME}/.config/chromium/Default/Last Session"
+        kill-file               "${HOME}/.config/chromium/Default/Last Tabs"
+        kill-file               "${HOME}/.config/chromium/Default/Login Data"
+        kill-file               "${HOME}/.config/chromium/Default/Login Data-journal"
+        kill-file               "${HOME}/.config/chromium/Default/Shortcuts"
+        kill-file               "${HOME}/.config/chromium/Default/Shortcuts-journal"
+        kill-file               "${HOME}/.config/chromium/Default/Visited Links"
+        kill-file               "${HOME}/.config/chromium/Default/Web Data"
+        kill-file               "${HOME}/.config/chromium/Default/Web Data-journal"
+        kill-directory-contents "${HOME}"/.cache/chromium/
+    else
+        warn "Chromium running!"
+    fi
+    # chromium.form_history
+}
+
 master-privacy () {
     time {
         # TODO: any argument will do, not just --batch
@@ -929,35 +1020,9 @@ master-privacy () {
         fi
         # TODO: reset so gnome does not give errors
         h1 "Bleachbit browsers"
-        h2 "Chromium"
-        # XXXX: I only use chromium as a secondary browser, decided to just shred everything
-        if ! check-chromium; then
-            kill-directory-contents "${HOME}"/.config/chromium/
-            kill-directory-contents "${HOME}"/.cache/chromium/
-        else
-            warn "Chromium running!"
-        fi
-        # chromium.form_history
-        h2 "Firefox"
-        if ! check-firefox; then
-            # XXXX: this preserves any bookmarks
-            bleachbit --overwrite --clean firefox.backup firefox.cache firefox.crash_reports firefox.forms firefox.download_history firefox.session_restore firefox.url_history firefox.vacuum
-        fi
-        #
-        # TODO: do I still want to ask?
-        if [[ "$ynfirefox" =~ y ]]; then
-            # TODO: terrible way to do this
-            if export-firefox-bookmarks >/dev/null; then
-                export-firefox-bookmarks >> ~/Downloads/firefox-bookmarks-$(date-time-stamp).txt
-            else
-                warn "Cannot export Firefox bookmarks, places.sqlite probably does not exist!"
-            fi
-            # XXXX: this kills all bookmarks
-            kill-find-matching ""${HOME}"/.mozilla/firefox places.sqlite"
-            kill-recursive ""${HOME}"/.mozilla/firefox/Crash Reports"
-        else
-            warn "Firefox running or not clearing due to no input.!"
-        fi
+        master-privacy-chromium
+        master-privacy-firefox
+        master-privacy-conkeror
          # TODO: ask to delete filefox places due to bug
         # bleachbit --overwrite --clean
         h2 "Flash"
@@ -965,41 +1030,6 @@ master-privacy () {
         # secondary browsers
         h2 "Google Chrome, Konqueror, Epiphany, and Elinks"
         bleachbit --overwrite --clean elinks.* epiphany.* google_chrome.* konqueror.*
-        h2 "Conkeror"
-        # XXXX: I now use a password manager and just clear everything
-        if ! check-firefox; then
-            if [[ -d "${HOME}"/.conkeror.mozdev.org/ ]]; then
-                msg "Clearing firefox-based browsers OK!"
-                # XXXX: preserve as much as possible, like adblocker
-                # TODO: keep shredding more
-                kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror content-prefs.sqlite
-                kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror cookies.sqlite
-                kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror cookies.sqlite-shm
-                kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror cookies.sqlite-wal
-                kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror datareporting
-                kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror downloads.json
-                kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror formhistory.sqlite
-                kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror mimeTypes.rdf
-                kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror permissions.sqlite
-                kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror places.sqlite
-                kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror places.sqlite-shm
-                kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror places.sqlite-wal
-                kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror prefs.js
-                kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror sessionCheckpoints.json
-                kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror saved-telemetry-pings
-                kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror storage
-                kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror webappsstore.sqlite
-                kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror webappsstore.sqlite-shm
-                kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror webappsstore.sqlite-wal
-                kill-find-matching "${HOME}"/.conkeror.mozdev.org/conkeror xulstore.json
-                # cache files
-                kill-directory-contents "${HOME}"/.cache/conkeror.mozdev.org/
-                kill-directory-contents "${HOME}"/.cache/firefox/
-                kill-directory-contents "${HOME}"/.cache/mozilla/
-            fi
-        else
-            warn "Firefox or similar running!"
-        fi
         h1 "Bleachbit system"
         h2 "Recent application files"
         # TODO: be as severe as possible on anything I don't use
