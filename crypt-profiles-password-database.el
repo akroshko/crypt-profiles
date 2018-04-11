@@ -52,8 +52,8 @@
           (the-lisp-table (cic:org-table-to-lisp-no-separators))
           return-value)
       (dolist (lisp-row the-lisp-table)
-        (let ((name (cic:strip-full (elt lisp-row 1)))
-              (autourl (cic:strip-full (elt lisp-row 2))))
+        (let ((name (s-trim-full (elt lisp-row 1)))
+              (autourl (s-trim-full (elt lisp-row 2))))
           (when (and (not (equal autourl "")) (string-match autourl url))
             (setq return-value (list name (elt lisp-row 4) (elt lisp-row 5))))))
       ;; make things command line safe
