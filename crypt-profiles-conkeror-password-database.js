@@ -5,7 +5,7 @@
 // Author: Andrew Kroshko
 // Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 // Created: Mon Jun 20, 2016
-// Version: 20180307
+// Version: 20180502
 // URL: https://github.com/akroshko/crypt-profiles
 //
 // This program is free software; you can redistribute it and/or
@@ -125,12 +125,14 @@ logindata["digikey"] =       ["https://www.digikey.ca/MyDigiKey/Login",
 // TODO: nonfunctional
 logindata["ebay"]    =       ["https://signin.ebay.ca/ws/eBayISAPI.dll?SignIn&ru=http%3A%2F%2Fwww.ebay.ca%2F",
                               "userid",
-                              "pass"]
+                              "pass"];
 
 logindata["twitch"]  =       ["https://www.twitch.tv/login",
                               "username",
-                              "password"]
-
+                              "password"];
+logindata["discord"]    =    ["https://discordapp.com/login",
+                              "register-email",
+                              "register-password"];
 // TODO: might be an issue
 logindata["soundcloud"] =    ["https://soundcloud.com/signin"];
 
