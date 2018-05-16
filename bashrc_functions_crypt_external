@@ -5,7 +5,7 @@
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20180307
+# Version: 20180516
 # URL: https://github.com/akroshko/crypt-profiles
 #
 # This program is free software: you can redistribute it and/or modify
@@ -260,7 +260,7 @@ super-password-easy () {
         openssl rand -base64 128 >/dev/null
     done
     # http://www.commandlinefu.com/commands/view/722/generate-a-random-password-30-characters-long
-    openssl rand -base64 128 | grep -o '[a-z]' | head -n 30 | tr -d '\n'; echo
+    openssl rand -base64 128 | grep -o -- '[a-z]' | head -n 30 | tr -d '\n'; echo
 }
 
 

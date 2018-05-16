@@ -5,7 +5,7 @@
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20180307
+# Version: 20180516
 # URL: https://github.com/akroshko/crypt-profiles
 #
 # This program is free software: you can redistribute it and/or modify
@@ -354,7 +354,7 @@ harm-crypt () {
     killall-agents
     source "${HOME}"/.bash_profile
     # TODO: decide if I really want this here like this, maybe use function?
-    if ps -ef | grep "emacs --daemon" | grep -v grep >/dev/null && type -P launch-emacsclient >/dev/null 2>&1; then
+    if ps -ef | grep -- "emacs --daemon" | grep -v grep >/dev/null && type -P launch-emacsclient >/dev/null 2>&1; then
         h2 "Re-initing Emacs!"
         launch-emacsclient noframe --eval "(cic:init-crypt)"
     fi
@@ -589,7 +589,7 @@ mount-container () {
     if [[ $? != 4 ]]; then
         sudo mkdir -p "$2"
         # TODO: do better than this
-        if ! grep -qs "$2" /proc/mounts; then
+        if ! grep -qs -- "$2" /proc/mounts; then
             sudo mount /dev/mapper/"$(basename $1)" "$2"
             # TODO: should this be default
             sudo chown -R ${USER}:${USER} "$2"
@@ -619,7 +619,7 @@ umount-container () {
         return 1
     fi
     if [[ -d "$2" ]]; then
-        if grep -qs "$2" /proc/mounts; then
+        if grep -qs -- "$2" /proc/mounts; then
             msg "Unmounting $2!"
             sudo umount "$2"
         else
@@ -773,7 +773,7 @@ mount-vg-img () {
     else
         warn "Device /dev/mapper/$1 already mapped!"
     fi
-    if ! grep -qs "$2" /proc/mounts; then
+    if ! grep -qs -- "$2" /proc/mounts; then
         mkdir -p "$2"
         sudo mount /dev/mapper/$(basename "$2") "$2"
         sudo chown -R ${USER}:${USER} "$2"
@@ -796,7 +796,7 @@ umount-vg-img () {
     fi
     if [[ -d "$2" ]]; then
         # TODO: seperate function?
-        if grep -qs "$2" /proc/mounts; then
+        if grep -qs -- "$2" /proc/mounts; then
             msg "Unmounting $2!"
             sudo umount "$2"
         else
@@ -1057,6 +1057,8 @@ master-privacy () {
         kill-file "${HOME}"/.config/gxine/playlist
         # causes problems on my system
         kill-file "${HOME}"/.config/mimeapps.list
+        kill-file "${HOME}"/.config/autostart/dropbox.desktop
+        kill-file "${HOME}"/.config/autostart/skypeforlinux.desktop
         # XXXX: these are killed by bleachbit
         # kill-recursive ~/.local/share/*xbel*;
         kill-file-contents "${HOME}"/.local/share/user-places.xbel;
