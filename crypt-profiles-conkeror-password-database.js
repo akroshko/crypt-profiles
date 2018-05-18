@@ -130,9 +130,13 @@ logindata["ebay"]    =       ["https://signin.ebay.ca/ws/eBayISAPI.dll?SignIn&ru
 logindata["twitch"]  =       ["https://www.twitch.tv/login",
                               "username",
                               "password"];
+// TODO: will need something custom for this, they changed login beginning of may 2018
 logindata["discord"]    =    ["https://discordapp.com/login",
                               "register-email",
                               "register-password"];
+logindata["deviantart"] = ["https://www.deviantart.com/users/login",
+                           "login_username",
+                           "login_password"]
 // TODO: might be an issue
 logindata["soundcloud"] =    ["https://soundcloud.com/signin"];
 
