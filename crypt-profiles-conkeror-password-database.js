@@ -5,7 +5,7 @@
 // Author: Andrew Kroshko
 // Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 // Created: Mon Jun 20, 2016
-// Version: 20180516
+// Version: 20180615
 // URL: https://github.com/akroshko/crypt-profiles
 //
 // This program is free software; you can redistribute it and/or
@@ -74,7 +74,8 @@ logindata["gmail"] =         ["https://accounts.google.com/ServiceLogin?continue
 logindata["youtube"] =       ["https://accounts.google.com/ServiceLogin?continue=https%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26app%3Ddesktop%26next%3D%252Ffeed%252Fsubscriptions%26hl%3Den-GB%26feature%3Dredirect_login&service=youtube&sacu=1&passive=1209600&ignoreShadow=0&acui=0"];
 logindata["instagram"] =     ["https://www.instagram.com/accounts/login/?force_classic_login",
                               "id_username",
-                              "id_password"];
+                              "id_password",
+                              "button-green"];
 logindata["amazonca"] =      ["https://www.amazon.ca/ap/signin?_encoding=UTF8&openid.assoc_handle=caflex&openid.claimed_id=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.identity=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.mode=checkid_setup&openid.ns=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0&openid.ns.pape=http%3A%2F%2Fspecs.openid.net%2Fextensions%2Fpape%2F1.0&openid.pape.max_auth_age=0&openid.return_to=https%3A%2F%2Fwww.amazon.ca%2Fgp%2Fcss%2Fhomepage.html%2Fref%3Dnav_signin",
                               "ap_email",
                               "ap_password"];
@@ -144,6 +145,8 @@ initialstate=0
 
 define_key(content_buffer_normal_keymap, "s-p",
     "get-current-password-login");
+define_key(content_buffer_normal_keymap, "C-u s-p",
+    "current-signout");
 define_key(content_buffer_normal_keymap, "M-s-p",
     "get-current-password-login-alternate");
 // TODO: add $repeat = "insert-current-password"
@@ -212,15 +215,21 @@ interactive("insert-current-password","Get the current password and login for pa
             var n2 = I.buffer.document.getElementsByClassName("js-password-field");
             browser_element_focus(I.buffer, n2[0]);
             n2[0].value = theloginpassword;
+            var thebutton = I.buffer.document.getElementsByClassName("submit EdgeButton EdgeButton--primary EdgeButtom--medium");
+            thebutton[0].click();
         } else if ( theloginname == "gmail" || theloginname == "youtube" ) {
             var n1 = I.buffer.document.getElementById("Email");
             if ( n1 == null || n1.readOnly == true ) {
                 var n2 = I.buffer.document.getElementById("Passwd");
                 browser_element_focus(I.buffer, n2);
                 n2.value = theloginpassword;
+                var theform = I.buffer.document.getElementsByClassName("rc-button rc-button-submit");
+                theform[0].click();
             } else {
                 browser_element_focus(I.buffer, n1);
                 n1.value = theloginuser;
+                var theform = I.buffer.document.getElementsByClassName("rc-button rc-button-submit");
+                theform[0].click();
             }
         } else if ( theloginname == "flickr" ) {
             // TODO: will have to use state
@@ -243,11 +252,13 @@ interactive("insert-current-password","Get the current password and login for pa
             var n2 = n2_wrapper.getElementsByClassName("text");
             browser_element_focus(I.buffer, n2[0]);
             n2[0].value = theloginpassword;
+            var thebutton = I.buffer.document.getElementsByClassName("primary button js-login-button");
+            thebutton[0].click();
         }
         else if ( theloginname == "vimeo" ) {
-            I.window.minibuffer.message("vimeo");
+            I.window.minibuffer.message("vimeo not supported");
         } else if ( theloginname == "soundcloud" ) {
-            I.window.minibuffer.message("soundcloud");
+            I.window.minibuffer.message("soundcloud not supported");
         } else {
             var n1 = I.buffer.document.getElementById(logindata[theloginname][1]);
             browser_element_focus(I.buffer, n1);
@@ -255,5 +266,26 @@ interactive("insert-current-password","Get the current password and login for pa
             var n2 = I.buffer.document.getElementById(logindata[theloginname][2]);
             browser_element_focus(I.buffer, n2);
             n2.value = theloginpassword;
+            if ( logindata[theloginname].length > 3 ) {
+                var thebutton = I.buffer.document.getElementsByClassName(logindata[theloginname][3]);
+                thebutton[0].click();
+            }
         }
+    });
+
+interactive("current-signout","Sign out from current website..",
+    function (I) {
+        // loop over login data
+        // TODO: goto login screen
+        theurl = I.buffer.display_uri_string;
+        if (theurl.match(/twitter.com/)) {
+            // https://twitter.com/logout except it confirms and have to press button anyways
+            var thebutton = I.buffer.document.getElementsByClassName("js-signout-button");
+            thebutton[0].click();
+        } else if (theurl.match(/youtube.com/)) {
+            browser_object_follow(I.buffer,OPEN_CURRENT_BUFFER,"https://www.youtube.com/logout");
+        } else if (theurl.match(/instagram.com/)) {
+            browser_object_follow(I.buffer,OPEN_CURRENT_BUFFER,"https://instagram.com/accounts/logout");
+        }
+        // TODO: gmail next
     });

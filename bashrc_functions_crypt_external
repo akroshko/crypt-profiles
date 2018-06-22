@@ -263,28 +263,59 @@ super-password-easy () {
     openssl rand -base64 128 | grep -o -- '[a-z]' | head -n 30 | tr -d '\n'; echo
 }
 
-
 ssh-host-fingerprint () {
     # get the sshd fingerprints of the current host
     # TODO: no color for now
     echo "${HOSTNAME}"
     if [[ -f /etc/ssh/ssh_host_ecdsa_key.pub ]]; then
-        echo '---------- ECDSA fingerprint'
+        h2 'ECDSA fingerprint'
+        awk '{print $2}' /etc/ssh/ssh_host_ecdsa_key.pub | base64 -d | md5sum | sed 's/../&:/g; s/: .*$//'
         ssh-keygen -lf /etc/ssh/ssh_host_ecdsa_key.pub
-        echo '---------- ECDSA public key'
+        h3 'ECDSA public key'
         cat /etc/ssh/ssh_host_ecdsa_key.pub
     fi
     if [[ -f /etc/ssh/ssh_host_ed25519_key.pub ]]; then
-        echo '---------- ED25519 fingerprint'
-        ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub
-        echo '---------- ED25519 public key'
+        h2 'ED25519 fingerprint'
+        # https://superuser.com/questions/1088165/get-ssh-key-fingerprint-in-old-hex-format-on-new-version-of-openssh
+        awk '{print $2}' /etc/ssh/ssh_host_ed25519_key.pub | base64 -d | md5sum | sed 's/../&:/g; s/: .*$//'
+        # new style for those that do not have it
+        awk '{print $2}' /etc/ssh/ssh_host_ed25519_key.pub | base64 -d | sha256sum -b | awk '{print $1}' | xxd -r -p | base64
+        h3 'ED25519 public key'
         cat /etc/ssh/ssh_host_ed25519_key.pub
     fi
     if [[ -f /etc/ssh/ssh_host_rsa_key.pub ]]; then
-        echo '---------- RSA fingerprint'
+        h2 'RSA fingerprint'
+        awk '{print $2}' /etc/ssh/ssh_host_rsa_key.pub | base64 -d | md5sum | sed 's/../&:/g; s/: .*$//'
         ssh-keygen -lf /etc/ssh/ssh_host_rsa_key.pub
-        echo '---------- RSA public key'
+        h3 'RSA public key'
         cat /etc/ssh/ssh_host_rsa_key.pub
+    fi
+}
+
+ssh-user-fingerprint () {
+    echo "${HOSTNAME}"
+    if [[ -f ~/.ssh/id_ecdsa.pub ]]; then
+        h2 'ECDSA fingerprint'
+        awk '{print $2}' ~/.ssh/id_ecdsa.pub | base64 -d | md5sum | sed 's/../&:/g; s/: .*$//'
+        ssh-keygen -lf ~/.ssh/id_ecdsa.pub
+        # h3 'ECDSA public key'
+        # cat /etc/ssh/ssh_host_ecdsa_key.pub
+    fi
+    if [[ -f ~/.ssh/id_ed25519.pub ]]; then
+        h2 'ED25519 fingerprint'
+        # https://superuser.com/questions/1088165/get-ssh-key-fingerprint-in-old-hex-format-on-new-version-of-openssh
+        awk '{print $2}' ~/.ssh/id_ed25519.pub | base64 -d | md5sum | sed 's/../&:/g; s/: .*$//'
+        # new style for those that do not have it
+        awk '{print $2}' ~/.ssh/id_ed25519.pub | base64 -d | sha256sum -b | awk '{print $1}' | xxd -r -p | base64
+        # h3 'ED25519 public key'
+        # cat /etc/ssh/ssh_host_ed25519_key.pub
+    fi
+    if [[ -f  ~/.ssh/id_rsa.pub ]]; then
+        h2 'RSA fingerprint'
+        awk '{print $2}' ~/.ssh/id_rsa.pub | base64 -d | md5sum | sed 's/../&:/g; s/: .*$//'
+        ssh-keygen -lf ~/.ssh/id_rsa.pub
+        # h3 'RSA public key'
+        # cat /etc/ssh/ssh_host_rsa_key.pub
     fi
 }
 
