@@ -5,7 +5,7 @@
 // Author: Andrew Kroshko
 // Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 // Created: Mon Jun 20, 2016
-// Version: 20180622
+// Version: 20180624
 // URL: https://github.com/akroshko/crypt-profiles
 //
 // This program is free software; you can redistribute it and/or
@@ -66,82 +66,94 @@ if (logindata == undefined) {
     logindata = {};
 }
 
-logindata["twitter"] =       ["https://twitter.com/login/"];
-logindata["facebook"] =      ["https://www.facebook.com/login.php",
-                              "email",
-                              "pass"];
-logindata["gmail"] =         ["https://accounts.google.com/ServiceLogin?continue=https%3A%2F%2Fmail.google.com%2Fmail%2F&ltmpl=default&service=mail&sacu=1&scc=1&passive=1209600&ignoreShadow=0&acui=0"];
-logindata["youtube"] =       ["https://accounts.google.com/ServiceLogin?continue=https%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26app%3Ddesktop%26next%3D%252Ffeed%252Fsubscriptions%26hl%3Den-GB%26feature%3Dredirect_login&service=youtube&sacu=1&passive=1209600&ignoreShadow=0&acui=0"];
-logindata["instagram"] =     ["https://www.instagram.com/accounts/login/?force_classic_login",
-                              "id_username",
-                              "id_password",
-                              "button-green"];
-logindata["amazonca"] =      ["https://www.amazon.ca/ap/signin?_encoding=UTF8&openid.assoc_handle=caflex&openid.claimed_id=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.identity=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.mode=checkid_setup&openid.ns=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0&openid.ns.pape=http%3A%2F%2Fspecs.openid.net%2Fextensions%2Fpape%2F1.0&openid.pape.max_auth_age=0&openid.return_to=https%3A%2F%2Fwww.amazon.ca%2Fgp%2Fcss%2Fhomepage.html%2Fref%3Dnav_signin",
-                              "ap_email",
-                              "ap_password"];
-logindata["amazoncom"] =     ["https://www.amazon.com/ap/signin?_encoding=UTF8&openid.assoc_handle=usflex&openid.claimed_id=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.identity=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.mode=checkid_setup&openid.ns=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0&openid.ns.pape=http%3A%2F%2Fspecs.openid.net%2Fextensions%2Fpape%2F1.0&openid.pape.max_auth_age=0&openid.return_to=https%3A%2F%2Fwww.amazon.com%2Fgp%2Fyourstore%2Fhome%3Fie%3DUTF8%26action%3Dsign-out%26path%3D%252Fgp%252Fyourstore%252Fhome%26ref_%3Dnav_youraccount_signout%26signIn%3D1%26useRedirectOnSuccess%3D1",
-                              "ap_email",
-                              "ap_password"];
-logindata["usask"] =         ["https://pawscas.usask.ca/cas-web/login?service=https%3A%2F%2Fpaws5.usask.ca%2Fc%2Fportal%2Flogin",
-                              "username",
-                              "password"];
-logindata["tdcanadatrust"] = ["https://easyweb.td.com/waw/idp/login.htm",
-                              "login:AccessCard",
-                              "login:Webpassword"];
-logindata["vimeo"] =         ["https://vimeo.com/log_in"];
-logindata["pcmastercard"] =  ["https://online.pcmastercard.ca/PCB_Consumer/Login.do?LAN=EN",
-                              "username",
-                              "password"];
+logindata["twitter"] =       {"url":"https://twitter.com/login/",
+                              "login-class":"js-username-field email-input js-initial-focus",
+                              "password-class":"js-password-field",
+                              "submit-class":"submit EdgeButton EdgeButton--primary EdgeButtom--medium"};
+logindata["facebook"] =      {"url":"https://www.facebook.com/login.php",
+                              "login-id":"email",
+                              "password-id":"pass",
+                              "submit-id":"loginbutton"};
+logindata["gmail"] =         {"url":"https://accounts.google.com/ServiceLogin?continue=https%3A%2F%2Fmail.google.com%2Fmail%2F&ltmpl=default&service=mail&sacu=1&scc=1&passive=1209600&ignoreShadow=0&acui=0",
+                              "logout-url":"https://mail.google.com/mail/logout?hl=en"};
+logindata["youtube"] =       {"url":"https://accounts.google.com/ServiceLogin?continue=https%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26app%3Ddesktop%26next%3D%252Ffeed%252Fsubscriptions%26hl%3Den-GB%26feature%3Dredirect_login&service=youtube&sacu=1&passive=1209600&ignoreShadow=0&acui=0",
+                              "logout-url":"https://www.youtube.com/logout"};
+logindata["instagram"] =     {"url":"https://www.instagram.com/accounts/login/?force_classic_login",
+                              "login-id":"id_username",
+                              'password-id':"id_password",
+                              "submit-class":"button-green",
+                              "logout-url":"https://instagram.com/accounts/logout"};
+logindata["amazonca"] =      {"url":"https://www.amazon.ca/ap/signin?_encoding=UTF8&openid.assoc_handle=caflex&openid.claimed_id=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.identity=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.mode=checkid_setup&openid.ns=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0&openid.ns.pape=http%3A%2F%2Fspecs.openid.net%2Fextensions%2Fpape%2F1.0&openid.pape.max_auth_age=0&openid.return_to=https%3A%2F%2Fwww.amazon.ca%2Fgp%2Fcss%2Fhomepage.html%2Fref%3Dnav_signin",
+                              "login-id":"ap_email",
+                              "password-id":"ap_password"};
+logindata["amazoncom"] =     {"url":"https://www.amazon.com/ap/signin?_encoding=UTF8&openid.assoc_handle=usflex&openid.claimed_id=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.identity=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.mode=checkid_setup&openid.ns=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0&openid.ns.pape=http%3A%2F%2Fspecs.openid.net%2Fextensions%2Fpape%2F1.0&openid.pape.max_auth_age=0&openid.return_to=https%3A%2F%2Fwww.amazon.com%2Fgp%2Fyourstore%2Fhome%3Fie%3DUTF8%26action%3Dsign-out%26path%3D%252Fgp%252Fyourstore%252Fhome%26ref_%3Dnav_youraccount_signout%26signIn%3D1%26useRedirectOnSuccess%3D1",
+                              "login-id":"ap_email",
+                              "password-id":"ap_password"};
+logindata["usask"] =         {"url":"https://pawscas.usask.ca/cas-web/login?service=https%3A%2F%2Fpaws5.usask.ca%2Fc%2Fportal%2Flogin",
+                              "login-id":"username",
+                              "password-id":"password",
+                              "submit-class":"btn btn-primary btn-block mbmd",
+                              "logout-url":"https://pawscas.usask.ca/cas-web/logout"};
+logindata["tdcanadatrust"] = {"url":"https://easyweb.td.com/waw/idp/login.htm",
+                              "login-id":"login:AccessCard",
+                              "password-id":"login:Webpassword"};
+logindata["vimeo"] =         {"url":"https://vimeo.com/log_in"};
+logindata["pcmastercard"] =  {"url":"https://online.pcmastercard.ca/PCB_Consumer/Login.do?LAN=EN",
+                              "login-id":"username",
+                              "password-id":"password"};
 // TODO: needs a special function
-logindata["mec"] =           ["https://www.mec.ca/Membership/login.jsp",
-                              "j_username",
-                              "j_password"];
-logindata["telusmobility"] = ["https://telusidentity.telus.com/as/authorization.oauth2?client_id=uni_portal&response_type=code&scope=priceplaninfo+securitymgmt+usagedetails+profilemanagement+invoiceinfo+usagemanagement+accountactivity+subscriberinfo+paymentmanagement+paymentprocessing+accountinfo+devicemanagement+serviceeligibility+loyaltyandrewards+recommendationmanagement+profileinfohighdetail+usagepreferencemanagement+usagemeter+usagenotificationacceptancehistory+usageblockmanagement+tvrequisition+tvsusbscriptioninfo+internetservicemanagement+customerinfo&redirect_uri=https%3A%2F%2Fwww.telus.com%2Fmy-account%2Foauth_callback",
-                              "IDToken1",
-                              "IDToken2"];
-logindata["flickr"] =        ["https://login.yahoo.com/config/login?.src=flickrsignin"];
-logindata["github"] =        ["https://github.com/login",
-                              "login_field",
-                              "password",
-                              "btn btn-primary btn-block"];
-logindata["newegg"] =        ["https://secure.newegg.ca/NewMyAccount/AccountLogin.aspx",
-                              "UserName",
-                              "UserPwd"];
-logindata["abebooks"] =      ["https://www.abebooks.com/servlet/SignOnPL?msg=You+are+not+authorized+to+view+this+page.++Either+you+have+not+signed+on+or+you+are+trying+to+access+a+page+that+requires+a+higher+level+of+authority.&cm_sp=TopNav-_-Home-_-MMM&goto=MembersMainMenu%3F",
-                              "email",
-                              "password"];
-logindata["memoryexpress"] = ["https://www.memoryexpress.com/User/Login.aspx"];
-logindata["clubtread"] =     ["http://forums.clubtread.com/register.php",
-                              "navbar_username",
-                              "navbar_password"];
-logindata["strava"] =        ["https://www.strava.com/login",
-                              "email",
-                              "password",
-                              "button btn-primary"];
-logindata["buyapi"] =        ["https://www.buyapi.ca/my-account/",
-                              "username",
-                              "password"];
+logindata["mec"] =           {"url":"https://www.mec.ca/Membership/login.jsp",
+                              "login-id":"j_username",
+                              "password-id":"j_password",
+                              "submit-class":"btn btn-primary btn-block js-btn-modal-sign-in js-form-submit"};
+logindata["telusmobility"] = {"url":"https://telusidentity.telus.com/as/authorization.oauth2?client_id=uni_portal&response_type=code&scope=priceplaninfo+securitymgmt+usagedetails+profilemanagement+invoiceinfo+usagemanagement+accountactivity+subscriberinfo+paymentmanagement+paymentprocessing+accountinfo+devicemanagement+serviceeligibility+loyaltyandrewards+recommendationmanagement+profileinfohighdetail+usagepreferencemanagement+usagemeter+usagenotificationacceptancehistory+usageblockmanagement+tvrequisition+tvsusbscriptioninfo+internetservicemanagement+customerinfo&redirect_uri=https%3A%2F%2Fwww.telus.com%2Fmy-account%2Foauth_callback",
+                              "login-id":"IDToken1",
+                              "password-id":"IDToken2"};
+logindata["flickr"] =        {"url":"https://login.yahoo.com/config/login?.src=flickrsignin"};
+logindata["github"] =        {"url":"https://github.com/login",
+                              "login-id":"login_field",
+                              "password-id":"password",
+                              "submit-class":"btn btn-primary btn-block",
+                              // TODO: will need additional click
+                              "logout-url":"https://github.com/logout"};
+logindata["newegg"] =        {"url":"https://secure.newegg.ca/NewMyAccount/AccountLogin.aspx",
+                              "login-id":"UserName",
+                              "password-id":"UserPwd",
+                              "submit-id":"submitLogin"};
+logindata["abebooks"] =      {"url":"https://www.abebooks.com/servlet/SignOnPL?msg=You+are+not+authorized+to+view+this+page.++Either+you+have+not+signed+on+or+you+are+trying+to+access+a+page+that+requires+a+higher+level+of+authority.&cm_sp=TopNav-_-Home-_-MMM&goto=MembersMainMenu%3F",
+                              "login-id":"email",
+                              "password-id":"password",
+                              "submit-id":"signon-button"};
+// TODO: here
+logindata["memoryexpress"] = {"url":"https://www.memoryexpress.com/User/Login.aspx"};
+logindata["clubtread"] =     {"url":"http://forums.clubtread.com/register.php",
+                              "login-id":"navbar_username",
+                              "password-id":"navbar_password",
+                              "submit-class":"button"};
+logindata["strava"] =        {"url":"https://www.strava.com/login",
+                              "login-id":"email",
+                              "password-id":"password",
+                              "submit-class":"button btn-primary"};
+logindata["buyapi"] =        {"url":"https://www.buyapi.ca/my-account/",
+                              "login-id":"username",
+                              "password-id":"password",
+                              "submit-class":"woocommerce-Button button"};
 // TODO: nonfunctional
-logindata["digikey"] =       ["https://www.digikey.ca/MyDigiKey/Login",
-                              "username",
-                              "password"];
-// TODO: nonfunctional
-logindata["ebay"]    =       ["https://signin.ebay.ca/ws/eBayISAPI.dll?SignIn&ru=http%3A%2F%2Fwww.ebay.ca%2F",
-                              "userid",
-                              "pass"];
-
-logindata["twitch"]  =       ["https://www.twitch.tv/login",
-                              "username",
-                              "password"];
+logindata["digikey"] =       {"url":"https://www.digikey.ca/MyDigiKey/Login"};
+logindata["ebay"]    =       {"url":"https://signin.ebay.ca/ws/eBayISAPI.dll?SignIn&ru=http%3A%2F%2Fwww.ebay.ca%2F",
+                              "login-id":"userid",
+                              "password-id":"pass",
+                              "submit-class":"signin-button"};
+logindata["twitch"]  =       {"url":"https://www.twitch.tv/login"};
 // TODO: will need something custom for this, they changed login beginning of may 2018
-logindata["discord"]    =    ["https://discordapp.com/login",
-                              "register-email",
-                              "register-password"];
-logindata["deviantart"] = ["https://www.deviantart.com/users/login",
-                           "login_username",
-                           "login_password"]
+logindata["discord"]    =    {"url":"https://discordapp.com/login"};
+logindata["deviantart"] =    {"url":"https://www.deviantart.com/users/login",
+                              "login-id":"login_username",
+                              "password-id":"login_password",
+                              "submit-class":"smbutton smbutton-size-default smbutton-shadow smbutton-blue"}
+logindata["pixiv"] =    {"url":"https://accounts.pixiv.net/login?lang=en&source=pc&view_type=page"}
 // TODO: might be an issue
-logindata["soundcloud"] =    ["https://soundcloud.com/signin"];
+logindata["soundcloud"] =    {"url":"https://soundcloud.com/signin"};
 
 initialstate=0
 
@@ -178,7 +190,7 @@ interactive("get-current-password-login","Get the current password and login for
         theloginuser = thejson[1];
         theloginpassword = thejson[2];
         I.window.minibuffer.message("");
-        browser_object_follow(I.buffer,OPEN_CURRENT_BUFFER,logindata[theloginname][0]);
+        browser_object_follow(I.buffer,OPEN_CURRENT_BUFFER,logindata[theloginname]["url"]);
         I.window.minibuffer.message(theloginname);
         initialstate = 0;
     });
@@ -202,24 +214,15 @@ interactive("get-current-password-login-alternate","Get the current password and
         theloginuser = thejson[1];
         theloginpassword = thejson[2];
         I.window.minibuffer.message("");
-        browser_object_follow(I.buffer,OPEN_CURRENT_BUFFER,logindata[theloginname][0]);
+        browser_object_follow(I.buffer,OPEN_CURRENT_BUFFER,logindata[theloginname]["url"]);
         I.window.minibuffer.message(theloginname);
         initialstate = 0;
     });
 
 interactive("insert-current-password","Get the current password and login for particular sites.",
     function (I) {
-        // unfocus(I.window, I.buffer);
-        if ( theloginname == "twitter" ) {
-            var n1 = I.buffer.document.getElementsByClassName("js-username-field email-input js-initial-focus");
-            browser_element_focus(I.buffer, n1[0]);
-            n1[0].value = theloginuser;
-            var n2 = I.buffer.document.getElementsByClassName("js-password-field");
-            browser_element_focus(I.buffer, n2[0]);
-            n2[0].value = theloginpassword;
-            var thebutton = I.buffer.document.getElementsByClassName("submit EdgeButton EdgeButton--primary EdgeButtom--medium");
-            thebutton[0].click();
-        } else if ( theloginname == "gmail" || theloginname == "youtube" ) {
+        unfocus(I.window, I.buffer);
+        if ( theloginname == "gmail" || theloginname == "youtube" ) {
             var n1 = I.buffer.document.getElementById("Email");
             if ( n1 == null || n1.readOnly == true ) {
                 var n2 = I.buffer.document.getElementById("Passwd");
@@ -234,16 +237,20 @@ interactive("insert-current-password","Get the current password and login for pa
                 theform[0].click();
             }
         } else if ( theloginname == "flickr" ) {
-            // TODO: will have to use state
+            // TODO: have to fix this
             var n1 = I.buffer.document.getElementById("login-username");
             if ( n1 == null || initialstate == 1 ) {
                 var n2 = I.buffer.document.getElementById("login-passwd");
                 browser_element_focus(I.buffer, n2);
                 n2.value = theloginpassword;
+                var theform = I.buffer.document.getElementById("login-signin");
+                theform.click();
             } else {
                 browser_element_focus(I.buffer, n1);
                 n1.value = theloginuser;
                 initialstate = 1;
+                var theform = I.buffer.document.getElementById("login-signin");
+                theform.click();
             }
         } else if ( theloginname == "twitch" ) {
             // TODO: will have to use state
@@ -256,38 +263,116 @@ interactive("insert-current-password","Get the current password and login for pa
             n2[0].value = theloginpassword;
             var thebutton = I.buffer.document.getElementsByClassName("primary button js-login-button");
             thebutton[0].click();
-        }
-        else if ( theloginname == "vimeo" ) {
+        } else if ( theloginname == "amazonca" || theloginname == "amazoncom" ) {
+            var n1 = I.buffer.document.getElementById("ap_email");
+            if ( n1 == null || initialstate == 1 ) {
+                var n2 = I.buffer.document.getElementById("ap_password");
+                browser_element_focus(I.buffer, n2);
+                n2.value = theloginpassword;
+                var theform = I.buffer.document.getElementsByClassName("a-button-input")[0];
+                theform.click();
+            } else {
+                browser_element_focus(I.buffer, n1);
+                n1.value = theloginuser;
+                initialstate = 1;
+                var theform = I.buffer.document.getElementsByClassName("a-button-input")[0];
+                theform.click();
+            }
+        } else if ( theloginname == "pixiv" ) {
+            // TODO: will have to use state
+            var nall = I.buffer.document.getElementsByClassName("input-field");
+            var n1 = nall[0];
+            var n1_inner = n1.getElementsByTagName("input")[0];
+            browser_element_focus(I.buffer, n1_inner);
+            n1_inner.value = theloginuser;
+            var n2 = nall[1];
+            var n2_inner = n2.getElementsByTagName("input")[0];
+            browser_element_focus(I.buffer, n2_inner);
+            n2_inner.value = theloginpassword;
+            var thebutton = I.buffer.document.getElementsByClassName("signup-form__submit");
+            thebutton[0].click();
+        } else if ( theloginname == "discord" ) {
+            // TODO: nonfunctional
+            // TODO: more universal for just selecting input fields
+            var n1 = I.buffer.document.getElementsByTagName("input")[0];
+            browser_element_focus(I.buffer, n1);
+            n1.value = theloginuser;
+            var n2 = I.buffer.document.getElementsByTagName("input")[1];
+            browser_element_focus(I.buffer, n2);
+            n2.value = theloginpassword;
+        } else if ( theloginname == "digikey" ) {
+            // https://www.w3schools.com/jsref/prop_frame_contentdocument.asp
+            // TODO: make more universal for dealing with logins with frames
+            var outer_frame = I.buffer.document.getElementById("frmLogin");
+            var outer_or = (outer_frame.contentWindow || outer_frame.contentDocument);
+            var outer = outer_or.document;
+            var n1 = outer.getElementById("username");
+            browser_element_focus(I.buffer, n1);
+            n1.value = theloginuser;
+            var n2 = outer.getElementById("password");
+            browser_element_focus(I.buffer, n2);
+            n2.value = theloginpassword;
+            var thebutton = outer.getElementById("btnPostLogin");
+            thebutton.click();
+        } else if ( theloginname == "vimeo" ) {
             I.window.minibuffer.message("vimeo not supported");
         } else if ( theloginname == "soundcloud" ) {
             I.window.minibuffer.message("soundcloud not supported");
         } else {
-            var n1 = I.buffer.document.getElementById(logindata[theloginname][1]);
-            browser_element_focus(I.buffer, n1);
-            n1.value = theloginuser;
-            var n2 = I.buffer.document.getElementById(logindata[theloginname][2]);
-            browser_element_focus(I.buffer, n2);
-            n2.value = theloginpassword;
-            if ( logindata[theloginname].length > 3 ) {
-                var thebutton = I.buffer.document.getElementsByClassName(logindata[theloginname][3]);
-                thebutton[0].click();
+            if ( "login-id" in logindata[theloginname] ) {
+                var n1 = I.buffer.document.getElementById(logindata[theloginname]["login-id"]);
+                browser_element_focus(I.buffer, n1);
+                n1.value = theloginuser;
+            } else if ( "login-class" in logindata[theloginname] ) {
+                var n1 = I.buffer.document.getElementsByClassName(logindata[theloginname]["login-class"])[0];
+                browser_element_focus(I.buffer, n1);
+                n1.value = theloginuser;
+            }
+            if ( "password-id" in logindata[theloginname] ) {
+                var n2 = I.buffer.document.getElementById(logindata[theloginname]["password-id"]);
+                browser_element_focus(I.buffer, n2);
+                n2.value = theloginpassword;
+            } else if ( "password-class" in logindata[theloginname] ) {
+                var n2 = I.buffer.document.getElementsByClassName(logindata[theloginname]["password-class"])[0];
+                browser_element_focus(I.buffer, n2);
+                n2.value = theloginpassword;
+            }
+            if ( "submit-id" in logindata[theloginname] ) {
+                var thebutton = I.buffer.document.getElementById(logindata[theloginname]["submit-id"]);
+                thebutton.click();
+            } else if ( "submit-class" in logindata[theloginname] ) {
+                var thebutton = I.buffer.document.getElementsByClassName(logindata[theloginname]["submit-class"])[0];
+                thebutton.click();
             }
         }
     });
 
 interactive("current-signout","Sign out from current website..",
     function (I) {
-        // loop over login data
-        // TODO: goto login screen
+        unfocus(I.window, I.buffer);
+        // TODO: get the password here
+        var base64_currenturl=btoa(unescape(I.buffer.display_uri_string));
+        var cmd_str="launch-emacsclient noframe --eval \'(crypt-profiles-get-matching-password \"" + base64_currenturl + "\")\'";
+        // credit where credit is due
+        // http://conkeror.org/Tips#Using_an_external_password_manager
+        var out = "";
+        var result = yield shell_command(cmd_str,
+                                         $fds=[{output: async_binary_string_writer("")},
+                                               {input: async_binary_reader(function (s) out += s || "") }]);
+        // TODO: not sure why slice is needed, there seems to be a spurious t coming out of emacs
+        var thejson = eval(JSON.parse(out.slice(1)));
+        // globals
+        theloginname = thejson[0];
+        theloginuser = thejson[1];
+        theloginpassword = thejson[2];
+        I.window.minibuffer.message("");
+        I.window.minibuffer.message(theloginname);
         theurl = I.buffer.display_uri_string;
-        if (theurl.match(/twitter.com/)) {
+        if ( 'logout-url' in logindata[theloginname]) {
+            browser_object_follow(I.buffer,OPEN_CURRENT_BUFFER,logindata[theloginname]['logout-url']);
+        } else if (theurl.match(/twitter.com/)) {
             // https://twitter.com/logout except it confirms and have to press button anyways
             var thebutton = I.buffer.document.getElementsByClassName("js-signout-button");
             thebutton[0].click();
-        } else if (theurl.match(/youtube.com/)) {
-            browser_object_follow(I.buffer,OPEN_CURRENT_BUFFER,"https://www.youtube.com/logout");
-        } else if (theurl.match(/instagram.com/)) {
-            browser_object_follow(I.buffer,OPEN_CURRENT_BUFFER,"https://instagram.com/accounts/logout");
         }
-        // TODO: gmail next
     });
