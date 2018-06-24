@@ -263,7 +263,7 @@ super-password-easy () {
     openssl rand -base64 128 | grep -o -- '[a-z]' | head -n 30 | tr -d '\n'; echo
 }
 
-ssh-host-fingerprint () {
+ssh-check-host-fingerprints () {
     # get the sshd fingerprints of the current host
     # TODO: no color for now
     echo "${HOSTNAME}"

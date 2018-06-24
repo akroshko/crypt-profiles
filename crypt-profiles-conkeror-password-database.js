@@ -5,7 +5,7 @@
 // Author: Andrew Kroshko
 // Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 // Created: Mon Jun 20, 2016
-// Version: 20180615
+// Version: 20180622
 // URL: https://github.com/akroshko/crypt-profiles
 //
 // This program is free software; you can redistribute it and/or
@@ -102,7 +102,8 @@ logindata["telusmobility"] = ["https://telusidentity.telus.com/as/authorization.
 logindata["flickr"] =        ["https://login.yahoo.com/config/login?.src=flickrsignin"];
 logindata["github"] =        ["https://github.com/login",
                               "login_field",
-                              "password"];
+                              "password",
+                              "btn btn-primary btn-block"];
 logindata["newegg"] =        ["https://secure.newegg.ca/NewMyAccount/AccountLogin.aspx",
                               "UserName",
                               "UserPwd"];
@@ -115,7 +116,8 @@ logindata["clubtread"] =     ["http://forums.clubtread.com/register.php",
                               "navbar_password"];
 logindata["strava"] =        ["https://www.strava.com/login",
                               "email",
-                              "password"];
+                              "password",
+                              "button btn-primary"];
 logindata["buyapi"] =        ["https://www.buyapi.ca/my-account/",
                               "username",
                               "password"];
