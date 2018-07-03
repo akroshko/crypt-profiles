@@ -22,9 +22,7 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 
 # source along with bashrc when doing cryptography
-if [[ -f "${HOME}/.keychain/${HOSTNAME}-sh" ]];then
-    source "${HOME}/.keychain/${HOSTNAME}-sh" >/dev/null
-fi
+[[ -f "${HOME}/.keychain/${HOSTNAME}-sh" ]] && source "${HOME}/.keychain/${HOSTNAME}-sh" >/dev/null
 # TODO: I don't use this
 # if [[ -f "${HOME}/.keychain/${hostname}-sh-gpg" ]]; then
 #     source "${HOME}/.keychain/${HOSTNAME}-sh-gpg" >/dev/null

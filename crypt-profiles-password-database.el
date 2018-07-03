@@ -42,10 +42,13 @@
   (with-current-file crypt-profiles-password-database-path
     (goto-char (point-min))
     ;; goto heading
-    (if alternate
-        (cic:org-find-headline "Website Logins Alternate")
-      (cic:org-find-headline "Website Logins"))
-    ;; TODO: this is a kludge
+    (cond ((equal alternate 3)
+           (cic:org-find-headline "Website Logins Tertiary"))
+          (alternate
+           (cic:org-find-headline "Website Logins Alternate"))
+          (t
+           (cic:org-find-headline "Website Logins")))
+    ;; TODO: this is a kludge, advance to table better
     (forward-line 2)
     (forward-char 4)
     (let ((url (base64-decode-string base64-url))

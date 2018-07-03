@@ -5,7 +5,7 @@
 // Author: Andrew Kroshko
 // Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 // Created: Mon Jun 20, 2016
-// Version: 20180624
+// Version: 20180630
 // URL: https://github.com/akroshko/crypt-profiles
 //
 // This program is free software; you can redistribute it and/or
@@ -74,7 +74,7 @@ logindata["facebook"] =      {"url":"https://www.facebook.com/login.php",
                               "login-id":"email",
                               "password-id":"pass",
                               "submit-id":"loginbutton"};
-logindata["gmail"] =         {"url":"https://accounts.google.com/ServiceLogin?continue=https%3A%2F%2Fmail.google.com%2Fmail%2F&ltmpl=default&service=mail&sacu=1&scc=1&passive=1209600&ignoreShadow=0&acui=0",
+logindata["gmail"] =         {"url":"https://accounts.google.com/ServiceLogin?sacu=1&scc=1&continue=https%3A%2F%2Fmail.google.com%2Fmail%2F&service=mail&ltmpl=default",
                               "logout-url":"https://mail.google.com/mail/logout?hl=en"};
 logindata["youtube"] =       {"url":"https://accounts.google.com/ServiceLogin?continue=https%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26app%3Ddesktop%26next%3D%252Ffeed%252Fsubscriptions%26hl%3Den-GB%26feature%3Dredirect_login&service=youtube&sacu=1&passive=1209600&ignoreShadow=0&acui=0",
                               "logout-url":"https://www.youtube.com/logout"};
@@ -108,7 +108,8 @@ logindata["mec"] =           {"url":"https://www.mec.ca/Membership/login.jsp",
                               "submit-class":"btn btn-primary btn-block js-btn-modal-sign-in js-form-submit"};
 logindata["telusmobility"] = {"url":"https://telusidentity.telus.com/as/authorization.oauth2?client_id=uni_portal&response_type=code&scope=priceplaninfo+securitymgmt+usagedetails+profilemanagement+invoiceinfo+usagemanagement+accountactivity+subscriberinfo+paymentmanagement+paymentprocessing+accountinfo+devicemanagement+serviceeligibility+loyaltyandrewards+recommendationmanagement+profileinfohighdetail+usagepreferencemanagement+usagemeter+usagenotificationacceptancehistory+usageblockmanagement+tvrequisition+tvsusbscriptioninfo+internetservicemanagement+customerinfo&redirect_uri=https%3A%2F%2Fwww.telus.com%2Fmy-account%2Foauth_callback",
                               "login-id":"IDToken1",
-                              "password-id":"IDToken2"};
+                              "password-id":"IDToken2",
+                              "submit-id":"standardLogin"};
 logindata["flickr"] =        {"url":"https://login.yahoo.com/config/login?.src=flickrsignin"};
 logindata["github"] =        {"url":"https://github.com/login",
                               "login-id":"login_field",
@@ -151,6 +152,13 @@ logindata["deviantart"] =    {"url":"https://www.deviantart.com/users/login",
                               "login-id":"login_username",
                               "password-id":"login_password",
                               "submit-class":"smbutton smbutton-size-default smbutton-shadow smbutton-blue"}
+// TODO: need to hit key in field for this one too
+logindata["linkedin"] =    {"url":"https://ca.linkedin.com/",
+                            "login-id":"login-email",
+                            "password-id":"login-password"
+                            // ,
+                            // "submit-class":"login-submit"
+                           }
 logindata["pixiv"] =    {"url":"https://accounts.pixiv.net/login?lang=en&source=pc&view_type=page"}
 // TODO: might be an issue
 logindata["soundcloud"] =    {"url":"https://soundcloud.com/signin"};
@@ -163,6 +171,8 @@ define_key(content_buffer_normal_keymap, "C-u s-p",
     "current-signout");
 define_key(content_buffer_normal_keymap, "M-s-p",
     "get-current-password-login-alternate");
+define_key(content_buffer_normal_keymap, "M-s-P",
+    "get-current-password-login-tertiary");
 // TODO: add $repeat = "insert-current-password"
 // TODO: decide which one to do
 define_key(content_buffer_normal_keymap, "C-s-p",
@@ -170,7 +180,7 @@ define_key(content_buffer_normal_keymap, "C-s-p",
 define_key(content_buffer_normal_keymap, "s-P",
            "insert-current-password");
 // TODO: just need to update password thing now, and do search function :)
-interactive("get-current-password-login","Get the current password and login for particular sites.",
+interactive("get-current-password-login","Get the login for the primary acount for particular sites.",
     function (I) {
         unfocus(I.window, I.buffer);
         // TODO: get the password here
@@ -195,12 +205,36 @@ interactive("get-current-password-login","Get the current password and login for
         initialstate = 0;
     });
 
-interactive("get-current-password-login-alternate","Get the current password and login for particular sites but alternate ones.",
+interactive("get-current-password-login-alternate","Get the login for the secondary account for particular sites.",
     function (I) {
         unfocus(I.window, I.buffer);
         // TODO: get the password here
         var base64_currenturl=btoa(unescape(I.buffer.display_uri_string));
         var cmd_str="launch-emacsclient noframe --eval \'(crypt-profiles-get-matching-password \"" + base64_currenturl + "\" t)\'";
+        // credit where credit is due
+        // http://conkeror.org/Tips#Using_an_external_password_manager
+        var out = "";
+        var result = yield shell_command(cmd_str,
+                                         $fds=[{output: async_binary_string_writer("")},
+                                               {input: async_binary_reader(function (s) out += s || "") }]);
+        // TODO: not sure why slice is needed, there seems to be a spurious t coming out of emacs
+        var thejson = eval(JSON.parse(out.slice(1)));
+        // globals
+        theloginname = thejson[0];
+        theloginuser = thejson[1];
+        theloginpassword = thejson[2];
+        I.window.minibuffer.message("");
+        browser_object_follow(I.buffer,OPEN_CURRENT_BUFFER,logindata[theloginname]["url"]);
+        I.window.minibuffer.message(theloginname);
+        initialstate = 0;
+    });
+
+interactive("get-current-password-login-tertiary","Get the login for the tertiary acount for particular sites.",
+    function (I) {
+        unfocus(I.window, I.buffer);
+        // TODO: get the password here
+        var base64_currenturl=btoa(unescape(I.buffer.display_uri_string));
+        var cmd_str="launch-emacsclient noframe --eval \'(crypt-profiles-get-matching-password \"" + base64_currenturl + "\" 3)\'";
         // credit where credit is due
         // http://conkeror.org/Tips#Using_an_external_password_manager
         var out = "";

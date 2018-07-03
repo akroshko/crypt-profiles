@@ -1,5 +1,6 @@
 #!/bin/bash
 main() {
+    # TODO: this makes no sense
     if [[ $(id -u) != 0 ]]; then
         echo "Must run as root!"
         exit 1
@@ -16,6 +17,7 @@ main() {
         local ROOTPATH="$1"
         if [[ -z "$ROOTPATH" ]]; then
             echo "Must specific directory corresponding to device to kill space on!!!"
+            return 1
         fi
         if [[ -e "$ROOTPATH"/randomfile.bin ]]; then
             echo "Deleting old "$ROOTPATH"/randomfile.bin"

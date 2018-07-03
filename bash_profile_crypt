@@ -5,7 +5,7 @@
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20180622
+# Version: 20180703
 # URL: https://github.com/akroshko/crypt-profiles
 #
 # This program is free software: you can redistribute it and/or modify
@@ -40,14 +40,10 @@ main () {
     local TOPSECRET=
     local GNUPGPWD=
     # get entered password if necessary
-    if [[ -n "$1" ]]
-    then
-        local GNUPGPWD="$1"
-    fi
+    [[ -n "$1" ]] && local GNUPGPWD="$1"
     # stop this from being run as root, just in case
     h1 "Running $(basename $BASH_SOURCE)"
-    if [[ $EUID -ne 0 ]]
-    then
+    if [[ $EUID -ne 0 ]]; then
         # XXXX: don't want something so severe in the future
         pkill -9 -f gnome-keyring-daemon
         pkill -9 pinentry
@@ -75,14 +71,9 @@ main () {
         # X11 display when logging in remotely
         # TODO: describe this issue with GnuPG in documentation
         # keep pinentry disabled when using $1=$GNUPGPWD because shell is generally non-interactive
-        if [[ -z "$GNUPGPWD" ]]
-        then
-            if [[ -f "${HOME}/bin/pinentry-select" ]]; then
-                rm -f "${HOME}/bin/pinentry-select"
-            fi
-            if [[ -f /usr/bin/pinentry-curses ]]; then
-                ln -s /usr/bin/pinentry-curses "${HOME}/bin/pinentry-select"
-            fi
+        if [[ -z "$GNUPGPWD" ]]; then
+            [[ -f "${HOME}/bin/pinentry-select" ]] && rm -f "${HOME}/bin/pinentry-select"
+            [[ -f /usr/bin/pinentry-curses ]] && ln -s /usr/bin/pinentry-curses "${HOME}/bin/pinentry-select"
         fi
         # run keychain after we see if we need to kill agents
         if type -P keychain >/dev/null 2>&1; then
@@ -91,7 +82,7 @@ main () {
         fi
         msg "Keychain done!"
         # set up normally if no passphrase given
-        while [[ -z $TOPSECRET  && "$TRYAGAIN" == "y" ]]; do
+        while [[ -z $TOPSECRET && "$TRYAGAIN" == "y" ]]; do
             # XXXX: might be problems here without other agents started by other programs
             if [[ -e "$envfile" ]] && kill -0 "$(grep -- GPG_AGENT_INFO $envfile | cut -d: -f 2)" 2>/dev/null; then
                 # eval "$(DISPLAY= cat "$envfile")"
@@ -100,8 +91,7 @@ main () {
                 export GPG_AGENT_INFO
             fi
             if [[ -f ${HOME}/.secrets/secrets.txt.gpg ]]; then
-                if [[ -n "$GNUPGPWD" ]]
-                then
+                if [[ -n "$GNUPGPWD" ]]; then
                     msg "Using entered password!"
                     local TOPSECRET="$(DISPLAY= gpg-batch --passphrase-fd 0 --decrypt --use-agent ${HOME}/.secrets/secrets.txt.gpg <<< "$GNUPGPWD")"
                 else
@@ -124,11 +114,9 @@ main () {
     h2 "Initializing or reinitializing ssh keys"
     # open the top secret keyfile first
     # TODO: make a seperate function to initialize SSH
-    if [[ ! -z $TOPSECRET ]]
-    then
+    if [[ ! -z $TOPSECRET ]]; then
         # add identity to gpg-agent
-        if [[ -z $GNUPGPWD ]]
-        then
+        if [[ -z $GNUPGPWD ]]; then
             msg "Retrieving master password!"
             local GNUPGPWD=`sed -n '1p' <<< "$TOPSECRET"`
         fi
@@ -136,9 +124,7 @@ main () {
         # TODO: possibly need to test for gpg-preset-passphrase working properly
         #       will clearing the agent deal with sleep and hibernation issues?
         # TODO: not working here, PRESETGPGKEYS not being loaded
-        if [[ -z ${PRESETGPGKEYS} ]]; then
-            warn "No preset keys!"
-        fi
+        [[ -z ${PRESETGPGKEYS} ]] && warn "No preset keys!"
         for PRESETKEY in ${PRESETGPGKEYS}; do
             msg "Presetting: $PRESETKEY"
             /usr/lib/gnupg2/gpg-preset-passphrase --verbose --preset "$PRESETKEY" <<< "$GNUPGPWD"
@@ -173,8 +159,7 @@ EOF
         warn "Skipping initialization of passwords!!!"
     fi
     # reset curses pinentry for this particular program
-    if [[ -f "${HOME}/bin/pinentry-select" &&  -f /usr/bin/pinentry-gtk-2 ]]
-    then
+    if [[ -f "${HOME}/bin/pinentry-select" && -f /usr/bin/pinentry-gtk-2 ]]; then
         rm -f "${HOME}/bin/pinentry-select"
         # TODO: pinentry-x11 is cool too
         ln -s /usr/bin/pinentry-gtk-2 "${HOME}/bin/pinentry-select"

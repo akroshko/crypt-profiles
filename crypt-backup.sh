@@ -64,9 +64,7 @@ main () {
     if [[ $@ == *"--reset"* ]]; then
         # TODO: try all of these even if some are errors
         sudo umount /mnt-snapshot
-        if [[ "${HOSTNAME}" == "$BACKUPHOSTNAME" ]]; then
-           sudo lvremove /dev/crypt-main/backup-snapshot
-        fi
+        [[ "${HOSTNAME}" == "$BACKUPHOSTNAME" ]] && sudo lvremove /dev/crypt-main/backup-snapshot
     else
         # XXXX: this is a dangerous script, make sure it always fails on error
         #       but not before here
@@ -139,9 +137,7 @@ main () {
         #       do not want backup done as root, but need it for other operations
         sudo true
         sudo umount /mnt-snapshot
-        if [[ "${HOSTNAME}" == "$BACKUPHOSTNAME" ]]; then
-           sudo lvremove /dev/crypt-main/backup-snapshot
-        fi
+        [[ "${HOSTNAME}" == "$BACKUPHOSTNAME" ]] && sudo lvremove /dev/crypt-main/backup-snapshot
     fi
 }
 main "$@"

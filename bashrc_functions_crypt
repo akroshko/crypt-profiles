@@ -219,9 +219,7 @@ crypt-profile-switch () {
     # get rid of agents
     killall-agents
     # gpg symlinks
-    if [[ -e "${HOME}"/.gnupg ]]; then
-        \mv --backup=t -- "${HOME}"/.gnupg "${HOME}"/.gnupg.backup
-    fi
+    [[ -e "${HOME}"/.gnupg ]] && \mv --backup=t -- "${HOME}"/.gnupg "${HOME}"/.gnupg.backup
     # make sure things are synced
     need_new_symlink "$PRIMARYPROFILE"/pubring.gpg "$WORKINGPROFILE"/pubring.gpg
     need_new_symlink "$PRIMARYPROFILE"/secring.gpg "$WORKINGPROFILE"/secring.gpg
@@ -272,9 +270,7 @@ crypt-profile-printable () {
         # get all gpg public keys ids
         while read LINE; do
             local REGEX='uid[[:space:]](.*)'
-            if [[ "${LINE}" =~ $REGEX ]]; then
-                NAMES+=( "${BASH_REMATCH[1]}" )
-            fi
+            [[ "${LINE}" =~ $REGEX ]] && NAMES+=( "${BASH_REMATCH[1]}" )
         done < <(gpg --list-keys --keyid-format 0xlong --no-default-keyring --keyring ${KEYSLOCATION}/pubring.gpg)
         # now get name and fingerprint for all keyids
         for NAME in "${NAMES[@]}"; do
@@ -334,17 +330,11 @@ killall-agents () {
     # XXXX: not completely desirable, but kill gnome keychain because it often interferes
     pkill -9 -f gnome-keyring-daemon
     # this is hopefully enough to purge it
-    if [[ -e "${HOME}"/.gnupg/gpg-agent-info-"${HOSTNAME}" ]]; then
-        rm "${HOME}"/.gnupg/gpg-agent-info-"${HOSTNAME}"
-    fi
+    [[ -e "${HOME}"/.gnupg/gpg-agent-info-"${HOSTNAME}" ]] && rm "${HOME}"/.gnupg/gpg-agent-info-"${HOSTNAME}"
     # TODO: not sure if I ever need this?
-    if [[ -e "${HOME}"/.gpg-agent-info ]]; then
-        rm "${HOME}"/.gpg-agent-info
-    fi
+    [[ -e "${HOME}"/.gpg-agent-info ]] && rm "${HOME}"/.gpg-agent-info
     # TODO: delete only things I own?
-    if find /tmp -iname "gpg-*" >/dev/null 2>&1; then
-        rm /tmp/gpg-*
-    fi
+    find /tmp -iname "gpg-*" >/dev/null 2>&1 && rm /tmp/gpg-*
     find "${HOME}"/.keychain -type f -delete
 }
 
@@ -819,9 +809,7 @@ umount-vg-img () {
 kill-recent-files-line () {
     # XXXX: dangerous functions for convenience in batch mode
     # TODO: want to make this more general
-    if [[ -f "$1" ]]; then
-        sed -i '/\[Recent Files\]/,/^\s*$/{d}' "$1"
-    fi
+    [[ -f "$1" ]] && sed -i '/\[Recent Files\]/,/^\s*$/{d}' "$1"
 }
 
 export-firefox-bookmarks () {
@@ -864,10 +852,8 @@ master-privacy-trash () {
         while read -r -t 0;do read -r; done;
         read -n 1 -p "Do you want to delete ~/tmp/trash? (y/n) " yn
         echo ""
-        if [[ "$yn" =~ y ]]; then
-            # TODO: add a countdown here
-            kill-directory-contents "${HOME}"/tmp/trash
-        fi
+        # TODO: add a countdown here
+        [[ "$yn" =~ y ]] && kill-directory-contents "${HOME}"/tmp/trash
     else
         warn "Nothing in ~/tmp/trash"
     fi
@@ -878,12 +864,10 @@ master-privacy-trash () {
         while read -r -t 0;do read -r; done;
         read -n 1 -p "Do you want to delete ~/.local/share/Trash/files? (y/n) " yn
         echo ""
-        if [[ "$yn" =~ y ]]; then
-            bleachbit --overwrite --clean system.trash
-            # TODO: add a countdown here
-            # kill-directory-contents "${HOME}"/.local/share/Trash/files
-            # kill-directory-contents "${HOME}"/.local/share/Trash/info
-        fi
+        [[ "$yn" =~ y ]] && bleachbit --overwrite --clean system.trash
+        # TODO: add a countdown here
+        # kill-directory-contents "${HOME}"/.local/share/Trash/files
+        # kill-directory-contents "${HOME}"/.local/share/Trash/info
     else
         warn "Nothing in "${HOME}"/.local/share/Trash/files"
     fi
@@ -1107,9 +1091,7 @@ master-privacy () {
             # TODO: clear xsession...
             # kill-file-contents "${HOME}"/.xsession-errors
             # TODO: want a robust kill matching files, see if a function I wrote works here
-            if [[ -d "${HOME}"/.local/share/ ]]; then
-                find "${HOME}"/.local/share/ -maxdepth 1 -type f -iname "recently-used.xbel.*" -exec bleachbit --shred {} \;
-            fi
+            [[ -d "${HOME}"/.local/share/ ]] && find "${HOME}"/.local/share/ -maxdepth 1 -type f -iname "recently-used.xbel.*" -exec bleachbit --shred {} \;
             # TODO:
         fi
         h2 "Re-caching programs such as Sage and Python"

@@ -42,6 +42,7 @@ kill-freespace-random-file () {
     local ROOTPATH="$1"
     if [[ -z "$ROOTPATH" ]]; then
         echo "Must specific directory corresponding to device to kill space on!!!"
+        return 1
     fi
     if [[ -e "$ROOTPATH"/randomfile.bin ]]; then
         rm "$ROOTPATH"/randomfile.bin
@@ -227,9 +228,7 @@ kill-find-matching () {
 
 kill-matching-line () {
     # XXXX: dangerous functions for convenience in batch mode
-    if [[ -f "$1" ]]; then
-        sed -i "/${1}/d" "$2"
-    fi
+    [[ -f "$1" ]] && sed -i "/${1}/d" "$2"
 }
 
 super-password () {
