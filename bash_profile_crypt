@@ -76,7 +76,7 @@ main () {
             [[ -f /usr/bin/pinentry-curses ]] && ln -s /usr/bin/pinentry-curses "${HOME}/bin/pinentry-select"
         fi
         # run keychain after we see if we need to kill agents
-        if type -P keychain >/dev/null 2>&1; then
+        if type -P keychain &>/dev/null; then
             `type -P keychain` --nogui --agents ssh
             source ${HOME}/.keychain/*-sh >/dev/null
         fi

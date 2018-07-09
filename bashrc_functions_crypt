@@ -334,7 +334,7 @@ killall-agents () {
     # TODO: not sure if I ever need this?
     [[ -e "${HOME}"/.gpg-agent-info ]] && rm "${HOME}"/.gpg-agent-info
     # TODO: delete only things I own?
-    find /tmp -iname "gpg-*" >/dev/null 2>&1 && rm /tmp/gpg-*
+    find /tmp -iname "gpg-*" &>/dev/null && rm /tmp/gpg-*
     find "${HOME}"/.keychain -type f -delete
 }
 
@@ -846,7 +846,7 @@ master-privacy-all () {
 
 master-privacy-trash () {
     h2 "Clearing trash"
-    if [[ -d "${HOME}"/tmp/trash ]] && ls -A "${HOME}"/tmp/trash/* >/dev/null 2>&1; then
+    if [[ -d "${HOME}"/tmp/trash ]] && ls -A "${HOME}"/tmp/trash/* &>/dev/null; then
         msg  "Contents of ~/tmp/trash:"
         ls -A "${HOME}"/tmp/trash/*
         while read -r -t 0;do read -r; done;
@@ -857,7 +857,7 @@ master-privacy-trash () {
     else
         warn "Nothing in ~/tmp/trash"
     fi
-    if [[ -d "${HOME}"/.local/share/Trash/files ]] && ls -A -d "${HOME}"/.local/share/Trash/files/* >/dev/null 2>&1; then
+    if [[ -d "${HOME}"/.local/share/Trash/files ]] && ls -A -d "${HOME}"/.local/share/Trash/files/* &>/dev/null; then
         msg "Contents of ~/.local/share/Trash/files:"
         ls -A "${HOME}"/.local/share/Trash/files
         # TODO: check if empty?
@@ -1097,19 +1097,19 @@ master-privacy () {
         h2 "Re-caching programs such as Sage and Python"
         # rerun/recomple python and sage if they exist, to restore cached stuff
         # TODO: should this be done elsewhere? function for this
-        if type -P sage >/dev/null 2>&1; then
+        if type -P sage &>/dev/null; then
             echo "recache sage"
             time {
                 sage -c "pass"
             }
         fi
-        if type -P python >/dev/null 2>&1; then
+        if type -P python &>/dev/null; then
             echo "recache python"
             time {
                 python -c "pass"
             }
         fi
-        if type -P ipython >/dev/null 2>&1; then
+        if type -P ipython &>/dev/null; then
             time {
                 echo "recache ipython"
                 ipython -c "pass"
