@@ -262,11 +262,13 @@ interactive("insert-current-password","Get the current password and login for pa
                 var n2 = I.buffer.document.getElementById("Passwd");
                 browser_element_focus(I.buffer, n2);
                 n2.value = theloginpassword;
+                sleep(100.0);
                 var theform = I.buffer.document.getElementsByClassName("rc-button rc-button-submit");
                 theform[0].click();
             } else {
                 browser_element_focus(I.buffer, n1);
                 n1.value = theloginuser;
+                sleep(100.0);
                 var theform = I.buffer.document.getElementsByClassName("rc-button rc-button-submit");
                 theform[0].click();
             }
@@ -277,11 +279,13 @@ interactive("insert-current-password","Get the current password and login for pa
                 var n2 = I.buffer.document.getElementById("login-passwd");
                 browser_element_focus(I.buffer, n2);
                 n2.value = theloginpassword;
+                sleep(100.0);
                 var theform = I.buffer.document.getElementById("login-signin");
                 theform.click();
             } else {
                 browser_element_focus(I.buffer, n1);
                 n1.value = theloginuser;
+                sleep(100.0);
                 initialstate = 1;
                 var theform = I.buffer.document.getElementById("login-signin");
                 theform.click();
@@ -291,10 +295,12 @@ interactive("insert-current-password","Get the current password and login for pa
             var n1 = I.buffer.document.getElementById("username");
             browser_element_focus(I.buffer, n1);
             n1.value = theloginuser;
+            sleep(100.0);
             var n2_wrapper = I.buffer.document.getElementById("password");
             var n2 = n2_wrapper.getElementsByClassName("text");
             browser_element_focus(I.buffer, n2[0]);
             n2[0].value = theloginpassword;
+            sleep(100.0);
             var thebutton = I.buffer.document.getElementsByClassName("primary button js-login-button");
             thebutton[0].click();
         } else if ( theloginname == "amazonca" || theloginname == "amazoncom" ) {
@@ -303,11 +309,13 @@ interactive("insert-current-password","Get the current password and login for pa
                 var n2 = I.buffer.document.getElementById("ap_password");
                 browser_element_focus(I.buffer, n2);
                 n2.value = theloginpassword;
+                sleep(100.0);
                 var theform = I.buffer.document.getElementsByClassName("a-button-input")[0];
                 theform.click();
             } else {
                 browser_element_focus(I.buffer, n1);
                 n1.value = theloginuser;
+                sleep(100.0);
                 initialstate = 1;
                 var theform = I.buffer.document.getElementsByClassName("a-button-input")[0];
                 theform.click();
@@ -319,10 +327,12 @@ interactive("insert-current-password","Get the current password and login for pa
             var n1_inner = n1.getElementsByTagName("input")[0];
             browser_element_focus(I.buffer, n1_inner);
             n1_inner.value = theloginuser;
+            sleep(100.0);
             var n2 = nall[1];
             var n2_inner = n2.getElementsByTagName("input")[0];
             browser_element_focus(I.buffer, n2_inner);
             n2_inner.value = theloginpassword;
+            sleep(100.0);
             var thebutton = I.buffer.document.getElementsByClassName("signup-form__submit");
             thebutton[0].click();
         } else if ( theloginname == "discord" ) {
@@ -331,9 +341,11 @@ interactive("insert-current-password","Get the current password and login for pa
             var n1 = I.buffer.document.getElementsByTagName("input")[0];
             browser_element_focus(I.buffer, n1);
             n1.value = theloginuser;
+            sleep(100.0);
             var n2 = I.buffer.document.getElementsByTagName("input")[1];
             browser_element_focus(I.buffer, n2);
             n2.value = theloginpassword;
+            sleep(100.0);
         } else if ( theloginname == "digikey" ) {
             // https://www.w3schools.com/jsref/prop_frame_contentdocument.asp
             // TODO: make more universal for dealing with logins with frames
@@ -343,9 +355,11 @@ interactive("insert-current-password","Get the current password and login for pa
             var n1 = outer.getElementById("username");
             browser_element_focus(I.buffer, n1);
             n1.value = theloginuser;
+            sleep(100.0);
             var n2 = outer.getElementById("password");
             browser_element_focus(I.buffer, n2);
             n2.value = theloginpassword;
+            sleep(100.0);
             var thebutton = outer.getElementById("btnPostLogin");
             thebutton.click();
         } else if ( theloginname == "vimeo" ) {
@@ -357,19 +371,23 @@ interactive("insert-current-password","Get the current password and login for pa
                 var n1 = I.buffer.document.getElementById(logindata[theloginname]["login-id"]);
                 browser_element_focus(I.buffer, n1);
                 n1.value = theloginuser;
+                sleep(100.0);
             } else if ( "login-class" in logindata[theloginname] ) {
                 var n1 = I.buffer.document.getElementsByClassName(logindata[theloginname]["login-class"])[0];
                 browser_element_focus(I.buffer, n1);
                 n1.value = theloginuser;
+                sleep(100.0);
             }
             if ( "password-id" in logindata[theloginname] ) {
                 var n2 = I.buffer.document.getElementById(logindata[theloginname]["password-id"]);
                 browser_element_focus(I.buffer, n2);
                 n2.value = theloginpassword;
+                sleep(100.0);
             } else if ( "password-class" in logindata[theloginname] ) {
                 var n2 = I.buffer.document.getElementsByClassName(logindata[theloginname]["password-class"])[0];
                 browser_element_focus(I.buffer, n2);
                 n2.value = theloginpassword;
+                sleep(100.0);
             }
             if ( "submit-id" in logindata[theloginname] ) {
                 var thebutton = I.buffer.document.getElementById(logindata[theloginname]["submit-id"]);

@@ -1164,7 +1164,7 @@ ssh-crypt-profile-batch-cmd () {
         if [[ $? == 0 ]]; then
             local GPGPWD=$(sed -n '1p' <<< "$TOPSECRET")
             local B64COMMAND="$(echo "$3" | base64)"
-            ssh-batch-interact $1 "source ~/.bash_profile $GPGPWD;source ~/.bash_libenv;bash -c \"$(echo ${B64COMMAND} | base64 -d)\""
+            ssh-batch-interact $1 "source ~/.bash_profile $GPGPWD;source ~/.bash_library;bash -c \"$(echo ${B64COMMAND} | base64 -d)\""
         else
             echo "Error decrypting!!!"
         fi
