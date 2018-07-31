@@ -209,6 +209,11 @@ crypt-profile-switch () {
         echo $USAGE
         return 1
     fi
+    while read -r -t 0;do read -r; done;
+    read -n 1 -p 'Is it OK to delete ~/.ssh/config (y/n)? ' YN
+    if [[ "$YN" != "y" ]]; then
+        yell 'Must be able to replace ~/.ssh/config!'
+    fi
     # need library hardcoded
     source "${HOME}"/.bash_library
     # kill symlinks by default, send to all child processes
@@ -247,7 +252,8 @@ crypt-profile-switch () {
     need_new_symlink "$PRIMARYPROFILE"/id_rsa "${HOME}"/.ssh/id_rsa
     need_new_symlink "$PRIMARYPROFILE"/id_rsa.pub "${HOME}"/.ssh/id_rsa.pub
     # TODO: may be an obsolete lines
-    # need_new_symlink "$PRIMARYPROFILE"/authorized_keys ~/.ssh/authorized_keys
+    # TODO: do this for others?
+    [[ -e "${HOME}"/.ssh/config ]] && rm -f "${HOME}"/.ssh/config
     need_new_symlink "$CRYPTSSHCONFIGPATH"/config "${HOME}"/.ssh/config
     # for scripts that modify .ssh/config, ensure there always an original
     need_new_symlink "$CRYPTSSHCONFIGPATH"/config "${HOME}"/.ssh/config_fallback
@@ -335,7 +341,7 @@ killall-agents () {
     [[ -e "${HOME}"/.gpg-agent-info ]] && rm "${HOME}"/.gpg-agent-info
     # TODO: delete only things I own?
     find /tmp -iname "gpg-*" &>/dev/null && rm /tmp/gpg-*
-    find "${HOME}"/.keychain -type f -delete
+    [[ -e "${HOME}"/.keychain ]] && find "${HOME}"/.keychain -type f -delete
 }
 
 harm-crypt () {
@@ -1172,7 +1178,7 @@ ssh-crypt-profile-batch-cmd () {
 }
 
 crypt-luks-headers-dump () {
-    sudo true
+    sudo true || return 1
     (IFS=$'\n'
      for Z in $(lsblk -l -o name | tail -n +2); do
          if [[ -e /dev/"$Z" ]]; then
@@ -1196,7 +1202,8 @@ crypt-luks-headers-dump () {
 
 # TODO: generalize with above
 crypt-luks-headers-backup-here () {
-    sudo true
+    # TODO: do I want this?
+    sudo true || return 1
     (IFS=$'\n'
      # XXXX: | sort | uniq means only one of a raid arry gets it's luks headers gets backed up
      # TODO: make sure this is OK

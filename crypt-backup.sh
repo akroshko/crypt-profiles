@@ -135,6 +135,7 @@ main () {
         popd >/dev/null
         # TODO: how to keep sudo going during this
         #       do not want backup done as root, but need it for other operations
+        # TODO: do not want || return 1, figure out
         sudo true
         sudo umount /mnt-snapshot
         [[ "${HOSTNAME}" == "$BACKUPHOSTNAME" ]] && sudo lvremove /dev/crypt-main/backup-snapshot

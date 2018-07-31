@@ -60,6 +60,24 @@ function sleep(milliseconds) {
     }
   }
 }
+
+// TODO: not a great way to get hostname, but serves its purpose for now
+define_variable("current_hostname","",
+    "Holds the current hostname");
+// TODO: want to do this without interactive.
+interactive("myhost",
+    "Set the current hostname.",
+    function set_hostname () {
+        // TODO: need to remember how this works
+        //       definitely need better way for shell command output
+        var thecmd = "hostname";
+        var out = "";
+        var result = yield shell_command(thecmd,
+                                         $fds=[{output: async_binary_string_writer("")},
+                                               {input:  async_binary_reader(function (s) out += s || "") }]);
+        current_hostname=out.trim();
+    });
+
 var logindata;
 // allow defining this elsewhere
 if (logindata == undefined) {

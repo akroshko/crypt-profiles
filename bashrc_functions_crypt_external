@@ -60,7 +60,7 @@ kill-freespace-random-file () {
        local BUFSIZE=2048M
     fi
     echo "Using buffer size $BUFSIZE!"
-    sudo true
+    sudo true || return 1
     sudo -i su root <<EOF
 time openssl enc -aes-256-ctr -pass pass:"$(dd if=/dev/urandom bs=128 count=1 2>/dev/null | base64)" -nosalt < /dev/zero | mbuffer -m "$BUFSIZE" -s 64k -A /bin/false -f -o "$ROOTPATH"/randomfile.bin
 sync
