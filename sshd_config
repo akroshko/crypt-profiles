@@ -3,7 +3,9 @@
 Protocol 2
 HostKey /etc/ssh/ssh_host_ed25519_key
 HostKey /etc/ssh/ssh_host_rsa_key
-Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
+# XXXX: aes-gcm and aes-ctr benchmark really well on my modern machines
+# XXXX: I have some old slow computers that do much better with arcfour, they should never get used unless explicitly specified or SSHing into a really old system
+Ciphers aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr,chacha20-poly1305@openssh.com,arcfour256,arcfour128
 # XXXX: last ones for compatibility, very insecure!!! For using mobile-org on android 4.4 (Jsch library)
 KexAlgorithms curve25519-sha256@libssh.org,diffie-hellman-group-exchange-sha256,diffie-hellman-group1-sha1
 # XXXX: last ones for compatibility, very insecure!!! For using mobile-org on android 4.4 (Jsch library)

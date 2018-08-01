@@ -1135,29 +1135,36 @@ fix-sshd-config () {
         yell "Must be run in crypt-profiles path."
         return 1
     fi
-    sudo cp --backup=t /etc/ssh/sshd_config /etc/ssh/sshd_config.bak
+    local TMPFILE=$(mktemp)
+    # copy sshd_config to tmpfile
+    cat /etc/ssh/sshd_config > "$TMPFILE"
     # edit my ssh block
     # delete my ssh block
     # TODO: deal with multiple copies
-    sudo sed -i '/#+BEGIN crypt_profiles ssd_config block/,/#+END crypt-profiles ssd_config block/d' /etc/ssh/sshd_config
+    sed -i '/#+BEGIN crypt_profiles ssd_config block/,/#+END crypt-profiles ssd_config block/d' "$TMPFILE"
     # comment out lines I will replace
-    sudo sed -e '/^Protocol/ s/^#*/# /'             -i /etc/ssh/sshd_config
-    sudo sed -e '/^HostKey/ s/^#*/# /'              -i /etc/ssh/sshd_config
-    sudo sed -e '/^Ciphers/ s/^#*/# /'              -i /etc/ssh/sshd_config
-    sudo sed -e '/^MACs/ s/^#*/# /'                 -i /etc/ssh/sshd_config
-    sudo sed -e '/^PermitRootLogin/ s/^#*/# /'      -i /etc/ssh/sshd_config
-    sudo sed -e '/^UseDNS/ s/^#*/# /'               -i /etc/ssh/sshd_config
-    sudo sed -e '/^GSSAPIAuthentication/ s/^#*/# /' -i /etc/ssh/sshd_config
-    sudo sed -e '/^LoginGraceTime/ s/^#*/# /'       -i /etc/ssh/sshd_config
-    sudo sed -e '/^AllowUsers/ s/^#*/# /'           -i /etc/ssh/sshd_config
-    sudo sed -e '/^Subsystem/ s/^#*/# /'            -i /etc/ssh/sshd_config
-    sudo sed -e '/^AllowTcpForwarding/ s/^#*/# /'            -i /etc/ssh/sshd_config
+    sed -e '/^Protocol/ s/^#*/# /'             -i "$TMPFILE"
+    sed -e '/^HostKey/ s/^#*/# /'              -i "$TMPFILE"
+    sed -e '/^Ciphers/ s/^#*/# /'              -i "$TMPFILE"
+    sed -e '/^MACs/ s/^#*/# /'                 -i "$TMPFILE"
+    sed -e '/^PermitRootLogin/ s/^#*/# /'      -i "$TMPFILE"
+    sed -e '/^UseDNS/ s/^#*/# /'               -i "$TMPFILE"
+    sed -e '/^GSSAPIAuthentication/ s/^#*/# /' -i "$TMPFILE"
+    sed -e '/^LoginGraceTime/ s/^#*/# /'       -i "$TMPFILE"
+    sed -e '/^AllowUsers/ s/^#*/# /'           -i "$TMPFILE"
+    sed -e '/^Subsystem/ s/^#*/# /'            -i "$TMPFILE"
+    sed -e '/^AllowTcpForwarding/ s/^#*/# /'   -i "$TMPFILE"
     # add my ssh block back
-    sudo bash -c "echo '' >> /etc/ssh/sshd_config"
-    sudo bash -c "cat ./sshd_config >> /etc/ssh/sshd_config"
-    sudo bash -c "echo '' >> /etc/ssh/sshd_config"
+    bash -c "echo '' >> $TMPFILE"
+    bash -c "cat ./sshd_config >> $TMPFILE"
+    bash -c "echo '' >> $TMPFILE"
     # eliminate double lines
-    sudo sed -e '/^$/N;/^\n$/D'                     -i /etc/ssh/sshd_config
+    sed -e '/^$/N;/^\n$/D'                     -i "$TMPFILE"
+    # test
+    if ! cmp --silent "$TMPFILE" /etc/ssh/sshd_config; then
+        sudo cp --backup=t /etc/ssh/sshd_config /etc/ssh/sshd_config.bak
+    fi
+    sudo cp "$TMPFILE" /etc/ssh/sshd_config
     sudo service ssh restart
 }
 
