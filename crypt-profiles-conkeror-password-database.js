@@ -87,7 +87,9 @@ if (logindata == undefined) {
 logindata["twitter"] =       {"url":"https://twitter.com/login/",
                               "login-class":"js-username-field email-input js-initial-focus",
                               "password-class":"js-password-field",
-                              "submit-class":"submit EdgeButton EdgeButton--primary EdgeButtom--medium"};
+                              "submit-narrow":".signin-wrapper",
+                              "submit-element":"button",
+                              "submit-type":"submit"};
 logindata["facebook"] =      {"url":"https://www.facebook.com/login.php",
                               "login-id":"email",
                               "password-id":"pass",
@@ -99,7 +101,8 @@ logindata["youtube"] =       {"url":"https://accounts.google.com/ServiceLogin?co
 logindata["instagram"] =     {"url":"https://www.instagram.com/accounts/login/?force_classic_login",
                               "login-id":"id_username",
                               'password-id':"id_password",
-                              "submit-class":"button-green",
+                              'submit-element':'input',
+                              'submit-type':'submit',
                               "logout-url":"https://instagram.com/accounts/logout"};
 logindata["amazonca"] =      {"url":"https://www.amazon.ca/ap/signin?_encoding=UTF8&openid.assoc_handle=caflex&openid.claimed_id=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.identity=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.mode=checkid_setup&openid.ns=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0&openid.ns.pape=http%3A%2F%2Fspecs.openid.net%2Fextensions%2Fpape%2F1.0&openid.pape.max_auth_age=0&openid.return_to=https%3A%2F%2Fwww.amazon.ca%2Fgp%2Fcss%2Fhomepage.html%2Fref%3Dnav_signin",
                               "login-id":"ap_email",
@@ -118,21 +121,27 @@ logindata["tdcanadatrust"] = {"url":"https://easyweb.td.com/waw/idp/login.htm",
 logindata["vimeo"] =         {"url":"https://vimeo.com/log_in"};
 logindata["pcmastercard"] =  {"url":"https://online.pcmastercard.ca/PCB_Consumer/Login.do?LAN=EN",
                               "login-id":"username",
-                              "password-id":"password"};
+                              "password-id":"password",
+                              "submit-element":"input",
+                              "submit-value":"Sign On"};
 // TODO: needs a special function
 logindata["mec"] =           {"url":"https://www.mec.ca/Membership/login.jsp",
                               "login-id":"j_username",
                               "password-id":"j_password",
                               "submit-class":"btn btn-primary btn-block js-btn-modal-sign-in js-form-submit"};
 logindata["telusmobility"] = {"url":"https://telusidentity.telus.com/as/authorization.oauth2?client_id=uni_portal&response_type=code&scope=priceplaninfo+securitymgmt+usagedetails+profilemanagement+invoiceinfo+usagemanagement+accountactivity+subscriberinfo+paymentmanagement+paymentprocessing+accountinfo+devicemanagement+serviceeligibility+loyaltyandrewards+recommendationmanagement+profileinfohighdetail+usagepreferencemanagement+usagemeter+usagenotificationacceptancehistory+usageblockmanagement+tvrequisition+tvsusbscriptioninfo+internetservicemanagement+customerinfo&redirect_uri=https%3A%2F%2Fwww.telus.com%2Fmy-account%2Foauth_callback",
-                              "login-id":"IDToken1",
-                              "password-id":"IDToken2",
-                              "submit-id":"standardLogin"};
+                              "login-id":"idtoken1",
+                              "password-id":"idtoken2",
+                              "submit-narrow":"form#login",
+                              "submit-element":"button",
+                              "submit-type":"submit"};
+
 logindata["flickr"] =        {"url":"https://login.yahoo.com/config/login?.src=flickrsignin"};
 logindata["github"] =        {"url":"https://github.com/login",
                               "login-id":"login_field",
                               "password-id":"password",
-                              "submit-class":"btn btn-primary btn-block",
+                              "submit-element":"input",
+                              "submit-type":"submit",
                               // TODO: will need additional click
                               "logout-url":"https://github.com/logout"};
 logindata["newegg"] =        {"url":"https://secure.newegg.ca/NewMyAccount/AccountLogin.aspx",
@@ -152,7 +161,7 @@ logindata["clubtread"] =     {"url":"http://forums.clubtread.com/register.php",
 logindata["strava"] =        {"url":"https://www.strava.com/login",
                               "login-id":"email",
                               "password-id":"password",
-                              "submit-class":"button btn-primary"};
+                              "submit-id":"login-button"};
 logindata["buyapi"] =        {"url":"https://www.buyapi.ca/my-account/",
                               "login-id":"username",
                               "password-id":"password",
@@ -162,10 +171,15 @@ logindata["digikey"] =       {"url":"https://www.digikey.ca/MyDigiKey/Login"};
 logindata["ebay"]    =       {"url":"https://signin.ebay.ca/ws/eBayISAPI.dll?SignIn&ru=http%3A%2F%2Fwww.ebay.ca%2F",
                               "login-id":"userid",
                               "password-id":"pass",
-                              "submit-class":"signin-button"};
+                              "submit-id":"sgnBt"};
 logindata["twitch"]  =       {"url":"https://www.twitch.tv/login"};
-// TODO: will need something custom for this, they changed login beginning of may 2018
-logindata["discord"]    =    {"url":"https://discordapp.com/login"};
+logindata["discord"]    =    {"url":"https://discordapp.com/login",
+                              "login-element":"input",
+                              "login-type":"email",
+                              "password-element":"input",
+                              "password-type":"password",
+                              "submit-element":"button",
+                              "submit-type":"submit"};
 logindata["deviantart"] =    {"url":"https://www.deviantart.com/users/login",
                               "login-id":"login_username",
                               "password-id":"login_password",
@@ -271,6 +285,17 @@ interactive("get-current-password-login-tertiary","Get the login for the tertiar
         initialstate = 0;
     });
 
+function type_manually(I,thestring) {
+    for (thec in thestring) {
+        send_key_as_event(I.window,
+                          I.buffer.focused_element,
+                          thestring[thec]);
+        // I was getting many queries about being a real person at one point,
+        // so add a bit of randomness to keystroke entry
+        sleep(20.0 + Math.random()*30.0);
+    }
+}
+
 interactive("insert-current-password","Get the current password and login for particular sites.",
     function (I) {
         unfocus(I.window, I.buffer);
@@ -279,13 +304,13 @@ interactive("insert-current-password","Get the current password and login for pa
             if ( n1 == null || n1.readOnly == true ) {
                 var n2 = I.buffer.document.getElementById("Passwd");
                 browser_element_focus(I.buffer, n2);
-                n2.value = theloginpassword;
+                type_manually(I,theloginpassword);
                 sleep(100.0);
                 var theform = I.buffer.document.getElementsByClassName("rc-button rc-button-submit");
                 theform[0].click();
             } else {
                 browser_element_focus(I.buffer, n1);
-                n1.value = theloginuser;
+                type_manually(I,theloginuser);
                 sleep(100.0);
                 var theform = I.buffer.document.getElementsByClassName("rc-button rc-button-submit");
                 theform[0].click();
@@ -296,13 +321,13 @@ interactive("insert-current-password","Get the current password and login for pa
             if ( n1 == null || initialstate == 1 ) {
                 var n2 = I.buffer.document.getElementById("login-passwd");
                 browser_element_focus(I.buffer, n2);
-                n2.value = theloginpassword;
+                type_manually(I,theloginpassword);
                 sleep(100.0);
                 var theform = I.buffer.document.getElementById("login-signin");
                 theform.click();
             } else {
                 browser_element_focus(I.buffer, n1);
-                n1.value = theloginuser;
+                type_manually(I,theloginuser);
                 sleep(100.0);
                 initialstate = 1;
                 var theform = I.buffer.document.getElementById("login-signin");
@@ -312,12 +337,12 @@ interactive("insert-current-password","Get the current password and login for pa
             // TODO: will have to use state
             var n1 = I.buffer.document.getElementById("username");
             browser_element_focus(I.buffer, n1);
-            n1.value = theloginuser;
+            type_manually(I,theloginuser);
             sleep(100.0);
             var n2_wrapper = I.buffer.document.getElementById("password");
             var n2 = n2_wrapper.getElementsByClassName("text");
             browser_element_focus(I.buffer, n2[0]);
-            n2[0].value = theloginpassword;
+            type_manually(I,theloginpassword);
             sleep(100.0);
             var thebutton = I.buffer.document.getElementsByClassName("primary button js-login-button");
             thebutton[0].click();
@@ -326,13 +351,13 @@ interactive("insert-current-password","Get the current password and login for pa
             if ( n1 == null || initialstate == 1 ) {
                 var n2 = I.buffer.document.getElementById("ap_password");
                 browser_element_focus(I.buffer, n2);
-                n2.value = theloginpassword;
+                type_manually(I,theloginpassword);
                 sleep(100.0);
                 var theform = I.buffer.document.getElementsByClassName("a-button-input")[0];
                 theform.click();
             } else {
                 browser_element_focus(I.buffer, n1);
-                n1.value = theloginuser;
+                type_manually(I,theloginuser);
                 sleep(100.0);
                 initialstate = 1;
                 var theform = I.buffer.document.getElementsByClassName("a-button-input")[0];
@@ -345,25 +370,16 @@ interactive("insert-current-password","Get the current password and login for pa
             var n1_inner = n1.getElementsByTagName("input")[0];
             browser_element_focus(I.buffer, n1_inner);
             n1_inner.value = theloginuser;
+            // type_manually(I,theloginuser);
             sleep(100.0);
             var n2 = nall[1];
             var n2_inner = n2.getElementsByTagName("input")[0];
             browser_element_focus(I.buffer, n2_inner);
             n2_inner.value = theloginpassword;
+            // type_manually(I,theloginpassword);
             sleep(100.0);
             var thebutton = I.buffer.document.getElementsByClassName("signup-form__submit");
             thebutton[0].click();
-        } else if ( theloginname == "discord" ) {
-            // TODO: nonfunctional
-            // TODO: more universal for just selecting input fields
-            var n1 = I.buffer.document.getElementsByTagName("input")[0];
-            browser_element_focus(I.buffer, n1);
-            n1.value = theloginuser;
-            sleep(100.0);
-            var n2 = I.buffer.document.getElementsByTagName("input")[1];
-            browser_element_focus(I.buffer, n2);
-            n2.value = theloginpassword;
-            sleep(100.0);
         } else if ( theloginname == "digikey" ) {
             // https://www.w3schools.com/jsref/prop_frame_contentdocument.asp
             // TODO: make more universal for dealing with logins with frames
@@ -372,11 +388,11 @@ interactive("insert-current-password","Get the current password and login for pa
             var outer = outer_or.document;
             var n1 = outer.getElementById("username");
             browser_element_focus(I.buffer, n1);
-            n1.value = theloginuser;
+            type_manually(I,theloginuser);
             sleep(100.0);
             var n2 = outer.getElementById("password");
             browser_element_focus(I.buffer, n2);
-            n2.value = theloginpassword;
+            type_manually(I,theloginpassword);
             sleep(100.0);
             var thebutton = outer.getElementById("btnPostLogin");
             thebutton.click();
@@ -385,33 +401,85 @@ interactive("insert-current-password","Get the current password and login for pa
         } else if ( theloginname == "soundcloud" ) {
             I.window.minibuffer.message("soundcloud not supported");
         } else {
+            // XXXX: some websites do not like the .value attribute being set directly
+            //       hence the wierd copy/pasting
+            var login_document=I.buffer.document;
             if ( "login-id" in logindata[theloginname] ) {
-                var n1 = I.buffer.document.getElementById(logindata[theloginname]["login-id"]);
+                var n1 = login_document.getElementById(logindata[theloginname]["login-id"]);
                 browser_element_focus(I.buffer, n1);
-                n1.value = theloginuser;
+                sleep(100.0);
+                type_manually(I,theloginuser);
                 sleep(100.0);
             } else if ( "login-class" in logindata[theloginname] ) {
-                var n1 = I.buffer.document.getElementsByClassName(logindata[theloginname]["login-class"])[0];
+                var n1 = login_document.getElementsByClassName(logindata[theloginname]["login-class"])[0];
                 browser_element_focus(I.buffer, n1);
-                n1.value = theloginuser;
+                type_manually(I,theloginuser);
+                sleep(100.0);
+            } else if ( "login-element" in logindata[theloginname] && "login-type" in logindata[theloginname] ) {
+                var theelements = login_document.querySelectorAll(logindata[theloginname]["login-element"]);
+                for (e in theelements) {
+                    if (theelements[e].type == logindata[theloginname]['login-type']) {
+                        var n1 = theelements[e];
+                    }
+                }
+                browser_element_focus(I.buffer, n1);
+                sleep(100.0);
+                type_manually(I,theloginuser);
                 sleep(100.0);
             }
+            ////////////////////////////////////////////////////////////////////////////////
             if ( "password-id" in logindata[theloginname] ) {
-                var n2 = I.buffer.document.getElementById(logindata[theloginname]["password-id"]);
+                var n2 = login_document.getElementById(logindata[theloginname]["password-id"]);
                 browser_element_focus(I.buffer, n2);
-                n2.value = theloginpassword;
+                sleep(100.0);
+                type_manually(I,theloginpassword);
                 sleep(100.0);
             } else if ( "password-class" in logindata[theloginname] ) {
-                var n2 = I.buffer.document.getElementsByClassName(logindata[theloginname]["password-class"])[0];
+                var n2 = login_document.getElementsByClassName(logindata[theloginname]["password-class"])[0];
                 browser_element_focus(I.buffer, n2);
-                n2.value = theloginpassword;
+                type_manually(I,theloginpassword);
+                sleep(100.0);
+            } else if ( "password-element" in logindata[theloginname] && "password-type" in logindata[theloginname] ) {
+                var theelements = login_document.querySelectorAll(logindata[theloginname]["password-element"]);
+                for (e in theelements) {
+                    if (theelements[e].type == logindata[theloginname]['password-type']) {
+                        var n1 = theelements[e];
+                    }
+                }
+                browser_element_focus(I.buffer, n1);
+                sleep(100.0);
+                type_manually(I,theloginpassword);
                 sleep(100.0);
             }
+            ////////////////////////////////////////////////////////////////////////////////
             if ( "submit-id" in logindata[theloginname] ) {
-                var thebutton = I.buffer.document.getElementById(logindata[theloginname]["submit-id"]);
+                var thebutton = login_document.getElementById(logindata[theloginname]["submit-id"]);
                 thebutton.click();
             } else if ( "submit-class" in logindata[theloginname] ) {
-                var thebutton = I.buffer.document.getElementsByClassName(logindata[theloginname]["submit-class"])[0];
+                var thebutton = login_document.getElementsByClassName(logindata[theloginname]["submit-class"])[0];
+                thebutton.click();
+            } else if ( "submit-element" in logindata[theloginname] && "submit-value" in logindata[theloginname] ) {
+                var theelements = login_document.querySelectorAll(logindata[theloginname]["submit-element"]);
+                // now find the value in the elements
+                for (e in theelements) {
+                    if (theelements[e].value == logindata[theloginname]['submit-value']) {
+                        var thebutton = theelements[e];
+                    }
+                }
+                thebutton.click();
+            } else if ( "submit-element" in logindata[theloginname] && "submit-type" in logindata[theloginname] ) {
+                if ( "submit-narrow" in logindata[theloginname] ) {
+                    var submit_document = login_document.querySelectorAll(logindata[theloginname]["submit-narrow"])[0];
+                } else {
+                    var submit_document=login_document;
+                }
+                var theelements = submit_document.querySelectorAll(logindata[theloginname]["submit-element"]);
+                // now find the value in the elemens
+                for (e in theelements) {
+                    if (theelements[e].type == logindata[theloginname]['submit-type']) {
+                        var thebutton = theelements[e];
+                    }
+                }
                 thebutton.click();
             }
         }
