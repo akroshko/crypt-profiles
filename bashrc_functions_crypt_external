@@ -133,7 +133,7 @@ kill-file () {
         fi
     else
         # TODO: warn if not file
-        warn "File $1 is not a file, does not exist, and is not cleared!"
+        warn "File $1 is not a file or does not exist, and is not cleared!"
     fi
 }
 

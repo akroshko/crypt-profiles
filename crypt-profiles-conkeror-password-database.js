@@ -194,6 +194,13 @@ logindata["linkedin"] =    {"url":"https://ca.linkedin.com/",
 logindata["pixiv"] =    {"url":"https://accounts.pixiv.net/login?lang=en&source=pc&view_type=page"}
 // TODO: might be an issue
 logindata["soundcloud"] =    {"url":"https://soundcloud.com/signin"};
+logindata["noip"] =          {"url":"https://www.noip.com/login",
+                              "login-element":"input",
+                              "login-type":"text",
+                              "password-element":"input",
+                              "password-type":"password",
+                              "submit-element":"button",
+                              "submit-type":"submit"};
 
 initialstate=0
 
@@ -420,6 +427,19 @@ interactive("insert-current-password","Get the current password and login for pa
                 for (e in theelements) {
                     if (theelements[e].type == logindata[theloginname]['login-type']) {
                         var n1 = theelements[e];
+                        break;
+                    }
+                }
+                browser_element_focus(I.buffer, n1);
+                sleep(100.0);
+                type_manually(I,theloginuser);
+                sleep(100.0);
+            } else if ( "login-element" in logindata[theloginname] && "login-name" in logindata[theloginname] ) {
+                var theelements = login_document.querySelectorAll(logindata[theloginname]["login-element"]);
+                for (e in theelements) {
+                    if (theelements[e].name == logindata[theloginname]['login-name']) {
+                        var n1 = theelements[e];
+                        break;
                     }
                 }
                 browser_element_focus(I.buffer, n1);
@@ -444,6 +464,19 @@ interactive("insert-current-password","Get the current password and login for pa
                 for (e in theelements) {
                     if (theelements[e].type == logindata[theloginname]['password-type']) {
                         var n1 = theelements[e];
+                        break;
+                    }
+                }
+                browser_element_focus(I.buffer, n1);
+                sleep(100.0);
+                type_manually(I,theloginpassword);
+                sleep(100.0);
+            } else if ( "password-element" in logindata[theloginname] && "password-name" in logindata[theloginname] ) {
+                var theelements = login_document.querySelectorAll(logindata[theloginname]["password-element"]);
+                for (e in theelements) {
+                    if (theelements[e].name == logindata[theloginname]['password-name']) {
+                        var n1 = theelements[e];
+                        break;
                     }
                 }
                 browser_element_focus(I.buffer, n1);
@@ -464,6 +497,7 @@ interactive("insert-current-password","Get the current password and login for pa
                 for (e in theelements) {
                     if (theelements[e].value == logindata[theloginname]['submit-value']) {
                         var thebutton = theelements[e];
+                        break;
                     }
                 }
                 thebutton.click();
@@ -478,6 +512,7 @@ interactive("insert-current-password","Get the current password and login for pa
                 for (e in theelements) {
                     if (theelements[e].type == logindata[theloginname]['submit-type']) {
                         var thebutton = theelements[e];
+                        break;
                     }
                 }
                 thebutton.click();

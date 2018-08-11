@@ -5,7 +5,7 @@
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20180622
+# Version: 20180808
 # URL: https://github.com/akroshko/crypt-profiles
 #
 # This program is free software: you can redistribute it and/or modify
@@ -933,8 +933,8 @@ master-privacy-firefox () {
             warn "Cannot export Firefox bookmarks, places.sqlite probably does not exist!"
         fi
         # XXXX: this kills all bookmarks
-        kill-find-matching ""${HOME}"/.mozilla/firefox places.sqlite"
-        kill-recursive ""${HOME}"/.mozilla/firefox/Crash Reports"
+        kill-find-matching "${HOME}"/.mozilla/firefox places.sqlite
+        kill-recursive "${HOME}"/.mozilla/firefox/Crash Reports
     else
         warn "Firefox running or not clearing due to no input.!"
     fi
@@ -977,7 +977,7 @@ master-privacy () {
             h1 "Delete things that need user input"
             while read -r -t 0;do read -r; done;
             # TODO: check if an sqllite exists before asking
-            read -n 1 -p "Do you want to delete all Firefox places.sqllite? (y/n) " ynfirefox
+            read -n 1 -p "Do you want to delete all Firefox places.sqlite? (y/n) " ynfirefox
             echo ""
             master-privacy-trash
             # XXXX: these are specific to other unreleased scripts I have
