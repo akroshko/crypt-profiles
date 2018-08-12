@@ -143,12 +143,14 @@ main () {
                 local TOPSECRET="$(DISPLAY= gpg-batch --no-tty --decrypt --use-agent $PWDFILE)"
                 if [[ $? == 0 ]]; then
                     local KEYPWD=$(sed -n '1p' <<< "$TOPSECRET")
-expect << EOF
-  spawn ssh-add -t 2419200 ${HOME}/.ssh/${KEYFILE}
-  expect "Enter passphrase"
-  send "$KEYPWD\r"
-  expect eof
-EOF
+                    empty -f -i in.fifo -o out.fifo -p empty.pid -L empty.log ssh-add -t 2419200 ${HOME}/.ssh/${KEYFILE}
+                    empty -w -i out.fifo -o in.fifo 'nter passphrase' "$KEYPWD\r"
+# expect << EOF
+#   spawn ssh-add -t 2419200 ${HOME}/.ssh/${KEYFILE}
+#   expect "Enter passphrase"
+#   send "$KEYPWD\r"
+#   expect eof
+# EOF
                     msg "Decrypt successful for ${PWDFILE}!"
                 else
                     warn "Decrypt failed for ${PWDFILE}!"
