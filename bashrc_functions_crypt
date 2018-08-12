@@ -5,7 +5,7 @@
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20180808
+# Version: 20180812
 # URL: https://github.com/akroshko/crypt-profiles
 #
 # This program is free software: you can redistribute it and/or modify
@@ -940,6 +940,27 @@ master-privacy-firefox () {
     fi
 }
 
+master-privacy-palemoon () {
+    h2 "Pale moon"
+    # TODO: check specifically for pale moon
+    if ! check-firefox; then
+        kill-find-matching "${HOME}/.moonchild productions/pale moon" cookies.sqlite
+        kill-find-matching "${HOME}/.moonchild productions/pale moon" content-prefs.sqlite
+        kill-find-matching "${HOME}/.moonchild productions/pale moon" permissions.sqlite
+        kill-find-matching "${HOME}/.moonchild productions/pale moon" places.sqlite
+        kill-find-matching "${HOME}/.moonchild productions/pale moon" places.sqlite-shm
+        kill-find-matching "${HOME}/.moonchild productions/pale moon" places.sqlite-wal
+        kill-find-matching "${HOME}/.moonchild productions/pale moon" prefs.js
+        kill-find-matching "${HOME}/.moonchild productions/pale moon" sessionCheckpoints.json
+        kill-find-matching "${HOME}/.moonchild productions/pale moon" sessionstore.bak
+        kill-find-matching "${HOME}/.moonchild productions/pale moon" sessionstore.json
+        kill-find-matching "${HOME}/.moonchild productions/pale moon" webappstore.sqlite
+        kill-find-matching "${HOME}/.moonchild productions/pale moon" xulstore.json
+    else
+        warn "Firefox running or not clearing due to no input.!"
+    fi
+}
+
 master-privacy-chromium () {
     h2 "Chromium"
     # XXXX: I only use chromium as a secondary browser, shreding most things, but keeping adblock?
@@ -1013,6 +1034,7 @@ master-privacy () {
         master-privacy-chromium
         master-privacy-firefox
         master-privacy-conkeror
+        master-privacy-palemoon
          # TODO: ask to delete filefox places due to bug
         # bleachbit --overwrite --clean
         h2 "Flash"
