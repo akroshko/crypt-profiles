@@ -22,7 +22,7 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 
 # XXXX: assumes my bash-stdlib library is installed, but can it be run as root?
-source ${HOME}/.bash_library
+source "${HOME}/.bash_library"
 # This script backs up a directory a disk of a particular uuid.
 #
 # Required:

@@ -55,9 +55,9 @@ main () {
             rm -f "${HOME}/bin/pinentry-select"
         fi
         ln -s /bin/false "${HOME}/bin/pinentry-select"
-        if [[ -f ${HOME}/.secrets/secrets.txt.gpg ]]; then
+        if [[ -f "${HOME}/.secrets/secrets.txt.gpg" ]]; then
             # TODO: maybe incorporate dummy file instead of secrets to try
-            DISPLAY= gpg-batch --decrypt ${HOME}/.secrets/secrets.txt.gpg >/dev/null
+            DISPLAY= gpg-batch --decrypt "${HOME}/.secrets/secrets.txt.gpg" >/dev/null
         fi
         if [[ $? != 0 ]]; then
             # reset everything properly if key for GPG profile expired or set up wrong
@@ -90,7 +90,7 @@ main () {
                 DISPLAY= source $envfile
                 export GPG_AGENT_INFO
             fi
-            if [[ -f ${HOME}/.secrets/secrets.txt.gpg ]]; then
+            if [[ -f "${HOME}/.secrets/secrets.txt.gpg" ]]; then
                 if [[ -n "$GNUPGPWD" ]]; then
                     msg "Using entered password!"
                     local TOPSECRET="$(DISPLAY= gpg-batch --passphrase-fd 0 --decrypt --use-agent ${HOME}/.secrets/secrets.txt.gpg <<< "$GNUPGPWD")"
@@ -143,7 +143,7 @@ main () {
                 local TOPSECRET="$(DISPLAY= gpg-batch --no-tty --decrypt --use-agent $PWDFILE)"
                 if [[ $? == 0 ]]; then
                     local KEYPWD=$(sed -n '1p' <<< "$TOPSECRET")
-                    empty -f -i in.fifo -o out.fifo -p empty.pid -L empty.log ssh-add -t 2419200 ${HOME}/.ssh/${KEYFILE}
+                    empty -f -i in.fifo -o out.fifo -p empty.pid -L empty.log ssh-add -t 2419200 "${HOME}/.ssh/${KEYFILE}"
                     empty -w -i out.fifo -o in.fifo 'nter passphrase' "$KEYPWD\r"
 # expect << EOF
 #   spawn ssh-add -t 2419200 ${HOME}/.ssh/${KEYFILE}
