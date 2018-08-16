@@ -320,9 +320,11 @@ session_pref("browser.helperApps.deleteTempFileOnExit", true);
 session_pref("network.jar.open-unsafe-types", false);
 // 2611: disable WebIDE to prevent remote debugging and add-on downloads
 // https://trac.torproject.org/projects/tor/ticket/16222
-session_pref("devtools.debugger.remote-enabled", false);
-session_pref("devtools.webide.enabled", false);
-session_pref("devtools.webide.widget.enabled", false);
+// TODO: I use this for debugging, change when appropriate
+// session_pref("devtools.debugger.remote-enabled", false);
+// session_pref("devtools.debugger.remote-enabled", true);
+// session_pref("devtools.webide.enabled", false);
+// session_pref("devtools.webide.widget.enabled", false);
 // 2612: disable SimpleServiceDiscovery - which can bypass proxy settings - eg Roku
    // https://trac.torproject.org/projects/tor/ticket/16222
 session_pref("gfx.layerscope.enabled", false);

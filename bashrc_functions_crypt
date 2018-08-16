@@ -909,6 +909,7 @@ master-privacy-conkeror () {
             kill-find-matching "${HOME}/.conkeror.mozdev.org/conkeror" xulstore.json
             # cache files
             kill-directory-contents "${HOME}/.cache/conkeror.mozdev.org/"
+            # TODO: are these really what I want for conkeror, does conkeror ever write here?
             kill-directory-contents "${HOME}/.cache/firefox/"
             kill-directory-contents "${HOME}/.cache/mozilla/"
         fi

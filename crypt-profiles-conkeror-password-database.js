@@ -5,7 +5,7 @@
 // Author: Andrew Kroshko
 // Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 // Created: Mon Jun 20, 2016
-// Version: 20180630
+// Version: 20180814
 // URL: https://github.com/akroshko/crypt-profiles
 //
 // This program is free software; you can redistribute it and/or
@@ -116,9 +116,15 @@ logindata["usask"] =         {"url":"https://pawscas.usask.ca/cas-web/login?serv
                               "submit-class":"btn btn-primary btn-block mbmd",
                               "logout-url":"https://pawscas.usask.ca/cas-web/logout"};
 logindata["tdcanadatrust"] = {"url":"https://easyweb.td.com/waw/idp/login.htm",
-                              "login-id":"login:AccessCard",
-                              "password-id":"login:Webpassword"};
-logindata["vimeo"] =         {"url":"https://vimeo.com/log_in"};
+                              "login-id":"username100",
+                              "password-id":"password",
+                              "submit-element":"button",
+                              "submit-type":"submit"};
+logindata["vimeo"] =         {"url":"https://vimeo.com/log_in",
+                              "login-id":"signup_email",
+                              "password-id":"login_password",
+                              "submit-element":"input",
+                              "submit-value":"Log in with email"};
 logindata["pcmastercard"] =  {"url":"https://online.pcmastercard.ca/PCB_Consumer/Login.do?LAN=EN",
                               "login-id":"username",
                               "password-id":"password",
@@ -135,7 +141,6 @@ logindata["telusmobility"] = {"url":"https://telusidentity.telus.com/as/authoriz
                               "submit-narrow":"form#login",
                               "submit-element":"button",
                               "submit-type":"submit"};
-
 logindata["flickr"] =        {"url":"https://login.yahoo.com/config/login?.src=flickrsignin"};
 logindata["github"] =        {"url":"https://github.com/login",
                               "login-id":"login_field",
@@ -403,8 +408,6 @@ interactive("insert-current-password","Get the current password and login for pa
             sleep(100.0);
             var thebutton = outer.getElementById("btnPostLogin");
             thebutton.click();
-        } else if ( theloginname == "vimeo" ) {
-            I.window.minibuffer.message("vimeo not supported");
         } else if ( theloginname == "soundcloud" ) {
             I.window.minibuffer.message("soundcloud not supported");
         } else {
