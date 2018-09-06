@@ -702,10 +702,7 @@ vg-container-expand () {
         echo "$USAGE"
         return 1
     fi
-    while read -r -t 0;do read -r; done;
-    read -n 1 -p "This is a dangerous and poorly tested function!!! Continue (y/n)? " yn
-    echo ""
-    if [[ $yn == "y" ]];then
+    if ask_yn "This is a dangerous and poorly tested function!!! Continue";then
         local CONTAINER="$1"
         local SIZEADD="$2"
         if [[ -e "$CONTAINER" ]]; then
@@ -856,10 +853,10 @@ master-privacy-trash () {
         msg  "Contents of ~/tmp/trash:"
         ls -A "${HOME}"/tmp/trash/*
         while read -r -t 0;do read -r; done;
-        read -n 1 -p "Do you want to delete ~/tmp/trash? (y/n) " yn
-        echo ""
         # TODO: add a countdown here
-        [[ "$yn" =~ y ]] && kill-directory-contents "${HOME}/tmp/trash"
+        if ask_yn "Do you want to delete ~/tmp/trash?";then
+            kill-directory-contents "${HOME}/tmp/trash"
+        fi
     else
         warn "Nothing in ~/tmp/trash"
     fi
@@ -867,10 +864,9 @@ master-privacy-trash () {
         msg "Contents of ~/.local/share/Trash/files:"
         ls -A "${HOME}/.local/share/Trash/files"
         # TODO: check if empty?
-        while read -r -t 0;do read -r; done;
-        read -n 1 -p "Do you want to delete ~/.local/share/Trash/files? (y/n) " yn
-        echo ""
-        [[ "$yn" =~ y ]] && bleachbit --overwrite --clean system.trash
+        if ask_yn "Do you want to delete ~/.local/share/Trash/files?"; then
+            bleachbit --overwrite --clean system.trash
+        fi
         # TODO: add a countdown here
         # kill-directory-contents "${HOME}"/.local/share/Trash/files
         # kill-directory-contents "${HOME}"/.local/share/Trash/info

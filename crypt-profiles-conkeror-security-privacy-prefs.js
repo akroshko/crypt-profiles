@@ -61,15 +61,15 @@ session_pref("extensions.blocklist.enabled", true);
 session_pref("privacy.trackingprotection.enabled", false); // all windows pref (not just private)
 // 0601: disable link prefetching
 // https://developer.mozilla.org/en-US/docs/Web/HTTP/Link_prefetching_FAQ
-session_pref("network.prefetch-next", false);
+user_pref("network.prefetch-next", false);
 // 0602: disable dns prefetching
 // http://www.ghacks.net/2013/04/27/firefox-prefetching-what-you-need-to-know/
 // https://developer.mozilla.org/en-US/docs/Web/HTTP/Controlling_DNS_prefetching
-session_pref("network.dns.disablePrefetch", true);
-session_pref("network.dns.disablePrefetchFromHTTPS", true); // (hidden pref)
+user_pref("network.dns.disablePrefetch", true);
+user_pref("network.dns.disablePrefetchFromHTTPS", true); // (hidden pref)
 // 0603: disable Seer/Necko
 // https://developer.mozilla.org/en-US/docs/Mozilla/Projects/Necko
-session_pref("network.predictor.enabled", false);
+user_pref("network.predictor.enabled", false);
 // 0603a: disable more Necko/Captive Portal
 // https://en.wikipedia.org/wiki/Captive_portal
 // https://wiki.mozilla.org/Necko/CaptivePortal
@@ -107,7 +107,6 @@ session_pref("browser.formfill.enable", false);
      see https://www.securityartwork.es/2017/02/02/tls-client-fingerprinting-with-bro/ . You can either
      strengthen your encryption/cipher suite and protocols (security) or keep them at default and let
      Mozilla handle them (dragging their feet for fear of breaking legacy sites) ***/
-session_pref("ghacks_user.js.parrot", "1200 syntax error: the parrot's a stiff!");
 // 1201: block rc4 fallback (default is now false as of at least FF45)
 session_pref("security.tls.unrestricted_rc4_fallback", false);
 // 1203: enable OCSP stapling
@@ -251,19 +250,15 @@ session_pref("camera.control.face_detection.enabled", false);
 // http://www.ghacks.net/2014/05/10/enable-media-source-extensions-firefox/
 session_pref("media.mediasource.enabled", true);
 session_pref("media.mediasource.mp4.enabled", true);
-session_pref("media.mediasource.webm.audio.enabled", true);
 session_pref("media.mediasource.webm.enabled", true);
-// 2025: enable/disable various media types - end user personal choice
-// WARNING: this is the author's settings, choose your own
-session_pref("media.mp4.enabled", true);
-session_pref("media.flac.enabled", true); // (FF51+)
-session_pref("media.ogg.enabled", false);
-session_pref("media.ogg.flac.enabled", false); // (FF51+)
-session_pref("media.opus.enabled", false);
-session_pref("media.raw.enabled", false);
-session_pref("media.wave.enabled", false);
+// // 2025: enable/disable various media types - end user personal choice
+// TODO: does not seem to exist in conkeror
+// session_pref("media.mp4.enabled", true);
+session_pref("media.ogg.enabled", true);
+session_pref("media.opus.enabled", true);
+session_pref("media.raw.enabled", true);
+session_pref("media.wave.enabled", true);
 session_pref("media.webm.enabled", true);
-session_pref("media.wmf.enabled", true); // https://www.youtube.com/html5 - for the two H.264 entries
 // 2027: disable camera image capture
 // https://trac.torproject.org/projects/tor/ticket/16339
 // TODO: see more like this?

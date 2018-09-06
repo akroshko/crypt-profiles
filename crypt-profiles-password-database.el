@@ -36,11 +36,12 @@
   nil
   "Path for an .org.gpg encrypted password database.")
 
+;; TODO: test out on twitter
+;; (crypt-profiles-get-matching-password "aHR0cHM6Ly93d3cudHdpdHRlci5jb20=" 3)
 (defun crypt-profiles-get-matching-password (base64-url &optional alternate)
   ;; TODO make sure file decrypts before proceeding
   ;; TODO: hard coding is bad
-  (with-current-file crypt-profiles-password-database-path
-    (goto-char (point-min))
+  (with-current-file-min crypt-profiles-password-database-path
     ;; goto heading
     (cond ((equal alternate 3)
            (cic:org-find-headline "Website Logins Tertiary"))
