@@ -21,9 +21,13 @@ LoginGraceTime 30
 # I use TCP forwarding a lot now
 AllowTcpForwarding yes
 # add a group for sftp
+# TOOD: not sure if these are the links I originally used
+# https://www.howtoforge.com/restricting-users-to-sftp-plus-setting-up-chrooted-ssh-sftp-debian-squeeze
+# https://wiki.archlinux.org/index.php/SFTP_chroot
 Subsystem sftp internal-sftp
 Match Group sftponly
     Chrootdirectory %h
     ForceCommand internal-sftp
+    X11Forwarding no
     AllowTcpForwarding no
 #+END crypt_profiles ssd_config block

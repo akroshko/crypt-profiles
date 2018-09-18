@@ -5,7 +5,7 @@
 ;; Author: Andrew Kroshko
 ;; Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 ;; Created: Mon Jun 20, 2016
-;; Version: 20180516
+;; Version: 20180918
 ;; URL: https://github.com/akroshko/crypt-profiles
 ;;
 ;; This program is free software; you can redistribute it and/or
@@ -32,11 +32,60 @@
 ;;
 ;;; Code:
 
+(require 'cl)
+(require 'json)
+
+
+;; TODO: not sure this will work for everyone, this is just what I use in my config files
+(when (file-exists-p "~/.gpg-agent-info.env")
+  (let ((gpg-agent
+        ;; read the file
+         (s-trim-full (with-temp-buffer
+                  (insert-file-contents "~/.gpg-agent-info.env")
+                  (buffer-string)))))
+    ;; set the variable
+    (setenv "GPG_AGENT_INFO" gpg-agent)))
+(setq epa-file-select-keys 'silent
+      epg-gpg-program "/usr/bin/gpg2")
+(epa-file-enable)
+
+;; XXXX: set filename filter if not already set, used for filenames in
+;; special formats that may be declared late
+(unless (fboundp 'with-filename-filter)
+  (fset 'with-filename-filter 'identity))
+
+(defun s-trim-full (str)
+  "Strip full leading and trailing whitespace from STR.  Does
+this for every line."
+  (while (string-match "\\`\n+\\|^\\s-+\\|\\s-+$\\|\n+\\'"
+                       str)
+    (setq str (replace-match "" t t str)))
+  str)
+
+(defmacro with-current-file-min (filename &rest body)
+  "Like with-current-file, but always go to point-min."
+  (declare (indent 1) ;; (debug t)
+           )
+  `(save-excursion
+     (set-buffer (find-file-noselect (with-filename-filter ,filename)))
+     (goto-char (point-min))
+     ,@body))
+
+(defun cic:org-find-headline (headline &optional buffer)
+  "Find a particular HEADLINE in BUFFER."
+  (goto-char (org-find-exact-headline-in-buffer headline)))
+
+(defun cic:org-table-to-lisp-no-separators ()
+  "Convert the org-table to lisp and eliminate seperators."
+  (remove-if-not (lambda (x) (if (eq x 'hline) nil x)) (org-table-to-lisp)))
+
 (defvar crypt-profiles-password-database-path
   nil
   "Path for an .org.gpg encrypted password database.")
+;; TODO: this is probably a security problem
+(when (file-exists-p "~/.crypt-database-path.el")
+  (load "~/.crypt-database-path.el"))
 
-;; TODO: test out on twitter
 ;; (crypt-profiles-get-matching-password "aHR0cHM6Ly93d3cudHdpdHRlci5jb20=" 3)
 (defun crypt-profiles-get-matching-password (base64-url &optional alternate)
   ;; TODO make sure file decrypts before proceeding
@@ -64,4 +113,4 @@
       ;; TODO: base64 encode
       (json-encode return-value))))
 
-(provide 'crypt-profiles-password-database)
+;; (provide 'crypt-profiles-password-database)

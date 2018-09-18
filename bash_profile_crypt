@@ -5,7 +5,7 @@
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20180703
+# Version: 20180918
 # URL: https://github.com/akroshko/crypt-profiles
 #
 # This program is free software: you can redistribute it and/or modify
@@ -51,13 +51,13 @@ main () {
         source $(dirname "${BASH_SOURCE[0]}")/bash_env_crypt
         source $(dirname "${BASH_SOURCE[0]}")/bashrc_functions_crypt
         # test if we can decrypt, make non-interactive by linking linking pinentry to /bin/false
-        if [[ -f "${HOME}/bin/pinentry-select" ]]; then
-            rm -f "${HOME}/bin/pinentry-select"
+        if [[ -f "$HOME/bin/pinentry-select" ]]; then
+            rm -f "$HOME/bin/pinentry-select"
         fi
-        ln -s /bin/false "${HOME}/bin/pinentry-select"
-        if [[ -f "${HOME}/.secrets/secrets.txt.gpg" ]]; then
+        ln -s /bin/false "$HOME/bin/pinentry-select"
+        if [[ -f "$HOME/.secrets/secrets.txt.gpg" ]]; then
             # TODO: maybe incorporate dummy file instead of secrets to try
-            DISPLAY= gpg-batch --decrypt "${HOME}/.secrets/secrets.txt.gpg" >/dev/null
+            DISPLAY= gpg-batch --decrypt "$HOME/.secrets/secrets.txt.gpg" >/dev/null
         fi
         if [[ $? != 0 ]]; then
             # reset everything properly if key for GPG profile expired or set up wrong
@@ -72,13 +72,13 @@ main () {
         # TODO: describe this issue with GnuPG in documentation
         # keep pinentry disabled when using $1=$GNUPGPWD because shell is generally non-interactive
         if [[ -z "$GNUPGPWD" ]]; then
-            [[ -f "${HOME}/bin/pinentry-select" ]] && rm -f "${HOME}/bin/pinentry-select"
-            [[ -f /usr/bin/pinentry-curses ]] && ln -s /usr/bin/pinentry-curses "${HOME}/bin/pinentry-select"
+            [[ -f "$HOME/bin/pinentry-select" ]] && rm -f "$HOME/bin/pinentry-select"
+            [[ -f /usr/bin/pinentry-curses ]] && ln -s /usr/bin/pinentry-curses "$HOME/bin/pinentry-select"
         fi
         # run keychain after we see if we need to kill agents
         if type -P keychain &>/dev/null; then
             `type -P keychain` --nogui --agents ssh
-            source ${HOME}/.keychain/*-sh >/dev/null
+            source $HOME/.keychain/*-sh >/dev/null
         fi
         msg "Keychain done!"
         # set up normally if no passphrase given
@@ -90,12 +90,12 @@ main () {
                 DISPLAY= source $envfile
                 export GPG_AGENT_INFO
             fi
-            if [[ -f "${HOME}/.secrets/secrets.txt.gpg" ]]; then
+            if [[ -f "$HOME/.secrets/secrets.txt.gpg" ]]; then
                 if [[ -n "$GNUPGPWD" ]]; then
                     msg "Using entered password!"
-                    local TOPSECRET="$(DISPLAY= gpg-batch --passphrase-fd 0 --decrypt --use-agent ${HOME}/.secrets/secrets.txt.gpg <<< "$GNUPGPWD")"
+                    local TOPSECRET="$(DISPLAY= gpg-batch --passphrase-fd 0 --decrypt --use-agent $HOME/.secrets/secrets.txt.gpg <<< "$GNUPGPWD")"
                 else
-                    local TOPSECRET="$(DISPLAY= gpg-batch --decrypt --use-agent ${HOME}/.secrets/secrets.txt.gpg)"
+                    local TOPSECRET="$(DISPLAY= gpg-batch --decrypt --use-agent $HOME/.secrets/secrets.txt.gpg)"
                     if [[ $? != 0 ]]; then
                         # TODO: add real option for quit
                         while read -r -t 0;do read -r; done;
@@ -129,24 +129,24 @@ main () {
             msg "Presetting: $PRESETKEY"
             /usr/lib/gnupg2/gpg-preset-passphrase --verbose --preset "$PRESETKEY" <<< "$GNUPGPWD"
         done
-        if [[ -f "${HOME}/.gnupg/gpg-agent-info-${HOSTNAME}" ]]; then
-            source "${HOME}/.gnupg/gpg-agent-info-${HOSTNAME}"
+        if [[ -f "$HOME/.gnupg/gpg-agent-info-${HOSTNAME}" ]]; then
+            source "$HOME/.gnupg/gpg-agent-info-${HOSTNAME}"
             export GPG_AGENT_INFO
         fi
         ################################################################################
         ## initialize ssh keys only if agent is live
         # read in all id_*.txt.gpg
-        for PWDFILE in ${HOME}/.secrets/id_*.txt.gpg; do
+        for PWDFILE in $HOME/.secrets/id_*.txt.gpg; do
             if [[ -f "${PWDFILE}" ]]; then
                 local KEYFILE=$(basename ${PWDFILE%.txt.gpg})
                 h2 "key for ${KEYFILE}"
                 local TOPSECRET="$(DISPLAY= gpg-batch --no-tty --decrypt --use-agent $PWDFILE)"
                 if [[ $? == 0 ]]; then
                     local KEYPWD=$(sed -n '1p' <<< "$TOPSECRET")
-                    empty -f -i in.fifo -o out.fifo -p empty.pid -L empty.log ssh-add -t 2419200 "${HOME}/.ssh/${KEYFILE}"
+                    empty -f -i in.fifo -o out.fifo -p empty.pid -L empty.log ssh-add -t 2419200 "$HOME/.ssh/${KEYFILE}"
                     empty -w -i out.fifo -o in.fifo 'nter passphrase' "$KEYPWD\r"
 # expect << EOF
-#   spawn ssh-add -t 2419200 ${HOME}/.ssh/${KEYFILE}
+#   spawn ssh-add -t 2419200 $HOME/.ssh/${KEYFILE}
 #   expect "Enter passphrase"
 #   send "$KEYPWD\r"
 #   expect eof
@@ -161,10 +161,10 @@ main () {
         warn "Skipping initialization of passwords!!!"
     fi
     # reset curses pinentry for this particular program
-    if [[ -f "${HOME}/bin/pinentry-select" && -f /usr/bin/pinentry-gtk-2 ]]; then
-        rm -f "${HOME}/bin/pinentry-select"
+    if [[ -f "$HOME/bin/pinentry-select" && -f /usr/bin/pinentry-gtk-2 ]]; then
+        rm -f "$HOME/bin/pinentry-select"
         # TODO: pinentry-x11 is cool too
-        ln -s /usr/bin/pinentry-gtk-2 "${HOME}/bin/pinentry-select"
+        ln -s /usr/bin/pinentry-gtk-2 "$HOME/bin/pinentry-select"
     fi
     h1-end "Finishing $(basename $BASH_SOURCE)"
 }

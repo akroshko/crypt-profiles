@@ -5,7 +5,7 @@
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20180516
+# Version: 20180918
 # URL: https://github.com/akroshko/crypt-profiles
 #
 # This program is free software: you can redistribute it and/or modify
@@ -352,4 +352,29 @@ ssh-kill-offending-key () {
     else
         warn "Must specific a known_hosts file and line number!"
     fi
+}
+
+# may want a standalone shell script
+# TODO: non-functional
+crypt-password-database-retrieve-primary () {
+    # TODO: change password database name
+    local CRYPT_PASSWORD_DATABASE=
+    # TODO: base64 decode
+    local URL="$1"
+    # load appropriate org-file heading into memory
+    sed -n '/^\* Website Logins$/,/^\*/p' <<< $(gpg2 --no-verbose --quiet --batch --yes --decrypt "${CRYPT_PASSWORD_DATABASE}" 2>/dev/null)
+}
+
+# TODO: non-functional
+crypt-password-database-retrieve-second () {
+    local CRYPT_PASSWORD_DATABASE=
+    # load org-file into memory
+
+}
+
+# TODO: non-functional
+crypt-password-database-retrieve-third () {
+    local CRYPT_PASSWORD_DATABASE=
+    # load org-file into memory
+
 }

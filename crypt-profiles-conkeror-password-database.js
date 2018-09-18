@@ -5,7 +5,7 @@
 // Author: Andrew Kroshko
 // Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 // Created: Mon Jun 20, 2016
-// Version: 20180819
+// Version: 20180918
 // URL: https://github.com/akroshko/crypt-profiles
 //
 // This program is free software; you can redistribute it and/or
@@ -177,7 +177,13 @@ logindata["ebay"]    =       {"url":"https://signin.ebay.ca/ws/eBayISAPI.dll?Sig
                               "login-id":"userid",
                               "password-id":"pass",
                               "submit-id":"sgnBt"};
-logindata["twitch"]  =       {"url":"https://www.twitch.tv/login"};
+// TODO: submit can only be identified by inner html
+logindata["twitch"]  =       {"url":"https://www.twitch.tv/login",
+                              "login-element":"input",
+                              "login-type":"text",
+                              "password-element":"input",
+                              "password-type":"password",
+                              "submit-element":"button"};
 logindata["discord"]    =    {"url":"https://discordapp.com/login",
                               "login-element":"input",
                               "login-type":"email",
@@ -230,7 +236,7 @@ interactive("get-current-password-login","Get the login for the primary acount f
         // TODO: get the password here
         var base64_currenturl=btoa(unescape(I.buffer.display_uri_string));
         /// TODO: environment variable problem with conkeror
-        var cmd_str="launch-emacsclient noframe --eval \'(crypt-profiles-get-matching-password \"" + base64_currenturl + "\")\'";
+        var cmd_str="emacs -q --batch --eval '(progn (load \"~/.crypt-profiles-password-database.el\") (prin1 (crypt-profiles-get-matching-password \"" + base64_currenturl + "\")))'"
         // credit where credit is due
         // http://conkeror.org/Tips#Using_an_external_password_manager
         var out = "";
@@ -238,7 +244,8 @@ interactive("get-current-password-login","Get the login for the primary acount f
                                          $fds=[{output: async_binary_string_writer("")},
                                                {input: async_binary_reader(function (s) out += s || "") }]);
         // TODO: not sure why slice is needed, there seems to be a spurious t coming out of emacs
-        var thejson = eval(JSON.parse(out.slice(1)));
+        // I.window.alert(out);
+        var thejson = eval(JSON.parse(out));
         // globals
         theloginname = thejson[0];
         theloginuser = thejson[1];
@@ -254,7 +261,7 @@ interactive("get-current-password-login-alternate","Get the login for the second
         unfocus(I.window, I.buffer);
         // TODO: get the password here
         var base64_currenturl=btoa(unescape(I.buffer.display_uri_string));
-        var cmd_str="launch-emacsclient noframe --eval \'(crypt-profiles-get-matching-password \"" + base64_currenturl + "\" t)\'";
+        var cmd_str="emacs -q --batch --eval '(progn (load \"~/.crypt-profiles-password-database.el\") (prin1 (crypt-profiles-get-matching-password \"" + base64_currenturl + "\" t)))'"
         // credit where credit is due
         // http://conkeror.org/Tips#Using_an_external_password_manager
         var out = "";
@@ -262,7 +269,7 @@ interactive("get-current-password-login-alternate","Get the login for the second
                                          $fds=[{output: async_binary_string_writer("")},
                                                {input: async_binary_reader(function (s) out += s || "") }]);
         // TODO: not sure why slice is needed, there seems to be a spurious t coming out of emacs
-        var thejson = eval(JSON.parse(out.slice(1)));
+        var thejson = eval(JSON.parse(out));
         // globals
         theloginname = thejson[0];
         theloginuser = thejson[1];
@@ -278,7 +285,7 @@ interactive("get-current-password-login-tertiary","Get the login for the tertiar
         unfocus(I.window, I.buffer);
         // TODO: get the password here
         var base64_currenturl=btoa(unescape(I.buffer.display_uri_string));
-        var cmd_str="launch-emacsclient noframe --eval \'(crypt-profiles-get-matching-password \"" + base64_currenturl + "\" 3)\'";
+        var cmd_str="emacs -q --batch --eval '(progn (load \"~/.crypt-profiles-password-database.el\") (prin1 (crypt-profiles-get-matching-password \"" + base64_currenturl + "\" 3)))'"
         // credit where credit is due
         // http://conkeror.org/Tips#Using_an_external_password_manager
         var out = "";
@@ -286,7 +293,7 @@ interactive("get-current-password-login-tertiary","Get the login for the tertiar
                                          $fds=[{output: async_binary_string_writer("")},
                                                {input: async_binary_reader(function (s) out += s || "") }]);
         // TODO: not sure why slice is needed, there seems to be a spurious t coming out of emacs
-        var thejson = eval(JSON.parse(out.slice(1)));
+        var thejson = eval(JSON.parse(out));
         // globals
         theloginname = thejson[0];
         theloginuser = thejson[1];
@@ -345,19 +352,19 @@ interactive("insert-current-password","Get the current password and login for pa
                 var theform = I.buffer.document.getElementById("login-signin");
                 theform.click();
             }
-        } else if ( theloginname == "twitch" ) {
-            // TODO: will have to use state
-            var n1 = I.buffer.document.getElementById("username");
-            browser_element_focus(I.buffer, n1);
-            type_manually(I,theloginuser);
-            sleep(100.0);
-            var n2_wrapper = I.buffer.document.getElementById("password");
-            var n2 = n2_wrapper.getElementsByClassName("text");
-            browser_element_focus(I.buffer, n2[0]);
-            type_manually(I,theloginpassword);
-            sleep(100.0);
-            var thebutton = I.buffer.document.getElementsByClassName("primary button js-login-button");
-            thebutton[0].click();
+        // } else if ( theloginname == "twitch" ) {
+        //     // TODO: will have to use state
+        //     var n1 = I.buffer.document.getElementById("username");
+        //     browser_element_focus(I.buffer, n1);
+        //     type_manually(I,theloginuser);
+        //     sleep(100.0);
+        //     var n2_wrapper = I.buffer.document.getElementById("password");
+        //     var n2 = n2_wrapper.getElementsByClassName("text");
+        //     browser_element_focus(I.buffer, n2[0]);
+        //     type_manually(I,theloginpassword);
+        //     sleep(100.0);
+        //     var thebutton = I.buffer.document.getElementsByClassName("primary button js-login-button");
+        //     thebutton[0].click();
         } else if ( theloginname == "amazonca" || theloginname == "amazoncom" ) {
             var n1 = I.buffer.document.getElementById("ap_email");
             if ( n1 == null || initialstate == 1 ) {
@@ -523,12 +530,12 @@ interactive("insert-current-password","Get the current password and login for pa
         }
     });
 
-interactive("current-signout","Sign out from current website..",
+interactive("current-signout","Sign out from current website.",
     function (I) {
         unfocus(I.window, I.buffer);
         // TODO: get the password here
         var base64_currenturl=btoa(unescape(I.buffer.display_uri_string));
-        var cmd_str="launch-emacsclient noframe --eval \'(crypt-profiles-get-matching-password \"" + base64_currenturl + "\")\'";
+        var cmd_str="emacs -q --batch --eval '(progn (load \"~/.crypt-profiles-password-database.el\") (prin1 (crypt-profiles-get-matching-password \"" + base64_currenturl + "\")))'"
         // credit where credit is due
         // http://conkeror.org/Tips#Using_an_external_password_manager
         var out = "";
@@ -536,7 +543,7 @@ interactive("current-signout","Sign out from current website..",
                                          $fds=[{output: async_binary_string_writer("")},
                                                {input: async_binary_reader(function (s) out += s || "") }]);
         // TODO: not sure why slice is needed, there seems to be a spurious t coming out of emacs
-        var thejson = eval(JSON.parse(out.slice(1)));
+        var thejson = eval(JSON.parse(out));
         // globals
         theloginname = thejson[0];
         theloginuser = thejson[1];

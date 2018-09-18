@@ -5,7 +5,7 @@
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20180812
+# Version: 20180918
 # URL: https://github.com/akroshko/crypt-profiles
 #
 # This program is free software: you can redistribute it and/or modify
@@ -122,12 +122,12 @@ crypt-create-profile () {
     if true; then
         cp -r "$MASTERPROFILE" "$WORKINGPROFILE"
         fix-crypt-permissions "${WORKINGPROFILE}"
-        gpg-batch --homedir "$WORKINGPROFILE" --export-secret-subkeys "$RECIPIENT" > "${HOME}/crypt-profiles-secret-keys"
+        gpg-batch --homedir "$WORKINGPROFILE" --export-secret-subkeys "$RECIPIENT" > "$HOME/crypt-profiles-secret-keys"
         h1
         msg "Answer (y)es to delete secret key"
         echo ""
         gpg2 --homedir "$WORKINGPROFILE" --delete-secret-key "$RECIPIENT"
-        gpg2 --homedir "$WORKINGPROFILE" --import "${HOME}/crypt-profiles-secret-keys"
+        gpg2 --homedir "$WORKINGPROFILE" --import "$HOME/crypt-profiles-secret-keys"
         # create the actually working profile
         # TODO: add some checks here
         mkdir -p "$PRIMARYPROFILE"
@@ -215,7 +215,7 @@ crypt-profile-switch () {
         yell 'Must be able to replace ~/.ssh/config!'
     fi
     # need library hardcoded
-    source "${HOME}/.bash_library"
+    source "$HOME/.bash_library"
     # kill symlinks by default, send to all child processes
     local PRIMARYPROFILE="$1"
     local WORKINGPROFILE="$2"
@@ -224,41 +224,41 @@ crypt-profile-switch () {
     # get rid of agents
     killall-agents
     # gpg symlinks
-    [[ -e "${HOME}"/.gnupg ]] && \mv --backup=t -- "${HOME}"/.gnupg "${HOME}/.gnupg.backup"
+    [[ -e "$HOME"/.gnupg ]] && \mv --backup=t -- "$HOME"/.gnupg "$HOME/.gnupg.backup"
     # make sure things are synced
     need_new_symlink "$PRIMARYPROFILE/pubring.gpg" "$WORKINGPROFILE/pubring.gpg"
     need_new_symlink "$PRIMARYPROFILE/secring.gpg" "$WORKINGPROFILE/secring.gpg"
     need_new_symlink "$PRIMARYPROFILE/trustdb.gpg" "$WORKINGPROFILE/trustdb.gpg"
-    need_new_symlink "$WORKINGPROFILE" "${HOME}/.gnupg"
+    need_new_symlink "$WORKINGPROFILE" "$HOME/.gnupg"
     # link to the secrets files
-    need_new_directory "${HOME}/.secrets"
+    need_new_directory "$HOME/.secrets"
     # a loop to create symlinks
     for THESECRETFILE in $PRIMARYPROFILE/*; do
         [[ $THESECRETFILE =~ secrets || $THESECRETFILE =~ openvpn ]]  || continue
-        need_new_symlink "$THESECRETFILE" "${HOME}/.secrets/$(basename $THESECRETFILE)"
+        need_new_symlink "$THESECRETFILE" "$HOME/.secrets/$(basename $THESECRETFILE)"
     done
     # XXXX: just use secrets for itself, use last word in directory
     # TODO: document this and possibly make a better way to do this
-    need_new_symlink "$PRIMARYPROFILE/secrets.txt.gpg"    "${HOME}"/.secrets/$(basename ${PRIMARYPROFILE##*-}).txt.gpg
-    need_new_symlink "$PRIMARYPROFILE/id_rsa.txt.gpg"     "${HOME}/.secrets/id_rsa.txt.gpg"
-    need_new_symlink "$PRIMARYPROFILE/id_ecdsa.txt.gpg"   "${HOME}/.secrets/id_ecdsa.txt.gpg"
-    need_new_symlink "$PRIMARYPROFILE/id_ed25519.txt.gpg" "${HOME}/.secrets/id_ed25519.txt.gpg"
+    need_new_symlink "$PRIMARYPROFILE/secrets.txt.gpg"    "$HOME"/.secrets/$(basename ${PRIMARYPROFILE##*-}).txt.gpg
+    need_new_symlink "$PRIMARYPROFILE/id_rsa.txt.gpg"     "$HOME/.secrets/id_rsa.txt.gpg"
+    need_new_symlink "$PRIMARYPROFILE/id_ecdsa.txt.gpg"   "$HOME/.secrets/id_ecdsa.txt.gpg"
+    need_new_symlink "$PRIMARYPROFILE/id_ed25519.txt.gpg" "$HOME/.secrets/id_ed25519.txt.gpg"
     # ssh symlinks
     # TODO: what to do if something other than symlinks exists?
-    need_new_symlink "$PRIMARYPROFILE/id_ecdsa"       "${HOME}/.ssh/id_ecdsa"
-    need_new_symlink "$PRIMARYPROFILE/id_ecdsa.pub"   "${HOME}/.ssh/id_ecdsa.pub"
-    need_new_symlink "$PRIMARYPROFILE/id_ed25519"     "${HOME}/.ssh/id_ed25519"
-    need_new_symlink "$PRIMARYPROFILE/id_ed25519.pub" "${HOME}/.ssh/id_ed25519.pub"
-    need_new_symlink "$PRIMARYPROFILE/id_rsa"         "${HOME}/.ssh/id_rsa"
-    need_new_symlink "$PRIMARYPROFILE/id_rsa.pub"     "${HOME}/.ssh/id_rsa.pub"
+    need_new_symlink "$PRIMARYPROFILE/id_ecdsa"       "$HOME/.ssh/id_ecdsa"
+    need_new_symlink "$PRIMARYPROFILE/id_ecdsa.pub"   "$HOME/.ssh/id_ecdsa.pub"
+    need_new_symlink "$PRIMARYPROFILE/id_ed25519"     "$HOME/.ssh/id_ed25519"
+    need_new_symlink "$PRIMARYPROFILE/id_ed25519.pub" "$HOME/.ssh/id_ed25519.pub"
+    need_new_symlink "$PRIMARYPROFILE/id_rsa"         "$HOME/.ssh/id_rsa"
+    need_new_symlink "$PRIMARYPROFILE/id_rsa.pub"     "$HOME/.ssh/id_rsa.pub"
     # TODO: may be an obsolete lines
     # TODO: do this for others?
-    [[ -e "${HOME}/.ssh/config" ]] && rm -f "${HOME}/.ssh/config"
-    need_new_symlink "$CRYPTSSHCONFIGPATH/config" "${HOME}/.ssh/config"
+    [[ -e "$HOME/.ssh/config" ]] && rm -f "$HOME/.ssh/config"
+    need_new_symlink "$CRYPTSSHCONFIGPATH/config" "$HOME/.ssh/config"
     # for scripts that modify .ssh/config, ensure there always an original
-    need_new_symlink "$CRYPTSSHCONFIGPATH/config"         "${HOME}/.ssh/config_fallback"
-    need_new_symlink "$CRYPTGPGCONFIGPATH/gpg.conf"       "${HOME}/.gnupg/gpg.conf"
-    need_new_symlink "$CRYPTGPGCONFIGPATH/gpg-agent.conf" "${HOME}/.gnupg/gpg-agent.conf"
+    need_new_symlink "$CRYPTSSHCONFIGPATH/config"         "$HOME/.ssh/config_fallback"
+    need_new_symlink "$CRYPTGPGCONFIGPATH/gpg.conf"       "$HOME/.gnupg/gpg.conf"
+    need_new_symlink "$CRYPTGPGCONFIGPATH/gpg-agent.conf" "$HOME/.gnupg/gpg-agent.conf"
     fix-gpg-ssh-permissions
 }
 
@@ -284,7 +284,7 @@ crypt-profile-printable () {
             # echo "${NAME}"
             # echo $(gpg --list-keys --fingerprint --keyid-format 0xlong --no-default-keyring --keyring ${KEYSLOCATION}/pubring.gpg "${NAME}")
             # echo "there"
-            local STRIPNAME=`echo "$NAME" | sed -e 's/^ *//g' -e 's/ *$//g' `
+            local STRIPNAME=$(sed -e 's/^ *//g' -e 's/ *$//g' <<< "$NAME")
             local KEYIDS=()
             while read LINE; do
                 local REGEXID='0x([0-9A-Z]{16})'
@@ -336,19 +336,19 @@ killall-agents () {
     # XXXX: not completely desirable, but kill gnome keychain because it often interferes
     pkill -9 -f gnome-keyring-daemon
     # this is hopefully enough to purge it
-    [[ -e "${HOME}/.gnupg/gpg-agent-info-${HOSTNAME}" ]] && rm "${HOME}/.gnupg/gpg-agent-info-${HOSTNAME}"
+    [[ -e "$HOME/.gnupg/gpg-agent-info-${HOSTNAME}" ]] && rm "$HOME/.gnupg/gpg-agent-info-${HOSTNAME}"
     # TODO: not sure if I ever need this?
-    [[ -e "${HOME}/.gpg-agent-info" ]] && rm "${HOME}/.gpg-agent-info"
+    [[ -e "$HOME/.gpg-agent-info" ]] && rm "$HOME/.gpg-agent-info"
     # TODO: delete only things I own?
     find /tmp -iname "gpg-*" &>/dev/null && rm /tmp/gpg-*
-    [[ -e "${HOME}/.keychain" ]] && find "${HOME}/.keychain" -type f -delete
+    [[ -e "$HOME/.keychain" ]] && find "$HOME/.keychain" -type f -delete
 }
 
 harm-crypt () {
     # harm stands for harmonize and is a nice prefix I use
     # XXXX: this function is pretty brutal, but resets very well
     killall-agents
-    source "${HOME}/.bash_profile"
+    source "$HOME/.bash_profile"
     # TODO: decide if I really want this here like this, maybe use function?
     # if ps -ef | grep -- "emacs --daemon" | grep -v grep >/dev/null && type -P launch-emacsclient >/dev/null 2>&1; then
     #     h2 "Re-initing Emacs!"
@@ -406,14 +406,14 @@ bootstrap-temporary-ssh () {
     fi
     # XXXX: only do this if an id_rsa does not already exist on host machine
     # create a temporary ssh key without a password, based on
-    ssh-keygen -b 4096 -t rsa -C "Temporary key to login to ${HOSTNAME}-$(date --rfc-3339=date)" -f "${HOME}/.ssh/id_rsa_temp"
+    ssh-keygen -b 4096 -t rsa -C "Temporary key to login to ${HOSTNAME}-$(date --rfc-3339=date)" -f "$HOME/.ssh/id_rsa_temp"
     # copy private key to the host machine
-    ssh $(whoami)@"$1" mkdir -p "${HOME}/.ssh"
-    scp "${HOME}/.ssh/id_rsa_temp" $(whoami)@"$1:${HOME}/.ssh/id_rsa"
-    scp "${HOME}/.ssh/id_rsa_temp.pub" $(whoami)@"$1:${HOME}/.ssh/id_rsa.pub"
-    chmod 600 "${HOME}"/.ssh/id_rsa_temp*
+    ssh $(whoami)@"$1" mkdir -p "$HOME/.ssh"
+    scp "$HOME/.ssh/id_rsa_temp" $(whoami)@"$1:$HOME/.ssh/id_rsa"
+    scp "$HOME/.ssh/id_rsa_temp.pub" $(whoami)@"$1:$HOME/.ssh/id_rsa.pub"
+    chmod 600 "$HOME"/.ssh/id_rsa_temp*
     # copy to authorized keys
-    cat "${HOME}/.ssh/id_rsa_temp.pub" >> "${HOME}/.ssh/authorized_keys"
+    cat "$HOME/.ssh/id_rsa_temp.pub" >> "$HOME/.ssh/authorized_keys"
 }
 
 bootstrap-temporary-ssh-remove () {
@@ -426,12 +426,12 @@ bootstrap-temporary-ssh-remove () {
     fi
     # XXXX: only do this if an id_rsa does not already exist on host machine
     # delete on private key on host machine
-    ssh $(whoami)@"$1" rm "${HOME}/.ssh/id_rsa"
+    ssh $(whoami)@"$1" rm "$HOME/.ssh/id_rsa"
     # delete public and authorized keys on this machine
     # TODO: clean up blank lines
-    sed -i '/Temporary key to login/d' "${HOME}/.ssh/authorized_keys"
+    sed -i '/Temporary key to login/d' "$HOME/.ssh/authorized_keys"
     # delete the keys themselves
-    rm "${HOME}/.ssh/id_rsa_temp" "${HOME}/.ssh/id_rsa_temp.pub"
+    rm "$HOME/.ssh/id_rsa_temp" "$HOME/.ssh/id_rsa_temp.pub"
 }
 
 bootstrap-temporary-ssh-remove-all () {
@@ -439,16 +439,16 @@ bootstrap-temporary-ssh-remove-all () {
     # fix up authorized keys
     # TODO: I should ask nicely before I do this
     # TODO: do I want to clear up authorized keys elsewhere
-    sed -i '/Temporary key to login/d' "${HOME}/.ssh/authorized_keys"
+    sed -i '/Temporary key to login/d' "$HOME/.ssh/authorized_keys"
     # delete the keys themselves
-    sed -i '/^\s*$/d' "${HOME}/.ssh/authorized_keys"
-    home-trash "${HOME}/.ssh/id_rsa_temp"
-    home-trash "${HOME}/.ssh/id_rsa_temp.pub"
+    sed -i '/^\s*$/d' "$HOME/.ssh/authorized_keys"
+    home-trash "$HOME/.ssh/id_rsa_temp"
+    home-trash "$HOME/.ssh/id_rsa_temp.pub"
 }
 
 bootstrap-nuke-crypt-home () {
     # deletes (backs up?) any stuff hanging around
-    home-trash "${HOME}/.ssh/config"
+    home-trash "$HOME/.ssh/config"
 }
 
 ################################################################################
@@ -849,29 +849,29 @@ master-privacy-all () {
 
 master-privacy-trash () {
     h2 "Clearing trash"
-    if [[ -d "${HOME}/tmp/trash" ]] && ls -A "${HOME}"/tmp/trash/* &>/dev/null; then
+    if [[ -d "$HOME/tmp/trash" ]] && ls -A "$HOME"/tmp/trash/* &>/dev/null; then
         msg  "Contents of ~/tmp/trash:"
-        ls -A "${HOME}"/tmp/trash/*
+        ls -A "$HOME"/tmp/trash/*
         while read -r -t 0;do read -r; done;
         # TODO: add a countdown here
         if ask_yn "Do you want to delete ~/tmp/trash?";then
-            kill-directory-contents "${HOME}/tmp/trash"
+            kill-directory-contents "$HOME/tmp/trash"
         fi
     else
         warn "Nothing in ~/tmp/trash"
     fi
-    if [[ -d "${HOME}/.local/share/Trash/files" ]] && ls -A -d "${HOME}"/.local/share/Trash/files/* &>/dev/null; then
+    if [[ -d "$HOME/.local/share/Trash/files" ]] && ls -A -d "$HOME"/.local/share/Trash/files/* &>/dev/null; then
         msg "Contents of ~/.local/share/Trash/files:"
-        ls -A "${HOME}/.local/share/Trash/files"
+        ls -A "$HOME/.local/share/Trash/files"
         # TODO: check if empty?
         if ask_yn "Do you want to delete ~/.local/share/Trash/files?"; then
             bleachbit --overwrite --clean system.trash
         fi
         # TODO: add a countdown here
-        # kill-directory-contents "${HOME}"/.local/share/Trash/files
-        # kill-directory-contents "${HOME}"/.local/share/Trash/info
+        # kill-directory-contents "$HOME"/.local/share/Trash/files
+        # kill-directory-contents "$HOME"/.local/share/Trash/info
     else
-        warn "Nothing in ${HOME}/.local/share/Trash/files"
+        warn "Nothing in $HOME/.local/share/Trash/files"
     fi
 }
 
@@ -879,35 +879,35 @@ master-privacy-conkeror () {
     h2 "Conkeror"
     # XXXX: I now use a password manager and just clear everything
     if ! check-firefox; then
-        if [[ -d "${HOME}/.conkeror.mozdev.org/" ]]; then
+        if [[ -d "$HOME/.conkeror.mozdev.org/" ]]; then
             msg "Clearing firefox-based browsers OK!"
             # XXXX: preserve as much as possible, like adblocker
             # TODO: keep shredding more
-            kill-find-matching "${HOME}/.conkeror.mozdev.org/conkeror" content-prefs.sqlite
-            kill-find-matching "${HOME}/.conkeror.mozdev.org/conkeror" cookies.sqlite
-            kill-find-matching "${HOME}/.conkeror.mozdev.org/conkeror" cookies.sqlite-shm
-            kill-find-matching "${HOME}/.conkeror.mozdev.org/conkeror" cookies.sqlite-wal
-            kill-find-matching "${HOME}/.conkeror.mozdev.org/conkeror" datareporting
-            kill-find-matching "${HOME}/.conkeror.mozdev.org/conkeror" downloads.json
-            kill-find-matching "${HOME}/.conkeror.mozdev.org/conkeror" formhistory.sqlite
-            kill-find-matching "${HOME}/.conkeror.mozdev.org/conkeror" mimeTypes.rdf
-            kill-find-matching "${HOME}/.conkeror.mozdev.org/conkeror" permissions.sqlite
-            kill-find-matching "${HOME}/.conkeror.mozdev.org/conkeror" places.sqlite
-            kill-find-matching "${HOME}/.conkeror.mozdev.org/conkeror" places.sqlite-shm
-            kill-find-matching "${HOME}/.conkeror.mozdev.org/conkeror" places.sqlite-wal
-            kill-find-matching "${HOME}/.conkeror.mozdev.org/conkeror" prefs.js
-            kill-find-matching "${HOME}/.conkeror.mozdev.org/conkeror" sessionCheckpoints.json
-            kill-find-matching "${HOME}/.conkeror.mozdev.org/conkeror" saved-telemetry-pings
-            kill-find-matching "${HOME}/.conkeror.mozdev.org/conkeror" storage
-            kill-find-matching "${HOME}/.conkeror.mozdev.org/conkeror" webappsstore.sqlite
-            kill-find-matching "${HOME}/.conkeror.mozdev.org/conkeror" webappsstore.sqlite-shm
-            kill-find-matching "${HOME}/.conkeror.mozdev.org/conkeror" webappsstore.sqlite-wal
-            kill-find-matching "${HOME}/.conkeror.mozdev.org/conkeror" xulstore.json
+            kill-find-matching "$HOME/.conkeror.mozdev.org/conkeror" content-prefs.sqlite
+            kill-find-matching "$HOME/.conkeror.mozdev.org/conkeror" cookies.sqlite
+            kill-find-matching "$HOME/.conkeror.mozdev.org/conkeror" cookies.sqlite-shm
+            kill-find-matching "$HOME/.conkeror.mozdev.org/conkeror" cookies.sqlite-wal
+            kill-find-matching "$HOME/.conkeror.mozdev.org/conkeror" datareporting
+            kill-find-matching "$HOME/.conkeror.mozdev.org/conkeror" downloads.json
+            kill-find-matching "$HOME/.conkeror.mozdev.org/conkeror" formhistory.sqlite
+            kill-find-matching "$HOME/.conkeror.mozdev.org/conkeror" mimeTypes.rdf
+            kill-find-matching "$HOME/.conkeror.mozdev.org/conkeror" permissions.sqlite
+            kill-find-matching "$HOME/.conkeror.mozdev.org/conkeror" places.sqlite
+            kill-find-matching "$HOME/.conkeror.mozdev.org/conkeror" places.sqlite-shm
+            kill-find-matching "$HOME/.conkeror.mozdev.org/conkeror" places.sqlite-wal
+            kill-find-matching "$HOME/.conkeror.mozdev.org/conkeror" prefs.js
+            kill-find-matching "$HOME/.conkeror.mozdev.org/conkeror" sessionCheckpoints.json
+            kill-find-matching "$HOME/.conkeror.mozdev.org/conkeror" saved-telemetry-pings
+            kill-find-matching "$HOME/.conkeror.mozdev.org/conkeror" storage
+            kill-find-matching "$HOME/.conkeror.mozdev.org/conkeror" webappsstore.sqlite
+            kill-find-matching "$HOME/.conkeror.mozdev.org/conkeror" webappsstore.sqlite-shm
+            kill-find-matching "$HOME/.conkeror.mozdev.org/conkeror" webappsstore.sqlite-wal
+            kill-find-matching "$HOME/.conkeror.mozdev.org/conkeror" xulstore.json
             # cache files
-            kill-directory-contents "${HOME}/.cache/conkeror.mozdev.org/"
+            kill-directory-contents "$HOME/.cache/conkeror.mozdev.org/"
             # TODO: are these really what I want for conkeror, does conkeror ever write here?
-            kill-directory-contents "${HOME}/.cache/firefox/"
-            kill-directory-contents "${HOME}/.cache/mozilla/"
+            kill-directory-contents "$HOME/.cache/firefox/"
+            kill-directory-contents "$HOME/.cache/mozilla/"
         fi
     else
         warn "Firefox or similar running!"
@@ -930,8 +930,8 @@ master-privacy-firefox () {
             warn "Cannot export Firefox bookmarks, places.sqlite probably does not exist!"
         fi
         # XXXX: this kills all bookmarks
-        kill-find-matching "${HOME}/.mozilla/firefox places.sqlite"
-        kill-recursive "${HOME}/.mozilla/firefox/Crash Reports"
+        kill-find-matching "$HOME/.mozilla/firefox places.sqlite"
+        kill-recursive "$HOME/.mozilla/firefox/Crash Reports"
     else
         warn "Firefox running or not clearing due to no input.!"
     fi
@@ -941,18 +941,18 @@ master-privacy-palemoon () {
     h2 "Pale moon"
     # TODO: check specifically for pale moon
     if ! check-firefox; then
-        kill-find-matching "${HOME}/.moonchild productions/pale moon" cookies.sqlite
-        kill-find-matching "${HOME}/.moonchild productions/pale moon" content-prefs.sqlite
-        kill-find-matching "${HOME}/.moonchild productions/pale moon" permissions.sqlite
-        kill-find-matching "${HOME}/.moonchild productions/pale moon" places.sqlite
-        kill-find-matching "${HOME}/.moonchild productions/pale moon" places.sqlite-shm
-        kill-find-matching "${HOME}/.moonchild productions/pale moon" places.sqlite-wal
-        kill-find-matching "${HOME}/.moonchild productions/pale moon" prefs.js
-        kill-find-matching "${HOME}/.moonchild productions/pale moon" sessionCheckpoints.json
-        kill-find-matching "${HOME}/.moonchild productions/pale moon" sessionstore.bak
-        kill-find-matching "${HOME}/.moonchild productions/pale moon" sessionstore.json
-        kill-find-matching "${HOME}/.moonchild productions/pale moon" webappstore.sqlite
-        kill-find-matching "${HOME}/.moonchild productions/pale moon" xulstore.json
+        kill-find-matching "$HOME/.moonchild productions/pale moon" cookies.sqlite
+        kill-find-matching "$HOME/.moonchild productions/pale moon" content-prefs.sqlite
+        kill-find-matching "$HOME/.moonchild productions/pale moon" permissions.sqlite
+        kill-find-matching "$HOME/.moonchild productions/pale moon" places.sqlite
+        kill-find-matching "$HOME/.moonchild productions/pale moon" places.sqlite-shm
+        kill-find-matching "$HOME/.moonchild productions/pale moon" places.sqlite-wal
+        kill-find-matching "$HOME/.moonchild productions/pale moon" prefs.js
+        kill-find-matching "$HOME/.moonchild productions/pale moon" sessionCheckpoints.json
+        kill-find-matching "$HOME/.moonchild productions/pale moon" sessionstore.bak
+        kill-find-matching "$HOME/.moonchild productions/pale moon" sessionstore.json
+        kill-find-matching "$HOME/.moonchild productions/pale moon" webappstore.sqlite
+        kill-find-matching "$HOME/.moonchild productions/pale moon" xulstore.json
     else
         warn "Firefox running or not clearing due to no input.!"
     fi
@@ -963,25 +963,25 @@ master-privacy-chromium () {
     # XXXX: I only use chromium as a secondary browser, shreding most things, but keeping adblock?
     # TODO: can I auto-reinstall adblock after shred?
     if ! check-chromium; then
-        kill-directory-contents "${HOME}/.config/chromium/Crash Reports"
-        kill-file               "${HOME}/.config/chromium/Default/Cookies"
-        kill-file               "${HOME}/.config/chromium/Default/Cookies-journal"
-        kill-file               "${HOME}/.config/chromium/Default/Cookies Session"
-        kill-file               "${HOME}/.config/chromium/Default/Cookies Tabs"
-        kill-file               "${HOME}/.config/chromium/Default/Favicons"
-        kill-file               "${HOME}/.config/chromium/Default/Favicons-journal"
-        kill-file               "${HOME}/.config/chromium/Default/History"
-        kill-file               "${HOME}/.config/chromium/Default/Historyjournal"
-        kill-file               "${HOME}/.config/chromium/Default/Last Session"
-        kill-file               "${HOME}/.config/chromium/Default/Last Tabs"
-        kill-file               "${HOME}/.config/chromium/Default/Login Data"
-        kill-file               "${HOME}/.config/chromium/Default/Login Data-journal"
-        kill-file               "${HOME}/.config/chromium/Default/Shortcuts"
-        kill-file               "${HOME}/.config/chromium/Default/Shortcuts-journal"
-        kill-file               "${HOME}/.config/chromium/Default/Visited Links"
-        kill-file               "${HOME}/.config/chromium/Default/Web Data"
-        kill-file               "${HOME}/.config/chromium/Default/Web Data-journal"
-        kill-directory-contents "${HOME}/.cache/chromium/"
+        kill-directory-contents "$HOME/.config/chromium/Crash Reports"
+        kill-file               "$HOME/.config/chromium/Default/Cookies"
+        kill-file               "$HOME/.config/chromium/Default/Cookies-journal"
+        kill-file               "$HOME/.config/chromium/Default/Cookies Session"
+        kill-file               "$HOME/.config/chromium/Default/Cookies Tabs"
+        kill-file               "$HOME/.config/chromium/Default/Favicons"
+        kill-file               "$HOME/.config/chromium/Default/Favicons-journal"
+        kill-file               "$HOME/.config/chromium/Default/History"
+        kill-file               "$HOME/.config/chromium/Default/Historyjournal"
+        kill-file               "$HOME/.config/chromium/Default/Last Session"
+        kill-file               "$HOME/.config/chromium/Default/Last Tabs"
+        kill-file               "$HOME/.config/chromium/Default/Login Data"
+        kill-file               "$HOME/.config/chromium/Default/Login Data-journal"
+        kill-file               "$HOME/.config/chromium/Default/Shortcuts"
+        kill-file               "$HOME/.config/chromium/Default/Shortcuts-journal"
+        kill-file               "$HOME/.config/chromium/Default/Visited Links"
+        kill-file               "$HOME/.config/chromium/Default/Web Data"
+        kill-file               "$HOME/.config/chromium/Default/Web Data-journal"
+        kill-directory-contents "$HOME/.cache/chromium/"
     else
         warn "Chromium running!"
     fi
@@ -1000,7 +1000,7 @@ master-privacy () {
             master-privacy-trash
             # XXXX: these are specific to other unreleased scripts I have
             h1 "Automatically deleting temporary files"
-            for tmplocation in "${HOME}"/tmp/*; do
+            for tmplocation in "$HOME"/tmp/*; do
                 [[ -d "$tmplocation" ]] || continue
                 # if [[ "$tmplocation" =~ flattened || "$tmplocation" =~ thumbnail ]]; then
                 # TODO: do not delete thumbnail for now, decide later
@@ -1015,7 +1015,7 @@ master-privacy () {
                     fi
                 fi
             done
-            local IMAGETMP="${HOME}/tmp/image-tmp"
+            local IMAGETMP="$HOME/tmp/image-tmp"
             if [[ -d  "${IMAGETMP}" ]]; then
                 if [[ -n "$(find $tmplocation -iname \"*.git\" -type d)" ]]; then
                     msg "Killing ${IMAGETMP}"
@@ -1046,10 +1046,10 @@ master-privacy () {
         h2 "Gnome"
         bleachbit --overwrite --clean gnome.* nautilus.*
         h2 "KDE"
-        kill-directory-contents "${HOME}"/.kde/share/apps/RecentDocuments/*
+        kill-directory-contents "$HOME"/.kde/share/apps/RecentDocuments/*
         bleachbit --overwrite --clean kde.*
-        kill-directory-contents "${HOME}/.kde/share/apps/okular/docdata"
-        kill-directory-contents "${HOME}/.kde/share/apps/kconf_update/log"
+        kill-directory-contents "$HOME/.kde/share/apps/okular/docdata"
+        kill-directory-contents "$HOME/.kde/share/apps/kconf_update/log"
         h2 "System-wide"
         # TODO: reinstate these
         # XXXX: not system.tmp!!! interferes with many many things
@@ -1061,25 +1061,25 @@ master-privacy () {
         # TODO: do better job at this?
         # clean out recently used lists
         h2 "Clearing recently used"
-        kill-file "${HOME}/.recently-used"
+        kill-file "$HOME/.recently-used"
         # kill-file ~/.config/epiphany/ephy-history.db
-        kill-file "${HOME}/.config/gxine/playlist"
+        kill-file "$HOME/.config/gxine/playlist"
         # causes problems on my system
-        kill-file "${HOME}/.config/mimeapps.list"
-        kill-file "${HOME}/.config/autostart/dropbox.desktop"
-        kill-file "${HOME}/.config/autostart/skypeforlinux.desktop"
+        kill-file "$HOME/.config/mimeapps.list"
+        kill-file "$HOME/.config/autostart/dropbox.desktop"
+        kill-file "$HOME/.config/autostart/skypeforlinux.desktop"
         # XXXX: these are killed by bleachbit
         # kill-recursive ~/.local/share/*xbel*;
-        kill-file-contents "${HOME}/.local/share/user-places.xbel"
-        kill-recent-files-line '/\[Recent Files\]/,/^\s*$/{d}' "${HOME}/.kde/share/config/arkrc"
-        kill-matching-line     '/Recent Urls/d'                "${HOME}/.kde/share/config/dragonplayerrc"
+        kill-file-contents "$HOME/.local/share/user-places.xbel"
+        kill-recent-files-line '/\[Recent Files\]/,/^\s*$/{d}' "$HOME/.kde/share/config/arkrc"
+        kill-matching-line     '/Recent Urls/d'                "$HOME/.kde/share/config/dragonplayerrc"
         # kill-recent-files-line ~/.kde/share/config/gwenviewrc
-        kill-recent-files-line "${HOME}/.kde/share/config/katerc"
-        kill-recent-files-line "${HOME}/.kde/share/config/okularrc"
+        kill-recent-files-line "$HOME/.kde/share/config/katerc"
+        kill-recent-files-line "$HOME/.kde/share/config/okularrc"
         # TODO: find out if these are really killed otherwise
         # h2  "Clearing tracker/indexers"
-        # kill-directory-contents-preserve-structure "${HOME}"/.local/share/tracker;
-        # kill-directory-contents "${HOME}"/.local/share/zeitgeist
+        # kill-directory-contents-preserve-structure "$HOME"/.local/share/tracker;
+        # kill-directory-contents "$HOME"/.local/share/zeitgeist
         # kill-directory-contents ~/.kde/share/apps/gwenview/recentfolders/*
         # bleachbit --overwrite --clean thumbnails.cache
         # kill-directory-contents-preserve-structure ~/.cache/thumbnails
@@ -1093,30 +1093,30 @@ master-privacy () {
         if [[ -z "$1" ]]; then
             # if ! check-emacs-daemon; then
             echo "Shredding temporary emacs files!"
-            kill-directory-contents "${HOME}/.emacs.d/tmp/"
-            kill-directory-contents "${HOME}/.emacs.d/image-dired/"
+            kill-directory-contents "$HOME/.emacs.d/tmp/"
+            kill-directory-contents "$HOME/.emacs.d/image-dired/"
             # TODO: ask before this?
-            kill-directory-contents "${HOME}/.local/share/zathura"
-            kill-recursive  "${HOME}/.local/share/data/qpdfview"
-            kill-recursive "${HOME}/.local/share/evolution"
+            kill-directory-contents "$HOME/.local/share/zathura"
+            kill-recursive  "$HOME/.local/share/data/qpdfview"
+            kill-recursive "$HOME/.local/share/evolution"
             # TODO: possibly do less, so preserve vlc options
-            kill-directory-contents "${HOME}/.local/share/vlc"
-            kill-directory-contents "${HOME}/.abobe"
-            kill-directory-contents "${HOME}/.cr3"
+            kill-directory-contents "$HOME/.local/share/vlc"
+            kill-directory-contents "$HOME/.abobe"
+            kill-directory-contents "$HOME/.cr3"
             # TODO: program I once tested, remove
-            kill-directory-contents "${HOME}/.viking"
-            kill-directory-contents "${HOME}/.xine"
+            kill-directory-contents "$HOME/.viking"
+            kill-directory-contents "$HOME/.xine"
             # TODO: if I seriously use this, fix
-            kill-directory-contents "${HOME}/.openshot"
+            kill-directory-contents "$HOME/.openshot"
             # TODO: if I seriously use this, fix
-            kill-directory-contents "${HOME}/.mypaint"
+            kill-directory-contents "$HOME/.mypaint"
             # TODO: do I want this in batch mode or not
             #       can I just kill it and ones that look like it
-            kill-file-contents "${HOME}/.local/share/recently-used.xbel"
+            kill-file-contents "$HOME/.local/share/recently-used.xbel"
             # TODO: clear xsession...
-            # kill-file-contents "${HOME}"/.xsession-errors
+            # kill-file-contents "$HOME"/.xsession-errors
             # TODO: want a robust kill matching files, see if a function I wrote works here
-            [[ -d "${HOME}/.local/share/" ]] && find "${HOME}/.local/share/" -maxdepth 1 -type f -iname "recently-used.xbel.*" -exec bleachbit --shred {} \;
+            [[ -d "$HOME/.local/share/" ]] && find "$HOME/.local/share/" -maxdepth 1 -type f -iname "recently-used.xbel.*" -exec bleachbit --shred {} \;
             # TODO:
         fi
         h2 "Re-caching programs such as Sage and Python"
