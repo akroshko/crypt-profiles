@@ -143,7 +143,7 @@ main () {
                 local TOPSECRET="$(DISPLAY= gpg-batch --no-tty --decrypt --use-agent $PWDFILE)"
                 if [[ $? == 0 ]]; then
                     local KEYPWD=$(sed -n '1p' <<< "$TOPSECRET")
-                    empty -f -i in.fifo -o out.fifo -p empty.pid -L empty.log ssh-add -t 2419200 "$HOME/.ssh/${KEYFILE}"
+                    empty -f -i in.fifo -o out.fifo -p empty.pid -L /tmp/empty-bash-profile-crypt.log ssh-add -t 2419200 "$HOME/.ssh/${KEYFILE}"
                     empty -w -i out.fifo -o in.fifo 'nter passphrase' "$KEYPWD\r"
 # expect << EOF
 #   spawn ssh-add -t 2419200 $HOME/.ssh/${KEYFILE}

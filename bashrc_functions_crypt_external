@@ -330,6 +330,7 @@ crypt-device-image-to-here () {
     # good for quick and dirty backups of disks on secondary machines before major modifications
     # TODO: will need to create and test a restore thing
     #       mbuffer limtted to easily fit on machines with 1G Ram
+    # TODO: change to lzop, I find it better for realtime compression on my machines
     sudo dd if=/dev/"$1" bs=64k conv=noerror,sync | lz4 | mbuffer -m 256M | gpg-batch --compress-algo none --cipher-algo AES256 --recipient "${CRYPTGPGUSER}" --output - --encrypt - | mbuffer -q -m 256M -s 64k -o ./"${HOSTNAME}"-"$1"--$(date +%Y%m%d%H%M%S).lz4.gpg
 }
 
@@ -342,8 +343,8 @@ ssh-kill-offending-key () {
     # TODO: do this automatically if there is already a good key?
     if [[ -n "$1" && "$1" =~ known_hosts ]]; then
         # TODO: how to split?
-        local HOSTSFILE=$(echo "$1" | cut -d':' -f1)
-        local LINENO=$(echo "$1" | cut -d':' -f2)
+        local HOSTSFILE=$(cut -d':' -f1 <<< "$1")
+        local LINENO=$(cut -d':' -f2 <<< "$1")
         if [[ -n "$HOSTSFILE" && -n "$LINENO" ]];then
             # delete appropriate line
             echo "Deleting ${LINENO} in ${HOSTSFILE}!!!"

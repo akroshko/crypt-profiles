@@ -5,7 +5,7 @@
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20180918
+# Version: 20181030
 # URL: https://github.com/akroshko/crypt-profiles
 #
 # This program is free software: you can redistribute it and/or modify
@@ -37,24 +37,25 @@ source "$HOME/.bash_library"
 # TODO: backup /home as default, try again... there are silly bugs here
 # TODO: still issue with best way to manage root
 
+# TODO: parse arguments a bit better
 main () {
-    local HELPTEXT="Usage: ./crypt-backup.sh [--help] [--reset] <<path>> [<<compression option>>] [<<compression level>>]
+    local HELPTEXT="Usage: ./crypt-backup.sh [--help] [--reset] <<tar options...>>
 
     Use --reset with no other options to umount and remove all logical
     volumes.
 
     <<path>> should be the full path to backup
 
-    <<compression option>> (default --lzop) and <<compression level>> can be:
-      --bzip2 with -1 (fast) to -9 (best) for <<compression level>>
-      --gzip with -1 (fast) -6 (default) -9 (best) for <<compression level>>
-      --lz4 with -1 (fast) to -9 (best) for <<compression level>>
-      --lzop or empty <<compression option>>, with -1 (equiv fast) -3 to -6 (equiv default) -7 to -9 (equiv slow) for <<compression level>>
-      --pigz with -1 (fast) -6 (default) -9 (best) for <<compression level>>
-      --lzip with -1 (fast) to -9 (best) with -6 (default) for <<compression level>>
-
     Note that environment variables \$CRYPTGPGKEY \$CRYPTGPGUSER \$BACKUPHOSTNAME \$BACKUPUUID must be set.
 "
+    # [<<compression option>>] [<<compression level>>]
+    # <<compression option>> (default --lzop) and <<compression level>> can be:
+    #   --bzip2 with -1 (fast) to -9 (best) for <<compression level>>
+    #   --gzip with -1 (fast) -6 (default) -9 (best) for <<compression level>>
+    #   --lz4 with -1 (fast) to -9 (best) for <<compression level>>
+    #   --lzop or empty <<compression option>>, with -1 (equiv fast) -3 to -6 (equiv default) -7 to -9 (equiv slow) for <<compression level>>
+    #   --pigz with -1 (fast) -6 (default) -9 (best) for <<compression level>>
+    #   --xz with -1 (fast) to -9 (best) with -6 (default) for <<compression level>>
 
     # XXXX: these must be set externally
     if [[ $@ == *"--help"* || -z "$CRYPTGPGKEY" || -z "$CRYPTGPGUSER" || -z "$BACKUPHOSTNAME" || -z "$BACKUPUUID" ]]; then
@@ -71,9 +72,13 @@ main () {
         set -e
         # XXXX: hard coded to ensure script does not screw anything up
         if [[ "${HOSTNAME}" == "$BACKUPHOSTNAME" ]]; then
+            # TODO: bail if sudo not correct
+            sudo true || return 1
+            echo "Creating snapshot of /dev/crypt-main/home"
             # TODO: is this necessary?
             sync; sleep 10; sync
             # TODO: make sure I backup proper directory rather than home by default
+            # TODO: no very useful
             sudo lvcreate --size 12G --snapshot --name backup-snapshot /dev/crypt-main/home
             sudo mount /dev/crypt-main/backup-snapshot /mnt-snapshot -o ro
         else
@@ -88,46 +93,52 @@ main () {
             gpg --import "${CRYPTGPGKEY}"
         fi
         pushd . >/dev/null
-        # TODO: make this more flexible
+        # TODO: make this more flexible, replace down below
         cd /mnt-snapshot/"${USER}"
-        # use pigz or http://compression.ca/pbzip2/
+        # use pigz or http://compression.ca/pbzip2/ ???
         # http://dbahire.com/which-compression-tool-should-i-use-for-my-database-backups-part-ii-decompression/
         # http://www.krazyworks.com/multithreaded-encryption-and-compression/
         clear
         if [[ $@ == *"--bzip2"* ]]; then
             local COMPRESSPROG="bzip2"
+            local COMPRESSLEVEL=
             local COMPRESSEXT="bz2"
         elif [[ $@ == *"--gzip"* ]]; then
             local COMPRESSPROG="gzip"
+            local COMPRESSLEVEL=
             local COMPRESSEXT="gz"
         elif [[ $@ == *"--lz4"* ]]; then
             # TODO: possibly a good replacement for lzop
             local COMPRESSPROG="lz4"
+            local COMPRESSLEVEL="-1"
             local COMPRESSEXT="lz4"
         elif [[ $@ == *"--pigz"* ]]; then
             # TODO: test this
             local COMPRESSPROG="pigz"
+            local COMPRESSLEVEL=
             local COMPRESSEXT="gz"
-        elif [[ $@ == *"--lzip"* ]]; then
-            # XXXX: changed xz to lzip even though the latter is slower because it is better for archiving and is being updated
-            local COMPRESSPROG="lzip"
-            local COMPRESSEXT="lzip"
+        elif [[ $@ == *"--xz"* ]]; then
+            local COMPRESSPROG="xz"
+            local COMPRESSLEVEL=
+            local COMPRESSEXT="xz"
         else
+            # TODO: default compression level as 6, which is fast (do a test)
             local COMPRESSPROG="lzop"
+            local COMPRESSLEVEL="-6"
             local COMPRESSEXT="lzo"
         fi
         # XXXX: . used, expect to change to directory in /mnt-snapshot/
-        if [[ -n "$2" ]]; then
-            local COMPRESSLEVEL="$3"
-            time tar --create --file - . | "${COMPRESSPROG}" "${COMPRESSLEVEL}" | mbuffer -m 8192M | gpg-batch --compress-algo none --cipher-algo AES256 --recipient "${CRYPTGPGUSER}" --output - --encrypt - | mbuffer -q -m 2048M -s 64k -o ${BACKUPPATH}/"${HOSTNAME}"-home--$(date +%Y%m%d%H%M%S).tar."${COMPRESSEXT}".gpg
-        else
-            time tar --create --file - . | "${COMPRESSPROG}"                    | mbuffer -m 8192M | gpg-batch --compress-algo none --cipher-algo AES256 --recipient "${CRYPTGPGUSER}" --output - --encrypt - | mbuffer -q -m 2048M -s 64k -o ${BACKUPPATH}/"${HOSTNAME}"-home--$(date +%Y%m%d%H%M%S).tar."${COMPRESSEXT}".gpg
-        fi
+        # TODO: shift eventually?
+        # https://stackoverflow.com/questions/24197955/tar-excludes-option-to-exclude-only-the-directory-at-current-working-directory
+        # https://unix.stackexchange.com/questions/32845/tar-exclude-doesnt-exclude-why
+        # --verbose
+        time tar "$@" --create  --file - . | "$COMPRESSPROG" "$COMPRESSLEVEL" | mbuffer -m 4096M | gpg-batch --compress-algo none --cipher-algo AES256 --recipient "$CRYPTGPGUSER" --output - --encrypt - | mbuffer -q -m 2048M -s 64k -o "${BACKUPPATH}/${HOSTNAME}"-home--$(date +%Y%m%d%H%M%S).tar."$COMPRESSEXT".gpg
+        # local COMPRESSLEVEL="$3"
         popd >/dev/null
         # backup any luks headers here
         # make sure headers are backed up plaintext to backup drive for now
         pushd . >/dev/null
-        cd "${BACKUPPATH}"
+        cd "$BACKUPPATH"
         mkdir -p ./luks-header-backup
         cd ./luks-header-backup
         # XXXX: assumes all functions in the crypt-profiles repo are available
