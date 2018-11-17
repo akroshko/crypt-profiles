@@ -5,7 +5,7 @@
 // Author: Andrew Kroshko
 // Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 // Created: Mon Jun 20, 2016
-// Version: 20181012
+// Version: 20181117
 // URL: https://github.com/akroshko/crypt-profiles
 //
 // This program is free software; you can redistribute it and/or
@@ -42,15 +42,22 @@
 //
 /// Code:
 
-// TODO: One button push or at least autologin.
-
-// TODO: Auto-logout to better handle secondary accounts.
-
 // TODO: Many more websites.
 
 // TODO: Simplify login links where possible.
 
 // TODO: Better format for logindata database.
+
+g_I=null;
+g_selection=null;
+g_theloginkey=null;
+g_theloginuser=null;
+g_theloginpassword=null;
+g_theloginuri=null;
+g_thelogoutkey=null;
+g_thelogoutuser=null;
+g_thelogoutpassword=null;
+g_thelogouturi=null;
 
 function sleep(milliseconds) {
   var start = new Date().getTime();
@@ -96,7 +103,7 @@ logindata["facebook"] =      {"url":"https://www.facebook.com/login.php",
                               "submit-id":"loginbutton"};
 logindata["gmail"] =         {"url":"https://accounts.google.com/ServiceLogin?sacu=1&scc=1&continue=https%3A%2F%2Fmail.google.com%2Fmail%2F&service=mail&ltmpl=default",
                               "logout-url":"https://mail.google.com/mail/logout?hl=en"};
-logindata["youtube"] =       {"url":"https://accounts.google.com/ServiceLogin?continue=https%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26app%3Ddesktop%26next%3D%252Ffeed%252Fsubscriptions%26hl%3Den-GB%26feature%3Dredirect_login&service=youtube&sacu=1&passive=1209600&ignoreShadow=0&acui=0",
+logindata["youtube"] =       {"url":"https://accounts.google.com/ServiceLogin?service=youtube&sacu=1&continue=https%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26app%3Ddesktop%26next%3D%252Ffeed%252Fsubscriptions%26hl%3Den-GB%26feature%3Dredirect_login",
                               "logout-url":"https://www.youtube.com/logout"};
 logindata["instagram"] =     {"url":"https://www.instagram.com/accounts/login/?force_classic_login",
                               "login-id":"id_username",
@@ -215,347 +222,405 @@ logindata["noip"] =          {"url":"https://www.noip.com/login",
 
 initialstate=0
 
-define_key(content_buffer_normal_keymap, "s-p",
-    "get-current-password-login");
-define_key(content_buffer_normal_keymap, "C-u s-p",
-    "current-signout");
-define_key(content_buffer_normal_keymap, "M-s-p",
-    "get-current-password-login-alternate");
-define_key(content_buffer_normal_keymap, "M-s-P",
-    "get-current-password-login-tertiary");
-// TODO: add $repeat = "insert-current-password"
-// TODO: decide which one to do
-define_key(content_buffer_normal_keymap, "C-s-p",
-    "insert-current-password");
-define_key(content_buffer_normal_keymap, "s-P",
-           "insert-current-password");
-// TODO: just need to update password thing now, and do search function :)
-interactive("get-current-password-login","Get the login for the primary acount for particular sites.",
-    function (I) {
-        unfocus(I.window, I.buffer);
-        // TODO: get the password here
-        var base64_currenturl=btoa(unescape(I.buffer.display_uri_string));
-        /// TODO: environment variable problem with conkeror
+define_key(content_buffer_normal_keymap, "s-!", "get-current-password-login");
+define_key(content_buffer_normal_keymap, "s-`", "current-signout");
+define_key(content_buffer_normal_keymap, "s-@", "get-current-password-login-alternate");
+define_key(content_buffer_normal_keymap, "s-#", "get-current-password-login-tertiary");
+define_key(content_buffer_normal_keymap, "s-p", "insert-current-password");
+function get_current_password_login(I, logintype) {
+    unfocus(I.window, I.buffer);
+    g_theloginkey = null;
+    g_theloginuser = null;
+    g_theloginpassword = null;
+    g_theloginuri = null;
+    initialstate = null;
+    // TODO: get the password here
+    var base64_currenturl=btoa(unescape(I.buffer.display_uri_string));
+    /// TODO: environment variable problem with conkeror
+    if (logintype == 3) {
+        var cmd_str="emacs -q --batch --eval '(progn (load \"~/.crypt-profiles-password-database.el\") (prin1 (crypt-profiles-get-matching-password \"" + base64_currenturl + "\" 3)))'"
+    } else if (logintype == 2) {
+        var cmd_str="emacs -q --batch --eval '(progn (load \"~/.crypt-profiles-password-database.el\") (prin1 (crypt-profiles-get-matching-password \"" + base64_currenturl + "\" t)))'"
+    } else {
         var cmd_str="emacs -q --batch --eval '(progn (load \"~/.crypt-profiles-password-database.el\") (prin1 (crypt-profiles-get-matching-password \"" + base64_currenturl + "\")))'"
-        // credit where credit is due
-        // http://conkeror.org/Tips#Using_an_external_password_manager
-        var out = "";
-        var result = yield shell_command(cmd_str,
-                                         $fds=[{output: async_binary_string_writer("")},
-                                               {input: async_binary_reader(function (s) out += s || "") }]);
-        // TODO: not sure why slice is needed, there seems to be a spurious t coming out of emacs
-        // I.window.alert(out);
+    }
+    // credit where credit is due
+    // http://conkeror.org/Tips#Using_an_external_password_manager
+    var out = "";
+    var thepromise = spawn_process("/bin/bash",
+                                   [null, "-c", cmd_str],
+                                   null,
+                                   [{output: async_binary_string_writer("")},
+                                    {input:  async_binary_reader(function (s) out += s || "") }]);
+    var theuri="";
+    thepromise.then(function(returncode) {
         var thejson = eval(JSON.parse(out));
         // globals
-        theloginname = thejson[0];
-        theloginuser = thejson[1];
-        theloginpassword = thejson[2];
-        I.window.minibuffer.message("");
-        browser_object_follow(I.buffer,OPEN_CURRENT_BUFFER,logindata[theloginname]["url"]);
-        I.window.minibuffer.message(theloginname);
+        g_theloginkey = thejson[0];
+        g_theloginuser = thejson[1];
+        g_theloginpassword = thejson[2];
+        g_theloginuri=logindata[g_theloginkey]["url"];
         initialstate = 0;
+        I.window.minibuffer.message("");
+        var spec = load_spec(g_theloginuri);
+        I.buffer.load(spec);
+        I.window.minibuffer.message(g_theloginkey);
     });
+    return thepromise;
+}
+
+function get_password_function_callback() {
+    remove_hook.call(g_I.buffer, "buffer_loaded_hook", get_password_function_callback);
+    var thepromise=get_current_password_login(g_I,g_selection);
+    thepromise.then(function(result) {
+        add_hook.call(g_I.buffer, "buffer_loaded_hook", insert_password_function_callback);
+    });
+}
+
+function insert_password_function_callback() {
+    remove_hook.call(g_I.buffer, "buffer_loaded_hook", insert_password_function_callback);
+    if ( g_theloginkey == "gmail" || g_theloginkey == "youtube" ) {
+        add_hook.call(g_I.buffer, "buffer_loaded_hook", insert_password_function_callback2);
+    }
+    insert_current_password(g_I);
+}
+
+function insert_password_function_callback2() {
+    remove_hook.call(g_I.buffer, "buffer_loaded_hook", insert_password_function_callback2);
+    insert_current_password(g_I);
+}
+
+
+// TODO: just need to update password thing now, and do search function :)
+// TODO: I am still learning how to write async javascript
+interactive("get-current-password-login","Get the login for the primary acount for particular sites.",
+    function (I) {
+        var thepromise=get_current_password_login(I,1);
+    });
+
+interactive("auto-login-primary","Login to primary fully automatically.",
+    function (I) {
+        remove_old_hooks(I);
+        g_I=I;
+        g_selection=1;
+        var thepromise_signout=current_signout(I);
+        thepromise_signout.then(function(result) {
+            add_hook.call(I.buffer, "buffer_loaded_hook", get_password_function_callback);
+        });
+    });
+define_key(content_buffer_normal_keymap, "s-1", "auto-login-primary");
 
 interactive("get-current-password-login-alternate","Get the login for the secondary account for particular sites.",
     function (I) {
-        unfocus(I.window, I.buffer);
-        // TODO: get the password here
-        var base64_currenturl=btoa(unescape(I.buffer.display_uri_string));
-        var cmd_str="emacs -q --batch --eval '(progn (load \"~/.crypt-profiles-password-database.el\") (prin1 (crypt-profiles-get-matching-password \"" + base64_currenturl + "\" t)))'"
-        // credit where credit is due
-        // http://conkeror.org/Tips#Using_an_external_password_manager
-        var out = "";
-        var result = yield shell_command(cmd_str,
-                                         $fds=[{output: async_binary_string_writer("")},
-                                               {input: async_binary_reader(function (s) out += s || "") }]);
-        // TODO: not sure why slice is needed, there seems to be a spurious t coming out of emacs
-        var thejson = eval(JSON.parse(out));
-        // globals
-        theloginname = thejson[0];
-        theloginuser = thejson[1];
-        theloginpassword = thejson[2];
-        I.window.minibuffer.message("");
-        browser_object_follow(I.buffer,OPEN_CURRENT_BUFFER,logindata[theloginname]["url"]);
-        I.window.minibuffer.message(theloginname);
-        initialstate = 0;
+        var thepromise=get_current_password_login(I,2);
     });
+
+interactive("auto-login-alternate","Login to alternate fully automatically.",
+    function (I) {
+        remove_old_hooks(I);
+        g_I=I;
+        g_selection=2;
+        var thepromise_signout=current_signout(I);
+        thepromise_signout.then(function(result) {
+            add_hook.call(I.buffer, "buffer_loaded_hook", get_password_function_callback);
+        });
+    });
+define_key(content_buffer_normal_keymap, "s-2", "auto-login-alternate");
 
 interactive("get-current-password-login-tertiary","Get the login for the tertiary acount for particular sites.",
     function (I) {
-        unfocus(I.window, I.buffer);
-        // TODO: get the password here
-        var base64_currenturl=btoa(unescape(I.buffer.display_uri_string));
-        var cmd_str="emacs -q --batch --eval '(progn (load \"~/.crypt-profiles-password-database.el\") (prin1 (crypt-profiles-get-matching-password \"" + base64_currenturl + "\" 3)))'"
-        // credit where credit is due
-        // http://conkeror.org/Tips#Using_an_external_password_manager
-        var out = "";
-        var result = yield shell_command(cmd_str,
-                                         $fds=[{output: async_binary_string_writer("")},
-                                               {input: async_binary_reader(function (s) out += s || "") }]);
-        // TODO: not sure why slice is needed, there seems to be a spurious t coming out of emacs
-        var thejson = eval(JSON.parse(out));
-        // globals
-        theloginname = thejson[0];
-        theloginuser = thejson[1];
-        theloginpassword = thejson[2];
-        I.window.minibuffer.message("");
-        browser_object_follow(I.buffer,OPEN_CURRENT_BUFFER,logindata[theloginname]["url"]);
-        I.window.minibuffer.message(theloginname);
-        initialstate = 0;
+        var thepromise=get_current_password_login(I,3);
     });
+
+interactive("auto-login-tertiary","Login to tertiary fully automatically.",
+    function (I) {
+        remove_old_hooks(I);
+        g_I=I;
+        g_selection=3;
+        var thepromise_signout=current_signout(I);
+        thepromise_signout.then(function(result) {
+            add_hook.call(I.buffer, "buffer_loaded_hook", get_password_function_callback);
+        });
+    });
+define_key(content_buffer_normal_keymap, "s-3", "auto-login-tertiary");
+
+function remove_old_hooks(I) {
+    remove_hook.call(I.buffer, "buffer_loaded_hook", get_password_function_callback);
+    remove_hook.call(I.buffer, "buffer_loaded_hook", insert_password_function_callback);
+    remove_hook.call(I.buffer, "buffer_loaded_hook", insert_password_function_callback2);
+}
 
 function type_manually(I,thestring) {
     for (thec in thestring) {
         send_key_as_event(I.window,
                           I.buffer.focused_element,
                           thestring[thec]);
+        // TODO: use timeouts and async for this
+        //       sleep locks up browser, so might be an issue with how this looks
         // I was getting many queries about being a real person at one point,
         // so add a bit of randomness to keystroke entry
         sleep(20.0 + Math.random()*30.0);
     }
 }
 
+function insert_current_password(I) {
+    unfocus(I.window, I.buffer);
+    if ( g_theloginkey == "gmail" || g_theloginkey == "youtube" ) {
+        var n1 = I.buffer.document.getElementById("Email");
+        if ( n1 == null || n1.readOnly == true ) {
+            var n2 = I.buffer.document.getElementById("Passwd");
+            browser_element_focus(I.buffer, n2);
+            type_manually(I,g_theloginpassword);
+            sleep(100.0);
+            var theform = I.buffer.document.getElementsByClassName("rc-button rc-button-submit");
+            theform[0].click();
+        } else {
+            browser_element_focus(I.buffer, n1);
+            type_manually(I,g_theloginuser);
+            sleep(100.0);
+            var theform = I.buffer.document.getElementsByClassName("rc-button rc-button-submit");
+            theform[0].click();
+        }
+    } else if ( g_theloginkey == "flickr" ) {
+        // TODO: have to fix this
+        var n1 = I.buffer.document.getElementById("login-username");
+        if ( n1 == null || initialstate == 1 ) {
+            var n2 = I.buffer.document.getElementById("login-passwd");
+            browser_element_focus(I.buffer, n2);
+            type_manually(I,g_theloginpassword);
+            sleep(100.0);
+            var theform = I.buffer.document.getElementById("login-signin");
+            theform.click();
+        } else {
+            browser_element_focus(I.buffer, n1);
+            type_manually(I,g_theloginuser);
+            sleep(100.0);
+            initialstate = 1;
+            var theform = I.buffer.document.getElementById("login-signin");
+            theform.click();
+        }
+    } else if ( g_theloginkey == "amazonca" || g_theloginkey == "amazoncom" ) {
+        var n1 = I.buffer.document.getElementById("ap_email");
+        if ( n1 == null || initialstate == 1 ) {
+            var n2 = I.buffer.document.getElementById("ap_password");
+            browser_element_focus(I.buffer, n2);
+            type_manually(I,g_theloginpassword);
+            sleep(100.0);
+            var theform = I.buffer.document.getElementsByClassName("a-button-input")[0];
+            theform.click();
+        } else {
+            browser_element_focus(I.buffer, n1);
+            type_manually(I,g_theloginuser);
+            sleep(100.0);
+            initialstate = 1;
+            var theform = I.buffer.document.getElementsByClassName("a-button-input")[0];
+            theform.click();
+        }
+    } else if ( g_theloginkey == "pixiv" ) {
+        // TODO: will have to use state
+        var nall = I.buffer.document.getElementsByClassName("input-field");
+        var n1 = nall[0];
+        var n1_inner = n1.getElementsByTagName("input")[0];
+        browser_element_focus(I.buffer, n1_inner);
+        n1_inner.value = g_theloginuser;
+        // type_manually(I,g_theloginuser);
+        sleep(100.0);
+        var n2 = nall[1];
+        var n2_inner = n2.getElementsByTagName("input")[0];
+        browser_element_focus(I.buffer, n2_inner);
+        n2_inner.value = g_theloginpassword;
+        // type_manually(I,g_theloginpassword);
+        sleep(100.0);
+        var thebutton = I.buffer.document.getElementsByClassName("signup-form__submit");
+        thebutton[0].click();
+    } else if ( g_theloginkey == "digikey" ) {
+        // https://www.w3schools.com/jsref/prop_frame_contentdocument.asp
+        // TODO: make more universal for dealing with logins with frames
+        var outer_frame = I.buffer.document.getElementById("frmLogin");
+        var outer_or = (outer_frame.contentWindow || outer_frame.contentDocument);
+        var outer = outer_or.document;
+        var n1 = outer.getElementById("username");
+        browser_element_focus(I.buffer, n1);
+        type_manually(I,g_theloginuser);
+        sleep(100.0);
+        var n2 = outer.getElementById("password");
+        browser_element_focus(I.buffer, n2);
+        type_manually(I,g_theloginpassword);
+        sleep(100.0);
+        var thebutton = outer.getElementById("btnPostLogin");
+        thebutton.click();
+    } else if ( g_theloginkey == "soundcloud" ) {
+        I.window.minibuffer.message("soundcloud not supported");
+    } else {
+        // XXXX: some websites do not like the .value attribute being set directly
+        //       hence the wierd copy/pasting
+        var login_document=I.buffer.document;
+        if ( "login-id" in logindata[g_theloginkey] ) {
+            var n1 = login_document.getElementById(logindata[g_theloginkey]["login-id"]);
+            browser_element_focus(I.buffer, n1);
+            sleep(100.0);
+            type_manually(I,g_theloginuser);
+            sleep(100.0);
+        } else if ( "login-class" in logindata[g_theloginkey] ) {
+            var n1 = login_document.getElementsByClassName(logindata[g_theloginkey]["login-class"])[0];
+            browser_element_focus(I.buffer, n1);
+            type_manually(I,g_theloginuser);
+            sleep(100.0);
+        } else if ( "login-element" in logindata[g_theloginkey] && "login-type" in logindata[g_theloginkey] ) {
+            var theelements = login_document.querySelectorAll(logindata[g_theloginkey]["login-element"]);
+            for (e in theelements) {
+                if (theelements[e].type == logindata[g_theloginkey]['login-type']) {
+                    var n1 = theelements[e];
+                    break;
+                }
+            }
+            browser_element_focus(I.buffer, n1);
+            sleep(100.0);
+            type_manually(I,g_theloginuser);
+            sleep(100.0);
+        } else if ( "login-element" in logindata[g_theloginkey] && "login-name" in logindata[g_theloginkey] ) {
+            var theelements = login_document.querySelectorAll(logindata[g_theloginkey]["login-element"]);
+            for (e in theelements) {
+                if (theelements[e].name == logindata[g_theloginkey]['login-name']) {
+                    var n1 = theelements[e];
+                    break;
+                }
+            }
+            browser_element_focus(I.buffer, n1);
+            sleep(100.0);
+            type_manually(I,g_theloginuser);
+            sleep(100.0);
+        }
+        ////////////////////////////////////////////////////////////////////////////////
+        if ( "password-id" in logindata[g_theloginkey] ) {
+            var n2 = login_document.getElementById(logindata[g_theloginkey]["password-id"]);
+            browser_element_focus(I.buffer, n2);
+            sleep(100.0);
+            type_manually(I,g_theloginpassword);
+            sleep(100.0);
+        } else if ( "password-class" in logindata[g_theloginkey] ) {
+            var n2 = login_document.getElementsByClassName(logindata[g_theloginkey]["password-class"])[0];
+            browser_element_focus(I.buffer, n2);
+            type_manually(I,g_theloginpassword);
+            sleep(100.0);
+        } else if ( "password-element" in logindata[g_theloginkey] && "password-type" in logindata[g_theloginkey] ) {
+            var theelements = login_document.querySelectorAll(logindata[g_theloginkey]["password-element"]);
+            for (e in theelements) {
+                if (theelements[e].type == logindata[g_theloginkey]['password-type']) {
+                    var n1 = theelements[e];
+                    break;
+                }
+            }
+            browser_element_focus(I.buffer, n1);
+            sleep(100.0);
+            type_manually(I,g_theloginpassword);
+            sleep(100.0);
+        } else if ( "password-element" in logindata[g_theloginkey] && "password-name" in logindata[g_theloginkey] ) {
+            var theelements = login_document.querySelectorAll(logindata[g_theloginkey]["password-element"]);
+            for (e in theelements) {
+                if (theelements[e].name == logindata[g_theloginkey]['password-name']) {
+                    var n1 = theelements[e];
+                    break;
+                }
+            }
+            browser_element_focus(I.buffer, n1);
+            sleep(100.0);
+            type_manually(I,g_theloginpassword);
+            sleep(100.0);
+        }
+        ////////////////////////////////////////////////////////////////////////////////
+        if ( "submit-id" in logindata[g_theloginkey] ) {
+            var thebutton = login_document.getElementById(logindata[g_theloginkey]["submit-id"]);
+            thebutton.click();
+        } else if ( "submit-class" in logindata[g_theloginkey] ) {
+            var thebutton = login_document.getElementsByClassName(logindata[g_theloginkey]["submit-class"])[0];
+            thebutton.click();
+        } else if ( "submit-element" in logindata[g_theloginkey] && "submit-value" in logindata[g_theloginkey] ) {
+            var theelements = login_document.querySelectorAll(logindata[g_theloginkey]["submit-element"]);
+            // now find the value in the elements
+            for (e in theelements) {
+                if (theelements[e].value == logindata[g_theloginkey]['submit-value']) {
+                    var thebutton = theelements[e];
+                    break;
+                }
+            }
+            thebutton.click();
+        } else if ( "submit-element" in logindata[g_theloginkey] && "submit-type" in logindata[g_theloginkey] ) {
+            if ( "submit-narrow" in logindata[g_theloginkey] ) {
+                var submit_document = login_document.querySelectorAll(logindata[g_theloginkey]["submit-narrow"])[0];
+            } else {
+                var submit_document=login_document;
+            }
+            var theelements = submit_document.querySelectorAll(logindata[g_theloginkey]["submit-element"]);
+            // now find the value in the elemens
+            for (e in theelements) {
+                if (theelements[e].type == logindata[g_theloginkey]['submit-type']) {
+                    var thebutton = theelements[e];
+                    break;
+                }
+            }
+            thebutton.click();
+        }
+    }
+};
+
+function current_signout (I) {
+    unfocus(I.window, I.buffer);
+    g_thelogoutkey = null;
+    g_thelogoutuser = null;
+    g_thelogoutpassword = null;
+    g_thelogouturi = null;
+    // TODO: get the password here
+    var base64_currenturl=btoa(unescape(I.buffer.display_uri_string));
+    var cmd_str="emacs -q --batch --eval '(progn (load \"~/.crypt-profiles-password-database.el\") (prin1 (crypt-profiles-get-matching-password \"" + base64_currenturl + "\")))'"
+    // credit where credit is due
+    // http://conkeror.org/Tips#Using_an_external_password_manager
+    var out = "";
+    var thepromise = spawn_process("/bin/bash",
+                                   [null, "-c", cmd_str],
+                                   null,
+                                   [{output: async_binary_string_writer("")},
+                                    {input:  async_binary_reader(function (s) out += s || "") }]);
+    thepromise.then(function(returncode) {
+        // TODO: not sure why slice is needed, there seems to be a spurious t coming out of emacs
+        var thejson = eval(JSON.parse(out));
+        // globals
+        g_thelogoutkey = thejson[0];
+        g_thelogoutuser = thejson[1];
+        g_thelogoutpassword = thejson[2];
+        theurl = I.buffer.display_uri_string;
+        if ( 'logout-url' in logindata[g_thelogoutkey]) {
+            g_thelogouturi=logindata[g_thelogoutkey]['logout-url'];
+            var spec = load_spec(g_thelogouturi);
+            I.buffer.load(spec);
+            I.window.minibuffer.message("Logging out: " + g_thelogoutkey);
+        } else if (theurl.match(/twitter.com/)) {
+            // https://twitter.com/logout except it confirms and have to press button anyways
+            var thebutton = I.buffer.document.getElementsByClassName("js-signout-button");
+            if (thebutton != undefined && thebutton[0] != undefined) {
+                thebutton[0].click();
+                I.window.minibuffer.message("Logging out: " + g_thelogoutkey);
+            } else {
+                I.window.minibuffer.message("Can't logout: " + g_thelogoutkey);
+                // TODO: functionize this, robustify, and improve this kludge, taken from reload function
+                I.buffer.web_navigation.reload(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
+            }
+        } else {
+            I.window.minibuffer.message("No logout key for: " + g_thelogoutkey);
+            // TODO: functionize this, robustify, and improve this kludge, taken from reload function
+            I.buffer.web_navigation.reload(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
+        }
+    });
+    return thepromise;
+}
+
 interactive("insert-current-password","Get the current password and login for particular sites.",
     function (I) {
-        unfocus(I.window, I.buffer);
-        if ( theloginname == "gmail" || theloginname == "youtube" ) {
-            var n1 = I.buffer.document.getElementById("Email");
-            if ( n1 == null || n1.readOnly == true ) {
-                var n2 = I.buffer.document.getElementById("Passwd");
-                browser_element_focus(I.buffer, n2);
-                type_manually(I,theloginpassword);
-                sleep(100.0);
-                var theform = I.buffer.document.getElementsByClassName("rc-button rc-button-submit");
-                theform[0].click();
-            } else {
-                browser_element_focus(I.buffer, n1);
-                type_manually(I,theloginuser);
-                sleep(100.0);
-                var theform = I.buffer.document.getElementsByClassName("rc-button rc-button-submit");
-                theform[0].click();
-            }
-        } else if ( theloginname == "flickr" ) {
-            // TODO: have to fix this
-            var n1 = I.buffer.document.getElementById("login-username");
-            if ( n1 == null || initialstate == 1 ) {
-                var n2 = I.buffer.document.getElementById("login-passwd");
-                browser_element_focus(I.buffer, n2);
-                type_manually(I,theloginpassword);
-                sleep(100.0);
-                var theform = I.buffer.document.getElementById("login-signin");
-                theform.click();
-            } else {
-                browser_element_focus(I.buffer, n1);
-                type_manually(I,theloginuser);
-                sleep(100.0);
-                initialstate = 1;
-                var theform = I.buffer.document.getElementById("login-signin");
-                theform.click();
-            }
-        // } else if ( theloginname == "twitch" ) {
-        //     // TODO: will have to use state
-        //     var n1 = I.buffer.document.getElementById("username");
-        //     browser_element_focus(I.buffer, n1);
-        //     type_manually(I,theloginuser);
-        //     sleep(100.0);
-        //     var n2_wrapper = I.buffer.document.getElementById("password");
-        //     var n2 = n2_wrapper.getElementsByClassName("text");
-        //     browser_element_focus(I.buffer, n2[0]);
-        //     type_manually(I,theloginpassword);
-        //     sleep(100.0);
-        //     var thebutton = I.buffer.document.getElementsByClassName("primary button js-login-button");
-        //     thebutton[0].click();
-        } else if ( theloginname == "amazonca" || theloginname == "amazoncom" ) {
-            var n1 = I.buffer.document.getElementById("ap_email");
-            if ( n1 == null || initialstate == 1 ) {
-                var n2 = I.buffer.document.getElementById("ap_password");
-                browser_element_focus(I.buffer, n2);
-                type_manually(I,theloginpassword);
-                sleep(100.0);
-                var theform = I.buffer.document.getElementsByClassName("a-button-input")[0];
-                theform.click();
-            } else {
-                browser_element_focus(I.buffer, n1);
-                type_manually(I,theloginuser);
-                sleep(100.0);
-                initialstate = 1;
-                var theform = I.buffer.document.getElementsByClassName("a-button-input")[0];
-                theform.click();
-            }
-        } else if ( theloginname == "pixiv" ) {
-            // TODO: will have to use state
-            var nall = I.buffer.document.getElementsByClassName("input-field");
-            var n1 = nall[0];
-            var n1_inner = n1.getElementsByTagName("input")[0];
-            browser_element_focus(I.buffer, n1_inner);
-            n1_inner.value = theloginuser;
-            // type_manually(I,theloginuser);
-            sleep(100.0);
-            var n2 = nall[1];
-            var n2_inner = n2.getElementsByTagName("input")[0];
-            browser_element_focus(I.buffer, n2_inner);
-            n2_inner.value = theloginpassword;
-            // type_manually(I,theloginpassword);
-            sleep(100.0);
-            var thebutton = I.buffer.document.getElementsByClassName("signup-form__submit");
-            thebutton[0].click();
-        } else if ( theloginname == "digikey" ) {
-            // https://www.w3schools.com/jsref/prop_frame_contentdocument.asp
-            // TODO: make more universal for dealing with logins with frames
-            var outer_frame = I.buffer.document.getElementById("frmLogin");
-            var outer_or = (outer_frame.contentWindow || outer_frame.contentDocument);
-            var outer = outer_or.document;
-            var n1 = outer.getElementById("username");
-            browser_element_focus(I.buffer, n1);
-            type_manually(I,theloginuser);
-            sleep(100.0);
-            var n2 = outer.getElementById("password");
-            browser_element_focus(I.buffer, n2);
-            type_manually(I,theloginpassword);
-            sleep(100.0);
-            var thebutton = outer.getElementById("btnPostLogin");
-            thebutton.click();
-        } else if ( theloginname == "soundcloud" ) {
-            I.window.minibuffer.message("soundcloud not supported");
-        } else {
-            // XXXX: some websites do not like the .value attribute being set directly
-            //       hence the wierd copy/pasting
-            var login_document=I.buffer.document;
-            if ( "login-id" in logindata[theloginname] ) {
-                var n1 = login_document.getElementById(logindata[theloginname]["login-id"]);
-                browser_element_focus(I.buffer, n1);
-                sleep(100.0);
-                type_manually(I,theloginuser);
-                sleep(100.0);
-            } else if ( "login-class" in logindata[theloginname] ) {
-                var n1 = login_document.getElementsByClassName(logindata[theloginname]["login-class"])[0];
-                browser_element_focus(I.buffer, n1);
-                type_manually(I,theloginuser);
-                sleep(100.0);
-            } else if ( "login-element" in logindata[theloginname] && "login-type" in logindata[theloginname] ) {
-                var theelements = login_document.querySelectorAll(logindata[theloginname]["login-element"]);
-                for (e in theelements) {
-                    if (theelements[e].type == logindata[theloginname]['login-type']) {
-                        var n1 = theelements[e];
-                        break;
-                    }
-                }
-                browser_element_focus(I.buffer, n1);
-                sleep(100.0);
-                type_manually(I,theloginuser);
-                sleep(100.0);
-            } else if ( "login-element" in logindata[theloginname] && "login-name" in logindata[theloginname] ) {
-                var theelements = login_document.querySelectorAll(logindata[theloginname]["login-element"]);
-                for (e in theelements) {
-                    if (theelements[e].name == logindata[theloginname]['login-name']) {
-                        var n1 = theelements[e];
-                        break;
-                    }
-                }
-                browser_element_focus(I.buffer, n1);
-                sleep(100.0);
-                type_manually(I,theloginuser);
-                sleep(100.0);
-            }
-            ////////////////////////////////////////////////////////////////////////////////
-            if ( "password-id" in logindata[theloginname] ) {
-                var n2 = login_document.getElementById(logindata[theloginname]["password-id"]);
-                browser_element_focus(I.buffer, n2);
-                sleep(100.0);
-                type_manually(I,theloginpassword);
-                sleep(100.0);
-            } else if ( "password-class" in logindata[theloginname] ) {
-                var n2 = login_document.getElementsByClassName(logindata[theloginname]["password-class"])[0];
-                browser_element_focus(I.buffer, n2);
-                type_manually(I,theloginpassword);
-                sleep(100.0);
-            } else if ( "password-element" in logindata[theloginname] && "password-type" in logindata[theloginname] ) {
-                var theelements = login_document.querySelectorAll(logindata[theloginname]["password-element"]);
-                for (e in theelements) {
-                    if (theelements[e].type == logindata[theloginname]['password-type']) {
-                        var n1 = theelements[e];
-                        break;
-                    }
-                }
-                browser_element_focus(I.buffer, n1);
-                sleep(100.0);
-                type_manually(I,theloginpassword);
-                sleep(100.0);
-            } else if ( "password-element" in logindata[theloginname] && "password-name" in logindata[theloginname] ) {
-                var theelements = login_document.querySelectorAll(logindata[theloginname]["password-element"]);
-                for (e in theelements) {
-                    if (theelements[e].name == logindata[theloginname]['password-name']) {
-                        var n1 = theelements[e];
-                        break;
-                    }
-                }
-                browser_element_focus(I.buffer, n1);
-                sleep(100.0);
-                type_manually(I,theloginpassword);
-                sleep(100.0);
-            }
-            ////////////////////////////////////////////////////////////////////////////////
-            if ( "submit-id" in logindata[theloginname] ) {
-                var thebutton = login_document.getElementById(logindata[theloginname]["submit-id"]);
-                thebutton.click();
-            } else if ( "submit-class" in logindata[theloginname] ) {
-                var thebutton = login_document.getElementsByClassName(logindata[theloginname]["submit-class"])[0];
-                thebutton.click();
-            } else if ( "submit-element" in logindata[theloginname] && "submit-value" in logindata[theloginname] ) {
-                var theelements = login_document.querySelectorAll(logindata[theloginname]["submit-element"]);
-                // now find the value in the elements
-                for (e in theelements) {
-                    if (theelements[e].value == logindata[theloginname]['submit-value']) {
-                        var thebutton = theelements[e];
-                        break;
-                    }
-                }
-                thebutton.click();
-            } else if ( "submit-element" in logindata[theloginname] && "submit-type" in logindata[theloginname] ) {
-                if ( "submit-narrow" in logindata[theloginname] ) {
-                    var submit_document = login_document.querySelectorAll(logindata[theloginname]["submit-narrow"])[0];
-                } else {
-                    var submit_document=login_document;
-                }
-                var theelements = submit_document.querySelectorAll(logindata[theloginname]["submit-element"]);
-                // now find the value in the elemens
-                for (e in theelements) {
-                    if (theelements[e].type == logindata[theloginname]['submit-type']) {
-                        var thebutton = theelements[e];
-                        break;
-                    }
-                }
-                thebutton.click();
-            }
-        }
+        insert_current_password(I);
     });
 
 interactive("current-signout","Sign out from current website.",
     function (I) {
-        unfocus(I.window, I.buffer);
-        // TODO: get the password here
-        var base64_currenturl=btoa(unescape(I.buffer.display_uri_string));
-        var cmd_str="emacs -q --batch --eval '(progn (load \"~/.crypt-profiles-password-database.el\") (prin1 (crypt-profiles-get-matching-password \"" + base64_currenturl + "\")))'"
-        // credit where credit is due
-        // http://conkeror.org/Tips#Using_an_external_password_manager
-        var out = "";
-        var result = yield shell_command(cmd_str,
-                                         $fds=[{output: async_binary_string_writer("")},
-                                               {input: async_binary_reader(function (s) out += s || "") }]);
-        // TODO: not sure why slice is needed, there seems to be a spurious t coming out of emacs
-        var thejson = eval(JSON.parse(out));
-        // globals
-        theloginname = thejson[0];
-        theloginuser = thejson[1];
-        theloginpassword = thejson[2];
-        I.window.minibuffer.message("");
-        I.window.minibuffer.message(theloginname);
-        theurl = I.buffer.display_uri_string;
-        if ( 'logout-url' in logindata[theloginname]) {
-            browser_object_follow(I.buffer,OPEN_CURRENT_BUFFER,logindata[theloginname]['logout-url']);
-        } else if (theurl.match(/twitter.com/)) {
-            // https://twitter.com/logout except it confirms and have to press button anyways
-            var thebutton = I.buffer.document.getElementsByClassName("js-signout-button");
-            thebutton[0].click();
-        }
+        remove_old_hooks(I);
+        current_signout(I);
     });

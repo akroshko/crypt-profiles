@@ -5,7 +5,7 @@
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20180918
+# Version: 20181108
 # URL: https://github.com/akroshko/crypt-profiles
 #
 # This program is free software: you can redistribute it and/or modify
@@ -224,7 +224,7 @@ crypt-profile-switch () {
     # get rid of agents
     killall-agents
     # gpg symlinks
-    [[ -e "$HOME"/.gnupg ]] && \mv --backup=t -- "$HOME"/.gnupg "$HOME/.gnupg.backup"
+    [[ -e "$HOME/.gnupg" ]] && \mv --backup=t -- "$HOME/.gnupg" "$HOME/.gnupg.backup"
     # make sure things are synced
     need_new_symlink "$PRIMARYPROFILE/pubring.gpg" "$WORKINGPROFILE/pubring.gpg"
     need_new_symlink "$PRIMARYPROFILE/secring.gpg" "$WORKINGPROFILE/secring.gpg"
@@ -411,7 +411,7 @@ bootstrap-temporary-ssh () {
     ssh $(whoami)@"$1" mkdir -p "$HOME/.ssh"
     scp "$HOME/.ssh/id_rsa_temp" $(whoami)@"$1:$HOME/.ssh/id_rsa"
     scp "$HOME/.ssh/id_rsa_temp.pub" $(whoami)@"$1:$HOME/.ssh/id_rsa.pub"
-    chmod 600 "$HOME"/.ssh/id_rsa_temp*
+    chmod 600 "$HOME/.ssh/id_rsa_temp*"
     # copy to authorized keys
     cat "$HOME/.ssh/id_rsa_temp.pub" >> "$HOME/.ssh/authorized_keys"
 }
@@ -561,10 +561,10 @@ decrypt-flatten () {
 ################################################################################
 # containers
 
-mount-container () {
+container-mount () {
     # mount an encrypted luks container on an appropiate mount point
     #
-    local USAGE="Usage: mount-container <<luks container path>> <<mount point>>
+    local USAGE="Usage: container-mount <<luks container path>> <<mount point>>
 
   <<luks container path>> the path to the luks container, the filename
     of the container is the same name used for the mapping in /dev/mapper
@@ -585,7 +585,7 @@ mount-container () {
     if [[ $? != 4 ]]; then
         sudo mkdir -p "$2"
         # TODO: do better than this
-        if ! grep -qs -- "$2" /proc/mounts; then
+        if ! mountpoint -q "$2"; then
             sudo mount /dev/mapper/"$(basename $1)" "$2"
             # TODO: should this be default
             sudo chown -R ${USER}:${USER} "$2"
@@ -596,43 +596,51 @@ mount-container () {
         yell "Cannot find specified container"
     fi
 }
+alias mount-container='container-mount'
 
-umount-container () {
+container-umount () {
     # unmount an encrypted luks container by using exactly the same
-    # arguments as mount-container
+    # arguments as container-mount
     #
     # $1=the path to the luks container, the filename of the container
     #    is the same name used for the mapping in /dev/mapper
     # $2=mount point, deleted after unmounting
-    local USAGE="Usage: umount-container <<luks container path>> <<mount point>>
+    local USAGE="Usage: container-umount <<luks container path or mount point>>
 
-  <<luks container path>> the path to the luks container, the filename
-    of the container is the same name used for the mapping in /dev/mapper
-
-  <<mount point>> mount point to create and use"
-    if [[ -z "$1" || -z "$2" ]]; then
+  <<luks container path or mount point>> the path to the luks
+    container, the filename of the container is the same name used for
+    the mapping in /dev/mapper, or the mount point to umount and remove"
+    if [[ -z "$1" ]]; then
         echo "$USAGE"
         return 1
     fi
-    if [[ -d "$2" ]]; then
-        if grep -qs -- "$2" /proc/mounts; then
-            msg "Unmounting $2!"
-            sudo umount "$2"
+    if [[ -d "$1" ]]; then
+        if mountpoint -q "$1"; then
+            local MOUNTPOINT=$(readlink -f "$1")
+            local MAPPER=$(findmnt -nr -o source "$MOUNTPOINT")
         else
-            yell "Nothing mounted!"
+            yell "Nothing mounted at $1!"
+            return 1
         fi
-        # XXXX: get rid of directory anyways
-        rmdir "$2"
     else
-        warn "Mount point $2 does not exist!"
+        if [[ -b "$1" ]];then
+            local MAPPER="$1"
+            local MOUNTPOINT=$(findmnt -nr -o target "$MAPPER")
+        elif [[ -b "/dev/mapper/$1" ]];then
+            local MAPPER="/dev/mapper/$1"
+            local MOUNTPOINT=$(findmnt -nr -o target "$MAPPER")
+        else
+            yell "No device found correpsonding to $1!"
+        fi
     fi
-    if [[ -e /dev/mapper/"$(basename $1)" ]]; then
-        msg "Closing $(basename $1)!"
-        sudo cryptsetup luksClose "$(basename $1)"
-    else
-        warn "Container "$(basename $1)" not mapped!"
-    fi
+    msg "Unmounting $MOUNTPOINT!"
+    sudo umount "$MOUNTPOINT"
+    # TODO: get rid of directory anyways?
+    rmdir "$MOUNTPOINT"
+    msg "Closing $MAPPER!"
+    sudo cryptsetup luksClose "$MAPPER"
 }
+alias umount-container='container-umount'
 
 open-vg () {
     # open a LVM volume group from an encrypted luks container
@@ -766,7 +774,7 @@ mount-vg-img () {
     else
         warn "Device /dev/mapper/$1 already mapped!"
     fi
-    if ! grep -qs -- "$2" /proc/mounts; then
+    if ! mountpoint -q "$2"; then
         mkdir -p "$2"
         sudo mount /dev/mapper/$(basename "$2") "$2"
         sudo chown -R ${USER}:${USER} "$2"
@@ -789,7 +797,7 @@ umount-vg-img () {
     fi
     if [[ -d "$2" ]]; then
         # TODO: seperate function?
-        if grep -qs -- "$2" /proc/mounts; then
+        if mountpoint -q "$2"; then
             msg "Unmounting $2!"
             sudo umount "$2"
         else
@@ -825,7 +833,7 @@ export-firefox-bookmarks () {
 
 master-privacy-brief () {
     # XXXX: suppress automatic privacy clearing if needed
-    if [[ -e "$HOME"/inhibit-privacy ]]; then
+    if [[ -e "$HOME/inhibit-privacy" ]]; then
         yell "Privacy cleanup suppressed!!!"
     else
         # delete benign things, that shouldn't cause too much trouble
@@ -849,7 +857,7 @@ master-privacy-all () {
 
 master-privacy-trash () {
     h2 "Clearing trash"
-    if [[ -d "$HOME/tmp/trash" ]] && ls -A "$HOME"/tmp/trash/* &>/dev/null; then
+    if [[ -d "$HOME/tmp/trash" ]] && ls -A "$HOME/tmp/trash/*" &>/dev/null; then
         msg  "Contents of ~/tmp/trash:"
         ls -A "$HOME"/tmp/trash/*
         while read -r -t 0;do read -r; done;

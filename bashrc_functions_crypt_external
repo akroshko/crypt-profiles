@@ -5,7 +5,7 @@
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20180918
+# Version: 20181115
 # URL: https://github.com/akroshko/crypt-profiles
 #
 # This program is free software: you can redistribute it and/or modify
@@ -39,9 +39,13 @@ kill-freespace-random-file () {
     # References
     # http://serverfault.com/questions/6440/is-there-an-alternative-to-dev-urandom
     # time openssl enc -aes-256-ctr -pass pass:"$(dd if=/dev/urandom bs=128 count=1 2>/dev/null | base64)" -nosalt < /dev/zero | pv -pterb > ~/randomfile.bin
-    local ROOTPATH="$1"
+    local ROOTPATH=$(readlink -f "$1")
     if [[ -z "$ROOTPATH" ]]; then
-        echo "Must specific directory corresponding to device to kill space on!!!"
+        echo "Must specify directory corresponding to device to kill space on!!!"
+        return 1
+    fi
+    if [[ ! -d "$ROOTPATH" ]]; then
+        echo "Must specify valid directory corresponding to device to kill space on!!!"
         return 1
     fi
     if [[ -e "$ROOTPATH"/randomfile.bin ]]; then
@@ -128,8 +132,9 @@ kill-file () {
         if [[ -h "$1" ]]; then
             yell "Cannot kill-file symlink $1!!!"
         else
-            msg "Killing $1"
-            bleachbit --shred "$1"
+            msg "Killing $1 with kill-file"
+            # bleachbit --shred "$1"
+            shred --iterations=3 --remove "$1"
         fi
     else
         # TODO: warn if not file
@@ -139,12 +144,16 @@ kill-file () {
 
 kill-recursive () {
     # XXXX: dangerous functions for convenience in batch mode
-    if [[ -e "$1" ]]; then
+    if [[ -d "$1" ]]; then
         if [[ -h "$1" ]]; then
             yell "Cannot kill-recursive symlink $1!!!"
         else
-            bleachbit --shred "$1"
-            msg "Clearing directory $1"
+            msg "Unlinking all symlinks in directory $1 with kill-recursive"
+            find "$1" -type l -delete
+            msg "Clearing files in directory $1 with kill-recursive"
+            find "$1" -type f -exec shred --iterations=3 --remove {} \;
+            msg "Clearing $1 and empty directories with kill-recursive"
+            find "$1" -depth -type d -exec rmdir {} \;
         fi
     else
         warn "Directory $1 does not exist and not deleted!"
@@ -170,8 +179,10 @@ kill-directory-contents () {
             # TODO: might have problem if spaces somewhere, but this commands works well anyways
             #       runs the find command if anything appears
             if [[ -n $(ls -A "$1") ]]; then
-                msg "Clearing directory contents $1"
-                find "$1" -mindepth 1 -exec bleachbit --shred {} \;
+                msg "Unlinking all symlinks of depth 1 in directory $1 with kill-directory-contents"
+                find "$1" -mindepth 1 -type l -delete
+                msg "Clearing directory contents $1 with kill-directory-contents"
+                find "$1" -mindepth 1 -type f -exec shred --iterations=3 --remove {} \;
             else
                 warn "Directory $1 empty and not cleared!"
             fi
@@ -190,7 +201,10 @@ kill-directory-files () {
         if [[ -h "$1" ]];then
             yell "Cannot kill-directory-files symlink $1!!!"
         else
-            find "$1" -mindepth 1 -maxdepth 1 -exec bleachbit --shred {} \;
+            msg "Unlinking all symlinks of depth 1 in directory $1 with kill-directory-files"
+            find "$1" -mindepth 1 -type l -delete
+            msg "Clearing directory files $1 with kill-directory-files"
+            find "$1" -mindepth 1 -maxdepth 1 -type f -exec shred --iterations=3 --remove {} \;
         fi
     fi
 }
@@ -202,7 +216,10 @@ kill-directory-contents-preserve-structure () {
             yell "Cannot kill-directory-contents-preserve-structure symlink $1!!!"
         else
             # TODO: does this go into dot directories
-            find "$1" -type f -exec bleachbit --shred {} \;
+            msg "Unlinking all symlinks of in directory $1 with kill-directory-contents-preserve-structure"
+            find "$1" -mindepth 1 -type l -delete
+            msg "Clearing directory contents in $1 with kill-directory-contents-preserve-structure"
+            find "$1" -type f -exec shred --iterations=3 --remove {} \;
         fi
     fi
 }
@@ -216,7 +233,7 @@ kill-find-matching () {
                 yell "Cannot kill-find-matching symlink $1!!!"
             else
                 # TODO: add more safeties against symlink
-                find "$1" -name "$2" -exec bleachbit --shred {} \;
+                find "$1" -type f -name "$2" -exec shred --iterations=3 --remove {} \;
             fi
         else
             warn "Directory $1 exists but nothing matching $2 to be cleared!"
@@ -378,4 +395,46 @@ crypt-password-database-retrieve-third () {
     local CRYPT_PASSWORD_DATABASE=
     # load org-file into memory
 
+}
+
+container-create-encrypted () {
+    # create an encrypted container formatted to ext4
+    # TODO: error checking!!!
+    sudo true || return 1
+    local USAGE="Usage: container-create-encrypted <<size>> <<container filename>>"
+    if [[ -z "$3" ]];then
+        echo "$USAGE"
+        return 1
+    fi
+    local THESIZE="$1"
+    local THESIZEBITS=$(convert-size-to-bytes-1024 "$1")
+    local THENUMBERBLOCKS=$(( "$THESIZEBITS" / 65535 ))
+    local THEFNAME="$2"
+    # TODO: get rid of any extension
+    local THECONTAINERNAME=$(basename "$2")
+    if [[ -e "$THEFNAME" ]];then
+        echo "Filename $THEFNAME cannot exist!"
+        echo "$USAGE"
+        return 1
+    fi
+    if [[ ! $(readlink -f "$THEFNAME") =~ $HOME ]];then
+        echo "Filename must be created in home directory!"
+        return 1
+    fi
+    # TODO: check that size is valid
+    # TODO: make sure file in second level of home directory, not device
+    # create file
+    fallocate -l "$THESIZE" "$THEFNAME"
+    # TODO: do I need count in files below
+    # fill with zeros first
+    dd if=/dev/zero of="$THEFNAME" bs=64k count="$THENUMBERBLOCKS"
+    # fill with random data
+    dd if=/dev/urandom of="$THEFNAME" bs=64k count="$THENUMBERBLOCKS"
+    sudo cryptsetup -y luksFormat "$THEFNAME"
+    sudo cryptsetup luksDump "$THEFNAME"
+    # first run of container and format with ext4
+    # TODO: used to use ext2, but unless there is a specific reason, just going with ext4
+    sudo cryptsetup luksOpen "$THEFNAME" "$THECONTAINERNAME"
+    sudo mkfs.ext4 /dev/mapper/"$THECONTAINERNAME"
+    sudo cryptsetup luksClose "$THECONTAINERNAME"
 }
