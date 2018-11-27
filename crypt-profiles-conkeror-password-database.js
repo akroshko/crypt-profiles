@@ -5,7 +5,7 @@
 // Author: Andrew Kroshko
 // Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 // Created: Mon Jun 20, 2016
-// Version: 20181117
+// Version: 20181127
 // URL: https://github.com/akroshko/crypt-profiles
 //
 // This program is free software; you can redistribute it and/or
@@ -48,16 +48,23 @@
 
 // TODO: Better format for logindata database.
 
-g_I=null;
-g_selection=null;
-g_theloginkey=null;
-g_theloginuser=null;
-g_theloginpassword=null;
-g_theloginuri=null;
-g_thelogoutkey=null;
-g_thelogoutuser=null;
-g_thelogoutpassword=null;
-g_thelogouturi=null;
+// global variables
+var g_pass_database_successful=false;
+var g_selection=null;
+var g_theloginkey=null;
+var g_theloginuser=null;
+var g_theloginpassword=null;
+var g_theloginuri=null;
+var g_thelogoutkey=null;
+var g_thelogoutuser=null;
+var g_thelogoutpassword=null;
+var g_thelogouturi=null;
+var g_initialstate=0;
+// promises and hooks
+var g_thedeferred_logout=null;
+var g_thedeferred_final=null;
+var g_thedeferred_final2=null;
+// TODO: may not want these anymore
 
 function sleep(milliseconds) {
   var start = new Date().getTime();
@@ -66,6 +73,13 @@ function sleep(milliseconds) {
       break;
     }
   }
+}
+
+// // https://stackoverflow.com/questions/951021/what-is-the-javascript-version-of-sleep
+// using sleep(<<delay>>).then()
+function sleep_async (time) {
+    // TODO: why does setTimeout I see on the web not work
+    return new Promise((resolve) => call_after_timeout(resolve, time));
 }
 
 // TODO: not a great way to get hostname, but serves its purpose for now
@@ -87,7 +101,7 @@ interactive("myhost",
 
 var logindata;
 // allow defining this elsewhere
-if (logindata == undefined) {
+if (typeof logindata == "undefined") {
     logindata = {};
 }
 
@@ -148,6 +162,10 @@ logindata["telusmobility"] = {"url":"https://telusidentity.telus.com/as/authoriz
                               "submit-narrow":"form#login",
                               "submit-element":"button",
                               "submit-type":"submit"};
+logindata["findmespot"] =    {"url":"https://login.findmespot.com/spot-main-web/auth/login.html",
+                              "login-id":"j_username",
+                              "password-id":"j_password",
+                              "submit-id":"login"};
 logindata["flickr"] =        {"url":"https://login.yahoo.com/config/login?.src=flickrsignin"};
 logindata["github"] =        {"url":"https://github.com/login",
                               "login-id":"login_field",
@@ -185,12 +203,13 @@ logindata["ebay"]    =       {"url":"https://signin.ebay.ca/ws/eBayISAPI.dll?Sig
                               "password-id":"pass",
                               "submit-id":"sgnBt"};
 // TODO: submit can only be identified by inner html
-logindata["twitch"]  =       {"url":"https://www.twitch.tv/login",
-                              "login-element":"input",
-                              "login-type":"text",
-                              "password-element":"input",
-                              "password-type":"password",
-                              "submit-element":"button"};
+logindata["twitch"]  =       {"url":"https://www.twitch.tv/login"// ,
+                              // "login-element":"input",
+                              // "login-type":"text",
+                              // "password-element":"input",
+                              // "password-type":"password",
+                              // "submit-element":"button"
+                             };
 logindata["discord"]    =    {"url":"https://discordapp.com/login",
                               "login-element":"input",
                               "login-type":"email",
@@ -219,24 +238,22 @@ logindata["noip"] =          {"url":"https://www.noip.com/login",
                               "password-type":"password",
                               "submit-element":"button",
                               "submit-type":"submit"};
-
-initialstate=0
+// TODO: nice
+logindata["quora"] =    {"url":""};
 
 define_key(content_buffer_normal_keymap, "s-!", "get-current-password-login");
 define_key(content_buffer_normal_keymap, "s-`", "current-signout");
 define_key(content_buffer_normal_keymap, "s-@", "get-current-password-login-alternate");
 define_key(content_buffer_normal_keymap, "s-#", "get-current-password-login-tertiary");
 define_key(content_buffer_normal_keymap, "s-p", "insert-current-password");
-function get_current_password_login(I, logintype) {
-    unfocus(I.window, I.buffer);
+function get_current_password_login(I, logintype, open_new_buffer=false) {
+    unfocus(I.window, I.window.buffers.current);
     g_theloginkey = null;
     g_theloginuser = null;
     g_theloginpassword = null;
     g_theloginuri = null;
-    initialstate = null;
-    // TODO: get the password here
-    var base64_currenturl=btoa(unescape(I.buffer.display_uri_string));
-    /// TODO: environment variable problem with conkeror
+    g_initialstate = null;
+    var base64_currenturl=btoa(unescape(I.window.buffers.current.display_uri_string));
     if (logintype == 3) {
         var cmd_str="emacs -q --batch --eval '(progn (load \"~/.crypt-profiles-password-database.el\") (prin1 (crypt-profiles-get-matching-password \"" + base64_currenturl + "\" 3)))'"
     } else if (logintype == 2) {
@@ -260,36 +277,79 @@ function get_current_password_login(I, logintype) {
         g_theloginuser = thejson[1];
         g_theloginpassword = thejson[2];
         g_theloginuri=logindata[g_theloginkey]["url"];
-        initialstate = 0;
+        g_initialstate = 0;
         I.window.minibuffer.message("");
         var spec = load_spec(g_theloginuri);
-        I.buffer.load(spec);
+        if (open_new_buffer == true) {
+            browser_object_follow(I.buffer, OPEN_NEW_BUFFER, spec);
+        } else {
+            I.buffer.load(spec);
+        }
         I.window.minibuffer.message(g_theloginkey);
     });
     return thepromise;
 }
 
-function get_password_function_callback() {
-    remove_hook.call(g_I.buffer, "buffer_loaded_hook", get_password_function_callback);
-    var thepromise=get_current_password_login(g_I,g_selection);
-    thepromise.then(function(result) {
-        add_hook.call(g_I.buffer, "buffer_loaded_hook", insert_password_function_callback);
+function logout_resolve_hook_function () {
+    // TODO check if buffer is loading and correct one
+    g_thedeferred_logout.resolve();
+}
+
+function login_resolve_hook_function () {
+    // TODO check if buffer is loading and correct one
+    // TODO: would love to add some delays in, but not yet
+    // sleep_async(1000).then(() => {
+    //     g_thedeferred_final.resolve();
+    // });
+    g_thedeferred_final.resolve();
+}
+
+function login_resolve_hook_function2 () {
+    // TODO check if buffer is loading and correct one
+    g_thedeferred_final2.resolve();
+}
+
+function auto_login (I, open_new_buffer=false) {
+    if (open_new_buffer==true) {
+        var thepromise_signout = new Promise(function(resolve, reject) {
+            resolve();
+        });
+        var original_buffer=I.buffer;
+    } else {
+        var thepromise_signout=current_signout(I);
+    }
+    thepromise_signout.then(function(result) {
+        g_thedeferred_logout=Promise.defer();
+        add_hook.call(I.window.buffers.current, "content_buffer_finished_loading_hook", logout_resolve_hook_function);
+        return g_thedeferred_logout;
+    }).then(function () {
+        var thepromise=get_current_password_login(I,g_selection,open_new_buffer);
+        return thepromise;
+    }).then(function(result) {
+        g_thedeferred_final=Promise.defer();
+        add_hook.call(I.window.buffers.current, "content_buffer_finished_loading_hook", login_resolve_hook_function);
+        return g_thedeferred_final.promise;
+    }).then(function() {
+        remove_hook.call(I.window.buffers.current, "content_buffer_finished_loading_hook", login_resolve_hook_function);
+        insert_current_password(I);
+        if ( g_theloginkey == "gmail" || g_theloginkey == "youtube" ) {
+            g_thedeferred_final2=Promise.defer();
+            add_hook.call(I.window.buffers.current, "content_buffer_finished_loading_hook", login_resolve_hook_function2);
+        } else {
+            var thepromise_signout = new Promise(function(resolve, reject) {
+                reject()
+            });
+        }
+        return g_thedeferred_final2.promise;
+        if (open_new_buffer==true) {
+            // TODO: non-functional
+            reload(I.window.buffers.current,true,null,null);
+        }
+    }).then(function() {
+        remove_hook.call(I.window.buffers.current, "content_buffer_finished_loading_hook", login_resolve_hook_function2);
+        insert_current_password(I);
     });
 }
-
-function insert_password_function_callback() {
-    remove_hook.call(g_I.buffer, "buffer_loaded_hook", insert_password_function_callback);
-    if ( g_theloginkey == "gmail" || g_theloginkey == "youtube" ) {
-        add_hook.call(g_I.buffer, "buffer_loaded_hook", insert_password_function_callback2);
-    }
-    insert_current_password(g_I);
-}
-
-function insert_password_function_callback2() {
-    remove_hook.call(g_I.buffer, "buffer_loaded_hook", insert_password_function_callback2);
-    insert_current_password(g_I);
-}
-
 
 // TODO: just need to update password thing now, and do search function :)
 // TODO: I am still learning how to write async javascript
@@ -301,14 +361,19 @@ interactive("get-current-password-login","Get the login for the primary acount f
 interactive("auto-login-primary","Login to primary fully automatically.",
     function (I) {
         remove_old_hooks(I);
-        g_I=I;
         g_selection=1;
-        var thepromise_signout=current_signout(I);
-        thepromise_signout.then(function(result) {
-            add_hook.call(I.buffer, "buffer_loaded_hook", get_password_function_callback);
-        });
+        yield auto_login(I);
     });
 define_key(content_buffer_normal_keymap, "s-1", "auto-login-primary");
+
+// TODO: does not work yet, logout screws up things and hooks wrong buffer
+interactive("auto-login-primary-new_buffer","Login to primary fully automatically, keep current buffer and login on new buffer.",
+    function (I) {
+        remove_old_hooks(I);
+        g_selection=1;
+        yield auto_login(I,true);
+    });
+define_key(content_buffer_normal_keymap, "C-u s-1", "auto-login-primary-new_buffer");
 
 interactive("get-current-password-login-alternate","Get the login for the secondary account for particular sites.",
     function (I) {
@@ -318,14 +383,18 @@ interactive("get-current-password-login-alternate","Get the login for the second
 interactive("auto-login-alternate","Login to alternate fully automatically.",
     function (I) {
         remove_old_hooks(I);
-        g_I=I;
         g_selection=2;
-        var thepromise_signout=current_signout(I);
-        thepromise_signout.then(function(result) {
-            add_hook.call(I.buffer, "buffer_loaded_hook", get_password_function_callback);
-        });
+        yield auto_login(I);
     });
 define_key(content_buffer_normal_keymap, "s-2", "auto-login-alternate");
+
+interactive("auto-login-alternate-new-buffer","Login to alternate fully automatically.",
+    function (I) {
+        remove_old_hooks(I);
+        g_selection=2;
+        yield auto_login(I,true);
+    });
+define_key(content_buffer_normal_keymap, "C-u s-2", "auto-login-alternate-new-buffer");
 
 interactive("get-current-password-login-tertiary","Get the login for the tertiary acount for particular sites.",
     function (I) {
@@ -335,25 +404,38 @@ interactive("get-current-password-login-tertiary","Get the login for the tertiar
 interactive("auto-login-tertiary","Login to tertiary fully automatically.",
     function (I) {
         remove_old_hooks(I);
-        g_I=I;
         g_selection=3;
-        var thepromise_signout=current_signout(I);
-        thepromise_signout.then(function(result) {
-            add_hook.call(I.buffer, "buffer_loaded_hook", get_password_function_callback);
-        });
+        yield auto_login(I);
     });
 define_key(content_buffer_normal_keymap, "s-3", "auto-login-tertiary");
 
+interactive("auto-login-tertiary-new-buffer","Login to tertiary fully automatically.",
+    function (I) {
+        remove_old_hooks(I);
+        g_selection=3;
+        yield auto_login(I,true);
+    });
+define_key(content_buffer_normal_keymap, "C-u s-3", "auto-login-tertiary-new-buffer");
+
 function remove_old_hooks(I) {
-    remove_hook.call(I.buffer, "buffer_loaded_hook", get_password_function_callback);
-    remove_hook.call(I.buffer, "buffer_loaded_hook", insert_password_function_callback);
-    remove_hook.call(I.buffer, "buffer_loaded_hook", insert_password_function_callback2);
+    remove_hook.call(I.window.buffers.current, "content_buffer_finished_loading_hook", logout_resolve_hook_function);
+    remove_hook.call(I.window.buffers.current, "content_buffer_finished_loading_hook", login_resolve_hook_function);
+    remove_hook.call(I.window.buffers.current, "content_buffer_finished_loading_hook", login_resolve_hook_function2);
 }
 
 function type_manually(I,thestring) {
-    for (thec in thestring) {
+    sleep(100.0);
+    send_key_as_event(I.window,
+                      I.window.buffers.current.focused_element,
+                      'C-a');
+    sleep(100.0+Math.random()*100.0);
+    send_key_as_event(I.window,
+                      I.window.buffers.current.focused_element,
+                      'C-k');
+    sleep(100.0+Math.random()*100.0);
+    for (let thec in thestring) {
         send_key_as_event(I.window,
-                          I.buffer.focused_element,
+                          I.window.buffers.current.focused_element,
                           thestring[thec]);
         // TODO: use timeouts and async for this
         //       sleep locks up browser, so might be an issue with how this looks
@@ -361,172 +443,171 @@ function type_manually(I,thestring) {
         // so add a bit of randomness to keystroke entry
         sleep(20.0 + Math.random()*30.0);
     }
+    sleep(100.0);
 }
 
 function insert_current_password(I) {
-    unfocus(I.window, I.buffer);
+    // TODO: these are like this because I was testing something
+    unfocus(I.window, I.window.buffers.current);
+    var login_document=I.window.buffers.current.document;
     if ( g_theloginkey == "gmail" || g_theloginkey == "youtube" ) {
-        var n1 = I.buffer.document.getElementById("Email");
+        var n1 = login_document.getElementById("Email");
         if ( n1 == null || n1.readOnly == true ) {
-            var n2 = I.buffer.document.getElementById("Passwd");
-            browser_element_focus(I.buffer, n2);
+            var n2 = login_document.getElementById("Passwd");
+            browser_element_focus(I.window.buffers.current, n2);
             type_manually(I,g_theloginpassword);
-            sleep(100.0);
-            var theform = I.buffer.document.getElementsByClassName("rc-button rc-button-submit");
+            var theform = login_document.getElementsByClassName("rc-button rc-button-submit");
             theform[0].click();
         } else {
-            browser_element_focus(I.buffer, n1);
+            browser_element_focus(I.window.buffers.current, n1);
             type_manually(I,g_theloginuser);
-            sleep(100.0);
-            var theform = I.buffer.document.getElementsByClassName("rc-button rc-button-submit");
+            var theform = login_document.getElementsByClassName("rc-button rc-button-submit");
             theform[0].click();
         }
     } else if ( g_theloginkey == "flickr" ) {
         // TODO: have to fix this
-        var n1 = I.buffer.document.getElementById("login-username");
-        if ( n1 == null || initialstate == 1 ) {
-            var n2 = I.buffer.document.getElementById("login-passwd");
-            browser_element_focus(I.buffer, n2);
+        var n1 = login_document.getElementById("login-username");
+        if ( n1 == null || g_initialstate == 1 ) {
+            var n2 = login_document.getElementById("login-passwd");
+            browser_element_focus(I.window.buffers.current, n2);
             type_manually(I,g_theloginpassword);
-            sleep(100.0);
-            var theform = I.buffer.document.getElementById("login-signin");
+            var theform = login_document.getElementById("login-signin");
             theform.click();
         } else {
-            browser_element_focus(I.buffer, n1);
+            browser_element_focus(I.window.buffers.current, n1);
             type_manually(I,g_theloginuser);
-            sleep(100.0);
-            initialstate = 1;
-            var theform = I.buffer.document.getElementById("login-signin");
+            g_initialstate = 1;
+            var theform = login_document.getElementById("login-signin");
             theform.click();
         }
     } else if ( g_theloginkey == "amazonca" || g_theloginkey == "amazoncom" ) {
-        var n1 = I.buffer.document.getElementById("ap_email");
-        if ( n1 == null || initialstate == 1 ) {
-            var n2 = I.buffer.document.getElementById("ap_password");
-            browser_element_focus(I.buffer, n2);
+        var n1 = login_document.getElementById("ap_email");
+        if ( n1 == null || g_initialstate == 1 ) {
+            var n2 = login_document.getElementById("ap_password");
+            browser_element_focus(I.window.buffers.current, n2);
             type_manually(I,g_theloginpassword);
-            sleep(100.0);
-            var theform = I.buffer.document.getElementsByClassName("a-button-input")[0];
+            var theform = login_document.getElementsByClassName("a-button-input")[0];
             theform.click();
         } else {
-            browser_element_focus(I.buffer, n1);
+            browser_element_focus(I.window.buffers.current, n1);
             type_manually(I,g_theloginuser);
-            sleep(100.0);
-            initialstate = 1;
-            var theform = I.buffer.document.getElementsByClassName("a-button-input")[0];
+            g_initialstate = 1;
+            var theform = login_document.getElementsByClassName("a-button-input")[0];
             theform.click();
         }
     } else if ( g_theloginkey == "pixiv" ) {
         // TODO: will have to use state
-        var nall = I.buffer.document.getElementsByClassName("input-field");
+        var nall = login_document.getElementsByClassName("input-field");
         var n1 = nall[0];
         var n1_inner = n1.getElementsByTagName("input")[0];
-        browser_element_focus(I.buffer, n1_inner);
+        browser_element_focus(I.window.buffers.current, n1_inner);
         n1_inner.value = g_theloginuser;
         // type_manually(I,g_theloginuser);
-        sleep(100.0);
         var n2 = nall[1];
         var n2_inner = n2.getElementsByTagName("input")[0];
-        browser_element_focus(I.buffer, n2_inner);
+        browser_element_focus(I.window.buffers.current, n2_inner);
         n2_inner.value = g_theloginpassword;
         // type_manually(I,g_theloginpassword);
-        sleep(100.0);
-        var thebutton = I.buffer.document.getElementsByClassName("signup-form__submit");
+        var thebutton = login_document.getElementsByClassName("signup-form__submit");
         thebutton[0].click();
     } else if ( g_theloginkey == "digikey" ) {
         // https://www.w3schools.com/jsref/prop_frame_contentdocument.asp
         // TODO: make more universal for dealing with logins with frames
-        var outer_frame = I.buffer.document.getElementById("frmLogin");
+        var outer_frame = login_document.getElementById("frmLogin");
         var outer_or = (outer_frame.contentWindow || outer_frame.contentDocument);
         var outer = outer_or.document;
         var n1 = outer.getElementById("username");
-        browser_element_focus(I.buffer, n1);
+        browser_element_focus(I.window.buffers.current, n1);
         type_manually(I,g_theloginuser);
-        sleep(100.0);
         var n2 = outer.getElementById("password");
-        browser_element_focus(I.buffer, n2);
+        browser_element_focus(I.window.buffers.current, n2);
         type_manually(I,g_theloginpassword);
-        sleep(100.0);
         var thebutton = outer.getElementById("btnPostLogin");
+        thebutton.click();
+    } else if ( g_theloginkey == "twitch" ) {
+        var theinputs = login_document.querySelectorAll("form input");
+        for (let e in theinputs) {
+            if (theinputs[e].type == "text") {
+                var n1 = theinputs[e];
+                break;
+            }
+        }
+        browser_element_focus(I.window.buffers.current, n1);
+        type_manually(I,g_theloginuser);
+        for (let e in theinputs) {
+            if (theinputs[e].type == "password") {
+                var n1 = theinputs[e];
+                break;
+            }
+        }
+        browser_element_focus(I.window.buffers.current, n1);
+        type_manually(I,g_theloginpassword);
+        var thebuttons = login_document.querySelectorAll("form button");
+        var thebutton = thebuttons[0];
         thebutton.click();
     } else if ( g_theloginkey == "soundcloud" ) {
         I.window.minibuffer.message("soundcloud not supported");
     } else {
         // XXXX: some websites do not like the .value attribute being set directly
         //       hence the wierd copy/pasting
-        var login_document=I.buffer.document;
         if ( "login-id" in logindata[g_theloginkey] ) {
             var n1 = login_document.getElementById(logindata[g_theloginkey]["login-id"]);
-            browser_element_focus(I.buffer, n1);
-            sleep(100.0);
+            browser_element_focus(I.window.buffers.current, n1);
             type_manually(I,g_theloginuser);
-            sleep(100.0);
         } else if ( "login-class" in logindata[g_theloginkey] ) {
             var n1 = login_document.getElementsByClassName(logindata[g_theloginkey]["login-class"])[0];
-            browser_element_focus(I.buffer, n1);
+            browser_element_focus(I.window.buffers.current, n1);
             type_manually(I,g_theloginuser);
-            sleep(100.0);
         } else if ( "login-element" in logindata[g_theloginkey] && "login-type" in logindata[g_theloginkey] ) {
             var theelements = login_document.querySelectorAll(logindata[g_theloginkey]["login-element"]);
-            for (e in theelements) {
-                if (theelements[e].type == logindata[g_theloginkey]['login-type']) {
+            for (let e in theelements) {
+                if (theelements[e].type == logindata[g_theloginkey]["login-type"]) {
                     var n1 = theelements[e];
                     break;
                 }
             }
-            browser_element_focus(I.buffer, n1);
-            sleep(100.0);
+            browser_element_focus(I.window.buffers.current, n1);
             type_manually(I,g_theloginuser);
-            sleep(100.0);
         } else if ( "login-element" in logindata[g_theloginkey] && "login-name" in logindata[g_theloginkey] ) {
             var theelements = login_document.querySelectorAll(logindata[g_theloginkey]["login-element"]);
-            for (e in theelements) {
-                if (theelements[e].name == logindata[g_theloginkey]['login-name']) {
+            for (let e in theelements) {
+                if (theelements[e].name == logindata[g_theloginkey]["login-name"]) {
                     var n1 = theelements[e];
                     break;
                 }
             }
-            browser_element_focus(I.buffer, n1);
-            sleep(100.0);
+            browser_element_focus(I.window.buffers.current, n1);
             type_manually(I,g_theloginuser);
-            sleep(100.0);
         }
         ////////////////////////////////////////////////////////////////////////////////
         if ( "password-id" in logindata[g_theloginkey] ) {
             var n2 = login_document.getElementById(logindata[g_theloginkey]["password-id"]);
-            browser_element_focus(I.buffer, n2);
-            sleep(100.0);
+            browser_element_focus(I.window.buffers.current, n2);
             type_manually(I,g_theloginpassword);
-            sleep(100.0);
         } else if ( "password-class" in logindata[g_theloginkey] ) {
             var n2 = login_document.getElementsByClassName(logindata[g_theloginkey]["password-class"])[0];
-            browser_element_focus(I.buffer, n2);
+            browser_element_focus(I.window.buffers.current, n2);
             type_manually(I,g_theloginpassword);
-            sleep(100.0);
         } else if ( "password-element" in logindata[g_theloginkey] && "password-type" in logindata[g_theloginkey] ) {
             var theelements = login_document.querySelectorAll(logindata[g_theloginkey]["password-element"]);
-            for (e in theelements) {
-                if (theelements[e].type == logindata[g_theloginkey]['password-type']) {
+            for (let e in theelements) {
+                if (theelements[e].type == logindata[g_theloginkey]["password-type"]) {
                     var n1 = theelements[e];
                     break;
                 }
             }
-            browser_element_focus(I.buffer, n1);
-            sleep(100.0);
+            browser_element_focus(I.window.buffers.current, n1);
             type_manually(I,g_theloginpassword);
-            sleep(100.0);
         } else if ( "password-element" in logindata[g_theloginkey] && "password-name" in logindata[g_theloginkey] ) {
             var theelements = login_document.querySelectorAll(logindata[g_theloginkey]["password-element"]);
-            for (e in theelements) {
-                if (theelements[e].name == logindata[g_theloginkey]['password-name']) {
+            for (let e in theelements) {
+                if (theelements[e].name == logindata[g_theloginkey]["password-name"]) {
                     var n1 = theelements[e];
                     break;
                 }
             }
-            browser_element_focus(I.buffer, n1);
-            sleep(100.0);
+            browser_element_focus(I.window.buffers.current, n1);
             type_manually(I,g_theloginpassword);
-            sleep(100.0);
         }
         ////////////////////////////////////////////////////////////////////////////////
         if ( "submit-id" in logindata[g_theloginkey] ) {
@@ -538,8 +619,8 @@ function insert_current_password(I) {
         } else if ( "submit-element" in logindata[g_theloginkey] && "submit-value" in logindata[g_theloginkey] ) {
             var theelements = login_document.querySelectorAll(logindata[g_theloginkey]["submit-element"]);
             // now find the value in the elements
-            for (e in theelements) {
-                if (theelements[e].value == logindata[g_theloginkey]['submit-value']) {
+            for (let e in theelements) {
+                if (theelements[e].value == logindata[g_theloginkey]["submit-value"]) {
                     var thebutton = theelements[e];
                     break;
                 }
@@ -547,14 +628,14 @@ function insert_current_password(I) {
             thebutton.click();
         } else if ( "submit-element" in logindata[g_theloginkey] && "submit-type" in logindata[g_theloginkey] ) {
             if ( "submit-narrow" in logindata[g_theloginkey] ) {
-                var submit_document = login_document.querySelectorAll(logindata[g_theloginkey]["submit-narrow"])[0];
+                var submit_document =login_document.querySelectorAll(logindata[g_theloginkey]["submit-narrow"])[0];
             } else {
                 var submit_document=login_document;
             }
             var theelements = submit_document.querySelectorAll(logindata[g_theloginkey]["submit-element"]);
-            // now find the value in the elemens
-            for (e in theelements) {
-                if (theelements[e].type == logindata[g_theloginkey]['submit-type']) {
+            // now find the value in the elements
+            for (let e in theelements) {
+                if (theelements[e].type == logindata[g_theloginkey]["submit-type"]) {
                     var thebutton = theelements[e];
                     break;
                 }
@@ -565,13 +646,13 @@ function insert_current_password(I) {
 };
 
 function current_signout (I) {
-    unfocus(I.window, I.buffer);
+    unfocus(I.window, I.window.buffers.current);
     g_thelogoutkey = null;
     g_thelogoutuser = null;
     g_thelogoutpassword = null;
     g_thelogouturi = null;
     // TODO: get the password here
-    var base64_currenturl=btoa(unescape(I.buffer.display_uri_string));
+    var base64_currenturl=btoa(unescape(I.window.buffers.current.display_uri_string));
     var cmd_str="emacs -q --batch --eval '(progn (load \"~/.crypt-profiles-password-database.el\") (prin1 (crypt-profiles-get-matching-password \"" + base64_currenturl + "\")))'"
     // credit where credit is due
     // http://conkeror.org/Tips#Using_an_external_password_manager
@@ -588,27 +669,26 @@ function current_signout (I) {
         g_thelogoutkey = thejson[0];
         g_thelogoutuser = thejson[1];
         g_thelogoutpassword = thejson[2];
-        theurl = I.buffer.display_uri_string;
+        var theurl = I.window.buffers.current.display_uri_string;
         if ( 'logout-url' in logindata[g_thelogoutkey]) {
-            g_thelogouturi=logindata[g_thelogoutkey]['logout-url'];
+            g_thelogouturi=logindata[g_thelogoutkey]["logout-url"];
             var spec = load_spec(g_thelogouturi);
-            I.buffer.load(spec);
+            I.window.buffers.current.load(spec);
             I.window.minibuffer.message("Logging out: " + g_thelogoutkey);
         } else if (theurl.match(/twitter.com/)) {
             // https://twitter.com/logout except it confirms and have to press button anyways
-            var thebutton = I.buffer.document.getElementsByClassName("js-signout-button");
-            if (thebutton != undefined && thebutton[0] != undefined) {
+            var thebutton =  I.window.buffers.current.document.getElementsByClassName("js-signout-button");
+            if (typeof thebutton != "undefined" && typeof thebutton[0] != "undefined") {
                 thebutton[0].click();
                 I.window.minibuffer.message("Logging out: " + g_thelogoutkey);
             } else {
                 I.window.minibuffer.message("Can't logout: " + g_thelogoutkey);
-                // TODO: functionize this, robustify, and improve this kludge, taken from reload function
-                I.buffer.web_navigation.reload(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
+                // TODO: not sure why this is needed
+                reload(I.window.buffers.current,true,null,null);
             }
         } else {
             I.window.minibuffer.message("No logout key for: " + g_thelogoutkey);
-            // TODO: functionize this, robustify, and improve this kludge, taken from reload function
-            I.buffer.web_navigation.reload(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
+            reload(I.window.buffers.current,true,null,null);
         }
     });
     return thepromise;
@@ -624,3 +704,5 @@ interactive("current-signout","Sign out from current website.",
         remove_old_hooks(I);
         current_signout(I);
     });
+
+var g_pass_database_successful=true;

@@ -978,6 +978,7 @@ master-privacy-chromium () {
         kill-file               "$HOME/.config/chromium/Default/Cookies Tabs"
         kill-file               "$HOME/.config/chromium/Default/Favicons"
         kill-file               "$HOME/.config/chromium/Default/Favicons-journal"
+        kill-directory-contents "$HOME/.config/chromium/Default/File System"
         kill-file               "$HOME/.config/chromium/Default/History"
         kill-file               "$HOME/.config/chromium/Default/Historyjournal"
         kill-file               "$HOME/.config/chromium/Default/Last Session"

@@ -5,7 +5,7 @@
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20181030
+# Version: 20181126
 # URL: https://github.com/akroshko/crypt-profiles
 #
 # This program is free software: you can redistribute it and/or modify
@@ -102,37 +102,37 @@ main () {
         if [[ $@ == *"--bzip2"* ]]; then
             local COMPRESSPROG="bzip2"
             local COMPRESSLEVEL=
-            local COMPRESSEXT="bz2"
+            local COMPRESSEXT="tbz"
         elif [[ $@ == *"--gzip"* ]]; then
             local COMPRESSPROG="gzip"
             local COMPRESSLEVEL=
-            local COMPRESSEXT="gz"
+            local COMPRESSEXT="tgz"
         elif [[ $@ == *"--lz4"* ]]; then
             # TODO: possibly a good replacement for lzop
             local COMPRESSPROG="lz4"
             local COMPRESSLEVEL="-1"
-            local COMPRESSEXT="lz4"
+            local COMPRESSEXT="tar.lz4"
         elif [[ $@ == *"--pigz"* ]]; then
             # TODO: test this
             local COMPRESSPROG="pigz"
             local COMPRESSLEVEL=
-            local COMPRESSEXT="gz"
+            local COMPRESSEXT="tgz"
         elif [[ $@ == *"--xz"* ]]; then
             local COMPRESSPROG="xz"
             local COMPRESSLEVEL=
-            local COMPRESSEXT="xz"
+            local COMPRESSEXT="txz"
         else
             # TODO: default compression level as 6, which is fast (do a test)
             local COMPRESSPROG="lzop"
             local COMPRESSLEVEL="-6"
-            local COMPRESSEXT="lzo"
+            local COMPRESSEXT="tzo"
         fi
         # XXXX: . used, expect to change to directory in /mnt-snapshot/
         # TODO: shift eventually?
         # https://stackoverflow.com/questions/24197955/tar-excludes-option-to-exclude-only-the-directory-at-current-working-directory
         # https://unix.stackexchange.com/questions/32845/tar-exclude-doesnt-exclude-why
         # --verbose
-        time tar "$@" --create  --file - . | "$COMPRESSPROG" "$COMPRESSLEVEL" | mbuffer -m 4096M | gpg-batch --compress-algo none --cipher-algo AES256 --recipient "$CRYPTGPGUSER" --output - --encrypt - | mbuffer -q -m 2048M -s 64k -o "${BACKUPPATH}/${HOSTNAME}"-home--$(date +%Y%m%d%H%M%S).tar."$COMPRESSEXT".gpg
+        time tar "$@" --create  --file - . | "$COMPRESSPROG" "$COMPRESSLEVEL" | mbuffer -m 2048M | gpg-batch --compress-algo none --cipher-algo AES256 --recipient "$CRYPTGPGUSER" --output - --encrypt - | mbuffer -q -m 2048M -s 64k -o "${BACKUPPATH}/${HOSTNAME}"-home--$(date +%Y%m%d%H%M%S)."$COMPRESSEXT".gpg
         # local COMPRESSLEVEL="$3"
         popd >/dev/null
         # backup any luks headers here

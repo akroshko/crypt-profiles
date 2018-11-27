@@ -3,6 +3,8 @@
 // No license found on original, but license of this is same as
 // original plus copyright Andrew Kroshko 2018.
 
+var g_security_privacy_prefs_successful=false;
+
 ////////////////////////////////////////////////////////////////////////////////
 // security stuff, taken from privacy prefs in ghacks
 // 0303: disable search update (Options>Advanced>Update>Automatically update: search engines)
@@ -415,3 +417,5 @@ session_pref("security.ssl3.rsa_rc4_128_sha",false);
 session_pref("browser.formfill.enable",false);
 // TODO: check what this is...
 session_pref("plugin.scan.plid.all",false);
+
+var g_security_privacy_prefs_successful=true;
