@@ -149,11 +149,11 @@ kill-recursive () {
             yell "Cannot kill-recursive symlink $1!!!"
         else
             msg "Unlinking all symlinks in directory $1 with kill-recursive"
-            find "$1" -type l -delete
+            find "$1" -type l -printf "Unlinking: %p\n" -delete
             msg "Clearing files in directory $1 with kill-recursive"
-            find "$1" -type f -print -exec shred --iterations=3 --remove {} \;
+            find "$1" -type f -printf "Shredding: %p\n" -exec shred --iterations=3 --remove {} \;
             msg "Clearing $1 and empty directories with kill-recursive"
-            find "$1" -depth -type d -print -exec rmdir {} \;
+            find "$1" -depth -type d -printf "Removing: %p\n" -exec rmdir {} \;
         fi
     else
         warn "Directory $1 does not exist and not deleted!"
@@ -180,9 +180,9 @@ kill-directory-contents () {
             #       runs the find command if anything appears
             if [[ -n $(ls -A "$1") ]]; then
                 msg "Unlinking all symlinks of depth 1 in directory $1 with kill-directory-contents"
-                find "$1" -mindepth 1 -type l -print -delete
+                find "$1" -mindepth 1 -type l -printf "Unlinking: %p\n" -delete
                 msg "Clearing directory contents $1 with kill-directory-contents"
-                find "$1" -mindepth 1 -type f -print -exec shred --iterations=3 --remove {} \;
+                find "$1" -mindepth 1 -type f -printf "Shredding: %p\n" -exec shred --iterations=3 --remove {} \;
             else
                 warn "Directory $1 empty and not cleared!"
             fi
@@ -202,9 +202,9 @@ kill-directory-files () {
             yell "Cannot kill-directory-files symlink $1!!!"
         else
             msg "Unlinking all symlinks of depth 1 in directory $1 with kill-directory-files"
-            find "$1" -mindepth 1 -type l -delete
+            find "$1" -mindepth 1 -type l -printf "Unlinking: %p\n" -delete
             msg "Clearing directory files $1 with kill-directory-files"
-            find "$1" -mindepth 1 -maxdepth 1 -type f -print -exec shred --iterations=3 --remove {} \;
+            find "$1" -mindepth 1 -maxdepth 1 -type f -printf "Shredding: %p\n" -exec shred --iterations=3 --remove {} \;
         fi
     fi
 }
@@ -217,9 +217,9 @@ kill-directory-contents-preserve-structure () {
         else
             # TODO: does this go into dot directories
             msg "Unlinking all symlinks of in directory $1 with kill-directory-contents-preserve-structure"
-            find "$1" -mindepth 1 -type l -print -delete
+            find "$1" -mindepth 1 -type l -printf "Unlinking: %p\n" -delete
             msg "Clearing directory contents in $1 with kill-directory-contents-preserve-structure"
-            find "$1" -type f -print -exec shred --iterations=3 --remove {} \;
+            find "$1" -type f -printf "Shredding: %p\n" -exec shred --iterations=3 --remove {} \;
         fi
     fi
 }
@@ -233,7 +233,7 @@ kill-find-matching () {
                 yell "Cannot kill-find-matching symlink $1!!!"
             else
                 # TODO: add more safeties against symlink
-                find "$1" -type f -name "$2" -print -exec shred --iterations=3 --remove {} \;
+                find "$1" -type f -name "$2" -printf "Shredding: %p\n" -exec shred --iterations=3 --remove {} \;
             fi
         else
             warn "Directory $1 exists but nothing matching $2 to be cleared!"

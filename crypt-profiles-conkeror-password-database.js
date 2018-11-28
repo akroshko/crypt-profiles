@@ -87,7 +87,7 @@ define_variable("current_hostname","",
     "Holds the current hostname");
 // TODO: want to do this without interactive.
 interactive("myhost",
-    "Set the current hostname.",
+    "Set the current hostname",
     function set_hostname () {
         // TODO: need to remember how this works
         //       definitely need better way for shell command output
@@ -248,6 +248,7 @@ define_key(content_buffer_normal_keymap, "s-#", "get-current-password-login-tert
 define_key(content_buffer_normal_keymap, "s-p", "insert-current-password");
 function get_current_password_login(I, logintype, open_new_buffer=false) {
     unfocus(I.window, I.window.buffers.current);
+    I.window.minibuffer.message("Finding current login and password");
     g_theloginkey = null;
     g_theloginuser = null;
     g_theloginpassword = null;
@@ -274,6 +275,7 @@ function get_current_password_login(I, logintype, open_new_buffer=false) {
         var thejson = eval(JSON.parse(out));
         // globals
         g_theloginkey = thejson[0];
+        I.window.minibuffer.message("Found login for: " + g_theloginkey);
         g_theloginuser = thejson[1];
         g_theloginpassword = thejson[2];
         g_theloginuri=logindata[g_theloginkey]["url"];
@@ -285,7 +287,7 @@ function get_current_password_login(I, logintype, open_new_buffer=false) {
         } else {
             I.buffer.load(spec);
         }
-        I.window.minibuffer.message(g_theloginkey);
+        I.window.minibuffer.message("Going to login for: " + g_theloginkey);
     });
     return thepromise;
 }
@@ -449,6 +451,7 @@ function type_manually(I,thestring) {
 function insert_current_password(I) {
     // TODO: these are like this because I was testing something
     unfocus(I.window, I.window.buffers.current);
+    I.window.minibuffer.message("Entering login and password for: " + g_thelogoutkey);
     var login_document=I.window.buffers.current.document;
     if ( g_theloginkey == "gmail" || g_theloginkey == "youtube" ) {
         var n1 = login_document.getElementById("Email");
@@ -652,6 +655,7 @@ function current_signout (I) {
     g_thelogoutpassword = null;
     g_thelogouturi = null;
     // TODO: get the password here
+    I.window.minibuffer.message("Looking up signout");
     var base64_currenturl=btoa(unescape(I.window.buffers.current.display_uri_string));
     var cmd_str="emacs -q --batch --eval '(progn (load \"~/.crypt-profiles-password-database.el\") (prin1 (crypt-profiles-get-matching-password \"" + base64_currenturl + "\")))'"
     // credit where credit is due
@@ -671,16 +675,16 @@ function current_signout (I) {
         g_thelogoutpassword = thejson[2];
         var theurl = I.window.buffers.current.display_uri_string;
         if ( 'logout-url' in logindata[g_thelogoutkey]) {
+            I.window.minibuffer.message("Logging out: " + g_thelogoutkey);
             g_thelogouturi=logindata[g_thelogoutkey]["logout-url"];
             var spec = load_spec(g_thelogouturi);
             I.window.buffers.current.load(spec);
-            I.window.minibuffer.message("Logging out: " + g_thelogoutkey);
         } else if (theurl.match(/twitter.com/)) {
             // https://twitter.com/logout except it confirms and have to press button anyways
             var thebutton =  I.window.buffers.current.document.getElementsByClassName("js-signout-button");
             if (typeof thebutton != "undefined" && typeof thebutton[0] != "undefined") {
-                thebutton[0].click();
                 I.window.minibuffer.message("Logging out: " + g_thelogoutkey);
+                thebutton[0].click();
             } else {
                 I.window.minibuffer.message("Can't logout: " + g_thelogoutkey);
                 // TODO: not sure why this is needed

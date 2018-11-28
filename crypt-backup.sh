@@ -101,7 +101,8 @@ main () {
         clear
         if [[ $@ == *"--bzip2"* ]]; then
             local COMPRESSPROG="bzip2"
-            local COMPRESSLEVEL=
+            # the benchmarks I looked at, this helps a lot and slows things down by a factor of two
+            local COMPRESSLEVEL="-9"
             local COMPRESSEXT="tbz"
         elif [[ $@ == *"--gzip"* ]]; then
             local COMPRESSPROG="gzip"
@@ -132,7 +133,7 @@ main () {
         # https://stackoverflow.com/questions/24197955/tar-excludes-option-to-exclude-only-the-directory-at-current-working-directory
         # https://unix.stackexchange.com/questions/32845/tar-exclude-doesnt-exclude-why
         # --verbose
-        time tar "$@" --create  --file - . | "$COMPRESSPROG" "$COMPRESSLEVEL" | mbuffer -m 2048M | gpg-batch --compress-algo none --cipher-algo AES256 --recipient "$CRYPTGPGUSER" --output - --encrypt - | mbuffer -q -m 2048M -s 64k -o "${BACKUPPATH}/${HOSTNAME}"-home--$(date +%Y%m%d%H%M%S)."$COMPRESSEXT".gpg
+        time tar "$@" --create  --file - . | mbuffer -m 2048M | "$COMPRESSPROG" "$COMPRESSLEVEL" | gpg-batch --compress-algo none --cipher-algo AES256 --recipient "$CRYPTGPGUSER" --output - --encrypt - | mbuffer -q -m 2048M -s 64k -o "${BACKUPPATH}/${HOSTNAME}"-home--$(date +%Y%m%d%H%M%S)."$COMPRESSEXT".gpg
         # local COMPRESSLEVEL="$3"
         popd >/dev/null
         # backup any luks headers here
