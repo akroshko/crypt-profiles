@@ -92,12 +92,18 @@ this for every line."
   ;; TODO: hard coding is bad
   (with-current-file-min crypt-profiles-password-database-path
     ;; goto heading
-    (cond ((equal alternate 3)
-           (cic:org-find-headline "Website Logins Tertiary"))
+    (cond ((equal alternate 6)
+           (cic:org-find-headline "Website Logins 6"))
+          ((equal alternate 5)
+           (cic:org-find-headline "Website Logins 5"))
+          ((equal alternate 4)
+           (cic:org-find-headline "Website Logins 4"))
+          ((equal alternate 3)
+           (cic:org-find-headline "Website Logins 3"))
           (alternate
-           (cic:org-find-headline "Website Logins Alternate"))
+           (cic:org-find-headline "Website Logins 2"))
           (t
-           (cic:org-find-headline "Website Logins")))
+           (cic:org-find-headline "Website Logins 1")))
     ;; TODO: this is a kludge, advance to table better
     (forward-line 2)
     (forward-char 4)

@@ -463,7 +463,7 @@ encrypt-file () {
         yell "Must specify an actual file to encrypt!!!"
         return 1
     fi
-    local NEWNAME="$(generate-uid)"
+    local NEWNAME=$(generate-uid)
     tar -cvzf - "$1" | gpg2 --recipient "$CRYPTGPGUSER" --output "$NEWNAME".tgz.gpg --encrypt -
     msg "Exit status: $? || Pipe status: ${PIPESTATUS[*]}"
     # TODO: is this a good way of verifying shredded file?
@@ -503,7 +503,7 @@ encrypt-file-password () {
         local TRYAGAIN=y
     done
     msg "Passwords recorded successfully!"
-    local FILEUID="$(generate-uid)"
+    local FILEUID=$(generate-uid)
     msg "The file UID is: $FILEUID"
     tar -cvzf - "$1" | gpg2 --cipher-algo AES256 --passphrase "$TOPSECRET" --output "$FILEUID".tgz.gpg --symmetric -
     msg "Encryption finished!!! "
@@ -1204,8 +1204,8 @@ ssh-crypt-profile-batch-cmd () {
         local TOPSECRET=$(DISPLAY= gpg-batch --no-tty --decrypt --use-agent "$PWDFILE")
         if [[ $? == 0 ]]; then
             local GPGPWD=$(sed -n '1p' <<< "$TOPSECRET")
-            local B64COMMAND="$(echo "$3" | base64)"
-            ssh-batch-interact $1 "source ~/.bash_profile $GPGPWD;source ~/.bash_library;bash -c \"$(echo ${B64COMMAND} | base64 -d)\""
+            local B64COMMAND=$(base64 <<< "$3")
+            ssh-batch-interact $1 "source ~/.bash_profile $GPGPWD;source ~/.bash_library;bash -c \"$(base64 -d <<< ${B64COMMAND})\""
         else
             echo "Error decrypting!!!"
         fi
@@ -1217,13 +1217,13 @@ crypt-luks-headers-dump () {
     (IFS=$'\n'
      for Z in $(lsblk -l -o name | tail -n +2); do
          if [[ -e /dev/"$Z" ]]; then
-             local OUTPUT="$(sudo cryptsetup luksDump /dev/$Z 2>&1)"
+             local OUTPUT=$(sudo cryptsetup luksDump "/dev/$Z" 2>&1)
              if [[ $? == 0 ]]; then
                  h2 /dev/"$Z"
                  echo "$OUTPUT"
              fi
          elif [[ -e /dev/mapper/"$Z" ]]; then
-             local OUTPUT="$(sudo cryptsetup luksDump /dev/mapper/$Z 2>&1)"
+             local OUTPUT=$(sudo cryptsetup luksDump "/dev/mapper/$Z" 2>&1)
              if [[ $? == 0 ]]; then
                  h2 /dev/mapper/"$Z"
                  echo "$OUTPUT"
@@ -1233,30 +1233,4 @@ crypt-luks-headers-dump () {
          fi
      done
     )
-}
-
-# TODO: generalize with above
-crypt-luks-headers-backup-here () {
-    # TODO: do I want this?
-    sudo true || return 1
-    (IFS=$'\n'
-     # XXXX: | sort | uniq means only one of a raid arry gets it's luks headers gets backed up
-     # TODO: make sure this is OK
-     for Z in $(lsblk -l -o name | tail -n +2 | sort | uniq); do
-         if [[ -e /dev/"$Z" ]]; then
-             local OUTPUT="$(sudo cryptsetup luksDump /dev/$Z 2>&1)"
-             if [[ $? == 0 ]]; then
-                 h2 /dev/"$Z"
-                 sudo cryptsetup luksHeaderBackup /dev/"$Z"        --header-backup-file=./luks-header-backup-"${HOSTNAME}"-"$Z"-$(date-time-stamp).bin
-             fi
-         elif [[ -e /dev/mapper/"$Z" ]]; then
-             local OUTPUT="$(sudo cryptsetup luksDump /dev/mapper/$Z 2>&1)"
-             if [[ $? == 0 ]]; then
-                 h2 /dev/mapper/"$Z"
-                 sudo cryptsetup luksHeaderBackup /dev/mapper/"$Z" --header-backup-file=./luks-header-backup-"${HOSTNAME}"-"$Z"-$(date-time-stamp).bin
-             fi
-         else
-             msg "Can't find $Z!!!"
-         fi
-     done)
 }

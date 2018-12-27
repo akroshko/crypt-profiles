@@ -93,9 +93,9 @@ main () {
             if [[ -f "$HOME/.secrets/secrets.txt.gpg" ]]; then
                 if [[ -n "$GNUPGPWD" ]]; then
                     msg "Using entered password!"
-                    local TOPSECRET="$(DISPLAY= gpg-batch --passphrase-fd 0 --decrypt --use-agent $HOME/.secrets/secrets.txt.gpg <<< "$GNUPGPWD")"
+                    local TOPSECRET=$(DISPLAY= gpg-batch --passphrase-fd 0 --decrypt --use-agent "$HOME/.secrets/secrets.txt.gpg" <<< "$GNUPGPWD")
                 else
-                    local TOPSECRET="$(DISPLAY= gpg-batch --decrypt --use-agent $HOME/.secrets/secrets.txt.gpg)"
+                    local TOPSECRET=$(DISPLAY= gpg-batch --decrypt --use-agent "$HOME/.secrets/secrets.txt.gpg")
                     if [[ $? != 0 ]]; then
                         # TODO: add real option for quit
                         while read -r -t 0;do read -r; done;
@@ -140,7 +140,7 @@ main () {
             if [[ -f "${PWDFILE}" ]]; then
                 local KEYFILE=$(basename ${PWDFILE%.txt.gpg})
                 h2 "key for ${KEYFILE}"
-                local TOPSECRET="$(DISPLAY= gpg-batch --no-tty --decrypt --use-agent $PWDFILE)"
+                local TOPSECRET=$(DISPLAY= gpg-batch --no-tty --decrypt --use-agent "$PWDFILE")
                 if [[ $? == 0 ]]; then
                     local KEYPWD=$(sed -n '1p' <<< "$TOPSECRET")
                     empty -f -i in.fifo -o out.fifo -p empty.pid -L /tmp/empty-bash-profile-crypt.log ssh-add -t 2419200 "$HOME/.ssh/${KEYFILE}"

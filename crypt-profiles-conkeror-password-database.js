@@ -5,7 +5,7 @@
 // Author: Andrew Kroshko
 // Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 // Created: Mon Jun 20, 2016
-// Version: 20181127
+// Version: 20181216
 // URL: https://github.com/akroshko/crypt-profiles
 //
 // This program is free software; you can redistribute it and/or
@@ -64,6 +64,7 @@ var g_initialstate=0;
 var g_thedeferred_logout=null;
 var g_thedeferred_final=null;
 var g_thedeferred_final2=null;
+var g_thedeferred_timeout=null;
 // TODO: may not want these anymore
 
 function sleep(milliseconds) {
@@ -147,10 +148,10 @@ logindata["vimeo"] =         {"url":"https://vimeo.com/log_in",
                               "submit-element":"input",
                               "submit-value":"Log in with email"};
 logindata["pcmastercard"] =  {"url":"https://online.pcmastercard.ca/PCB_Consumer/Login.do?LAN=EN",
-                              "login-id":"username",
-                              "password-id":"password",
-                              "submit-element":"input",
-                              "submit-value":"Sign On"};
+                              "login-id":"md-input-0",
+                              "password-id":"md-input-1",
+                              "submit-narrow":"form[name=login_form]",
+                              "submit-element":"button"};
 // TODO: needs a special function
 logindata["mec"] =           {"url":"https://www.mec.ca/Membership/login.jsp",
                               "login-id":"j_username",
@@ -255,12 +256,14 @@ function get_current_password_login(I, logintype, open_new_buffer=false) {
     g_theloginuri = null;
     g_initialstate = null;
     var base64_currenturl=btoa(unescape(I.window.buffers.current.display_uri_string));
-    if (logintype == 3) {
-        var cmd_str="emacs -q --batch --eval '(progn (load \"~/.crypt-profiles-password-database.el\") (prin1 (crypt-profiles-get-matching-password \"" + base64_currenturl + "\" 3)))'"
+    if (logintype >= 3) {
+        var cmd_str="emacs -q --batch --eval '(progn (load \"~/.crypt-profiles-password-database.el\") (prin1 (crypt-profiles-get-matching-password \"" + base64_currenturl + "\" " + String(logintype) + ")))'"
     } else if (logintype == 2) {
         var cmd_str="emacs -q --batch --eval '(progn (load \"~/.crypt-profiles-password-database.el\") (prin1 (crypt-profiles-get-matching-password \"" + base64_currenturl + "\" t)))'"
-    } else {
+    } else if (logintype == 1) {
         var cmd_str="emacs -q --batch --eval '(progn (load \"~/.crypt-profiles-password-database.el\") (prin1 (crypt-profiles-get-matching-password \"" + base64_currenturl + "\")))'"
+    } else {
+        I.window.alert("Invalid logintype!");
     }
     // credit where credit is due
     // http://conkeror.org/Tips#Using_an_external_password_manager
@@ -311,6 +314,10 @@ function login_resolve_hook_function2 () {
     g_thedeferred_final2.resolve();
 }
 
+function timeout_resolve_callback () {
+    g_thedeferred_timeout.resolve();
+}
+
 function auto_login (I, open_new_buffer=false) {
     if (open_new_buffer==true) {
         var thepromise_signout = new Promise(function(resolve, reject) {
@@ -324,36 +331,39 @@ function auto_login (I, open_new_buffer=false) {
         g_thedeferred_logout=Promise.defer();
         add_hook.call(I.window.buffers.current, "content_buffer_finished_loading_hook", logout_resolve_hook_function);
         return g_thedeferred_logout;
-    }).then(function () {
+    }).then(function (result) {
         var thepromise=get_current_password_login(I,g_selection,open_new_buffer);
         return thepromise;
     }).then(function(result) {
         g_thedeferred_final=Promise.defer();
         add_hook.call(I.window.buffers.current, "content_buffer_finished_loading_hook", login_resolve_hook_function);
         return g_thedeferred_final.promise;
-    }).then(function() {
+    // XXXX: still non-functional, need to find way to do this, probably a callback that lets command return
+    // }).then(function (result) {
+    //     var g_thedeferred_timeout=Promise.defer();
+    //     call_after_timeout(timeout_resolve_callback,10000);
+    //     return g_thedeferred_timeout;
+    }).then(function(result) {
         remove_hook.call(I.window.buffers.current, "content_buffer_finished_loading_hook", login_resolve_hook_function);
         insert_current_password(I);
+        g_thedeferred_final2=Promise.defer();
         if ( g_theloginkey == "gmail" || g_theloginkey == "youtube" ) {
-            g_thedeferred_final2=Promise.defer();
             add_hook.call(I.window.buffers.current, "content_buffer_finished_loading_hook", login_resolve_hook_function2);
         } else {
-            var thepromise_signout = new Promise(function(resolve, reject) {
-                reject()
-            });
+            g_thedeferred_final2.resolve();
         }
         return g_thedeferred_final2.promise;
-        if (open_new_buffer==true) {
-            // TODO: non-functional
-            reload(I.window.buffers.current,true,null,null);
-        }
-    }).then(function() {
+        // if (open_new_buffer==true) {
+        //     // TODO: non-functional
+        //     reload(I.window.buffers.current,true,null,null);
+        // }
+    }).then(function(result) {
         remove_hook.call(I.window.buffers.current, "content_buffer_finished_loading_hook", login_resolve_hook_function2);
         insert_current_password(I);
     });
+    yield co_return(thepromise_signout);
 }
 
-// TODO: just need to update password thing now, and do search function :)
 // TODO: I am still learning how to write async javascript
 interactive("get-current-password-login","Get the login for the primary acount for particular sites.",
     function (I) {
@@ -382,42 +392,90 @@ interactive("get-current-password-login-alternate","Get the login for the second
         var thepromise=get_current_password_login(I,2);
     });
 
-interactive("auto-login-alternate","Login to alternate fully automatically.",
+interactive("auto-login-2","Login to account profile 2 fully automatically.",
     function (I) {
         remove_old_hooks(I);
         g_selection=2;
         yield auto_login(I);
     });
-define_key(content_buffer_normal_keymap, "s-2", "auto-login-alternate");
+define_key(content_buffer_normal_keymap, "s-2", "auto-login-2");
 
-interactive("auto-login-alternate-new-buffer","Login to alternate fully automatically.",
+interactive("auto-login-2-new-buffer","Login to account profile 2 fully automatically.",
     function (I) {
         remove_old_hooks(I);
         g_selection=2;
         yield auto_login(I,true);
     });
-define_key(content_buffer_normal_keymap, "C-u s-2", "auto-login-alternate-new-buffer");
+define_key(content_buffer_normal_keymap, "C-u s-2", "auto-login-2-new-buffer");
 
 interactive("get-current-password-login-tertiary","Get the login for the tertiary acount for particular sites.",
     function (I) {
         var thepromise=get_current_password_login(I,3);
     });
 
-interactive("auto-login-tertiary","Login to tertiary fully automatically.",
+interactive("auto-login-3","Login to account profile 3 fully automatically.",
     function (I) {
         remove_old_hooks(I);
         g_selection=3;
         yield auto_login(I);
     });
-define_key(content_buffer_normal_keymap, "s-3", "auto-login-tertiary");
+define_key(content_buffer_normal_keymap, "s-3", "auto-login-3");
 
-interactive("auto-login-tertiary-new-buffer","Login to tertiary fully automatically.",
+interactive("auto-login-3-new-buffer","Login to account profile 3 fully automatically.",
     function (I) {
         remove_old_hooks(I);
         g_selection=3;
         yield auto_login(I,true);
     });
-define_key(content_buffer_normal_keymap, "C-u s-3", "auto-login-tertiary-new-buffer");
+define_key(content_buffer_normal_keymap, "C-u s-3", "auto-login-3-new-buffer");
+
+interactive("auto-login-4","Login to account profile 4 fully automatically.",
+    function (I) {
+        remove_old_hooks(I);
+        g_selection=4;
+        yield auto_login(I);
+    });
+define_key(content_buffer_normal_keymap, "s-4", "auto-login-4");
+
+interactive("auto-login-4-new-buffer","Login to account profile 4 fully automatically.",
+    function (I) {
+        remove_old_hooks(I);
+        g_selection=4;
+        yield auto_login(I,true);
+    });
+define_key(content_buffer_normal_keymap, "C-u s-4", "auto-login-4-new-buffer");
+
+interactive("auto-login-5","Login to account profile 5 fully automatically.",
+    function (I) {
+        remove_old_hooks(I);
+        g_selection=5;
+        yield auto_login(I);
+    });
+define_key(content_buffer_normal_keymap, "s-5", "auto-login-5");
+
+interactive("auto-login-5-new-buffer","Login to account profile 5 fully automatically.",
+    function (I) {
+        remove_old_hooks(I);
+        g_selection=5;
+        yield auto_login(I,true);
+    });
+define_key(content_buffer_normal_keymap, "C-u s-5", "auto-login-5-new-buffer");
+
+interactive("auto-login-6","Login to account profile 6 fully automatically.",
+    function (I) {
+        remove_old_hooks(I);
+        g_selection=6;
+        yield auto_login(I);
+    });
+define_key(content_buffer_normal_keymap, "s-6", "auto-login-6");
+
+interactive("auto-login-6-new-buffer","Login to account profile 6 fully automatically.",
+    function (I) {
+        remove_old_hooks(I);
+        g_selection=6;
+        yield auto_login(I,true);
+    });
+define_key(content_buffer_normal_keymap, "C-u s-6", "auto-login-6-new-buffer");
 
 function remove_old_hooks(I) {
     remove_hook.call(I.window.buffers.current, "content_buffer_finished_loading_hook", logout_resolve_hook_function);
@@ -629,7 +687,8 @@ function insert_current_password(I) {
                 }
             }
             thebutton.click();
-        } else if ( "submit-element" in logindata[g_theloginkey] && "submit-type" in logindata[g_theloginkey] ) {
+        } else if ( "submit-element" in logindata[g_theloginkey] ) {
+            // && "submit-type" in logindata[g_theloginkey]
             if ( "submit-narrow" in logindata[g_theloginkey] ) {
                 var submit_document =login_document.querySelectorAll(logindata[g_theloginkey]["submit-narrow"])[0];
             } else {
@@ -637,12 +696,21 @@ function insert_current_password(I) {
             }
             var theelements = submit_document.querySelectorAll(logindata[g_theloginkey]["submit-element"]);
             // now find the value in the elements
-            for (let e in theelements) {
-                if (theelements[e].type == logindata[g_theloginkey]["submit-type"]) {
+            if ("submit-type" in logindata[g_theloginkey] ) {
+                for (let e in theelements) {
+                    if (theelements[e].type == logindata[g_theloginkey]["submit-type"]) {
+                        var thebutton = theelements[e];
+                        break;
+                    }
+                }
+            } else {
+                for (let e in theelements) {
                     var thebutton = theelements[e];
                     break;
                 }
             }
+            // TODO: this allows pcmastercard signin
+            // I.window.alert(thebutton);
             thebutton.click();
         }
     }

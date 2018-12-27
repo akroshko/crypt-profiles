@@ -5,7 +5,7 @@
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20181126
+# Version: 20181224
 # URL: https://github.com/akroshko/crypt-profiles
 #
 # This program is free software: you can redistribute it and/or modify
@@ -37,9 +37,35 @@ source "$HOME/.bash_library"
 # TODO: backup /home as default, try again... there are silly bugs here
 # TODO: still issue with best way to manage root
 
+# TODO: generalize with crypt-luks-headers-dump
+crypt-luks-headers-backup-here () {
+    # TODO: do I want this?
+    sudo true || return 1
+    (IFS=$'\n'
+     # XXXX: | sort | uniq means only one of a raid arry gets it's luks headers gets backed up
+     # TODO: make sure this is OK
+     for Z in $(lsblk -l -o name | tail -n +2 | sort | uniq); do
+         if [[ -e /dev/"$Z" ]]; then
+             local OUTPUT=$(sudo cryptsetup luksDump "/dev/$Z" 2>&1)
+             if [[ $? == 0 ]]; then
+                 h2 /dev/"$Z"
+                 sudo cryptsetup luksHeaderBackup /dev/"$Z"        --header-backup-file=./luks-header-backup-"${HOSTNAME}"-"$Z"-$(date-time-stamp).bin
+             fi
+         elif [[ -e /dev/mapper/"$Z" ]]; then
+             local OUTPUT=$(sudo cryptsetup luksDump "/dev/mapper/$Z" 2>&1)
+             if [[ $? == 0 ]]; then
+                 h2 /dev/mapper/"$Z"
+                 sudo cryptsetup luksHeaderBackup /dev/mapper/"$Z" --header-backup-file=./luks-header-backup-"${HOSTNAME}"-"$Z"-$(date-time-stamp).bin
+             fi
+         else
+             msg "Can't find $Z!!!"
+         fi
+     done)
+}
+
 # TODO: parse arguments a bit better
 main () {
-    local HELPTEXT="Usage: ./crypt-backup.sh [--help] [--reset] <<tar options...>>
+    local HELPTEXT="Usage: ./crypt-backup.sh [--help] [--reset] [--headers-only] <<tar options...>>
 
     Use --reset with no other options to umount and remove all logical
     volumes.
@@ -66,6 +92,11 @@ main () {
         # TODO: try all of these even if some are errors
         sudo umount /mnt-snapshot
         [[ "${HOSTNAME}" == "$BACKUPHOSTNAME" ]] && sudo lvremove /dev/crypt-main/backup-snapshot
+        return 0
+    fi
+    if [[ $@ == *"--headers-only"* ]]; then
+       crypt-luks-headers-backup-here
+       return 0
     else
         # XXXX: this is a dangerous script, make sure it always fails on error
         #       but not before here
@@ -82,9 +113,10 @@ main () {
             sudo lvcreate --size 12G --snapshot --name backup-snapshot /dev/crypt-main/home
             sudo mount /dev/crypt-main/backup-snapshot /mnt-snapshot -o ro
         else
+            echo "Wrong host for this script!"
             return 1
         fi
-        local BACKUPPATH="$(mount-disk-uuid ${BACKUPUUID})"
+        local BACKUPPATH=$(mount-disk-uuid "${BACKUPUUID}")
         if [[ $? != 0 ]]; then
             warn "Disk cannot be mounted or already mounted!!!"
             return 1
@@ -98,6 +130,7 @@ main () {
         # use pigz or http://compression.ca/pbzip2/ ???
         # http://dbahire.com/which-compression-tool-should-i-use-for-my-database-backups-part-ii-decompression/
         # http://www.krazyworks.com/multithreaded-encryption-and-compression/
+        # https://catchchallenger.first-world.info/wiki/Quick_Benchmark:_Gzip_vs_Bzip2_vs_LZMA_vs_XZ_vs_LZ4_vs_LZO
         clear
         if [[ $@ == *"--bzip2"* ]]; then
             local COMPRESSPROG="bzip2"
@@ -120,7 +153,7 @@ main () {
             local COMPRESSEXT="tgz"
         elif [[ $@ == *"--xz"* ]]; then
             local COMPRESSPROG="xz"
-            local COMPRESSLEVEL=
+            local COMPRESSLEVEL="-1"
             local COMPRESSEXT="txz"
         else
             # TODO: default compression level as 6, which is fast (do a test)
