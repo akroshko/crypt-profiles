@@ -282,7 +282,7 @@ super-password-easy () {
 ssh-check-host-fingerprints () {
     # get the sshd fingerprints of the current host
     # TODO: no color for now
-    echo "${HOSTNAME}"
+    echo "$HOSTNAME"
     if [[ -f /etc/ssh/ssh_host_ecdsa_key.pub ]]; then
         h2 'ECDSA fingerprint'
         awk '{print $2}' /etc/ssh/ssh_host_ecdsa_key.pub | base64 -d | md5sum | sed 's/../&:/g; s/: .*$//'
@@ -309,7 +309,7 @@ ssh-check-host-fingerprints () {
 }
 
 ssh-user-fingerprint () {
-    echo "${HOSTNAME}"
+    echo "$HOSTNAME"
     if [[ -f ~/.ssh/id_ecdsa.pub ]]; then
         h2 'ECDSA fingerprint'
         awk '{print $2}' ~/.ssh/id_ecdsa.pub | base64 -d | md5sum | sed 's/../&:/g; s/: .*$//'
@@ -348,7 +348,7 @@ crypt-device-image-to-here () {
     # TODO: will need to create and test a restore thing
     #       mbuffer limtted to easily fit on machines with 1G Ram
     # TODO: change to lzop, I find it better for realtime compression on my machines
-    sudo dd if=/dev/"$1" bs=64k conv=noerror,sync | lz4 | mbuffer -m 256M | gpg-batch --compress-algo none --cipher-algo AES256 --recipient "${CRYPTGPGUSER}" --output - --encrypt - | mbuffer -q -m 256M -s 64k -o ./"${HOSTNAME}"-"$1"--$(date +%Y%m%d%H%M%S).lz4.gpg
+    sudo dd if=/dev/"$1" bs=64k conv=noerror,sync | lz4 | mbuffer -m 256M | gpg-batch --compress-algo none --cipher-algo AES256 --recipient "${CRYPTGPGUSER}" --output - --encrypt - | mbuffer -q -m 256M -s 64k -o ./"$HOSTNAME"-"$1"--$(date +%Y%m%d%H%M%S).lz4.gpg
 }
 
 ssh-clear-all-controlmaster () {

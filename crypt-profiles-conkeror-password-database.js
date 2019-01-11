@@ -239,6 +239,10 @@ logindata["noip"] =          {"url":"https://www.noip.com/login",
                               "password-type":"password",
                               "submit-element":"button",
                               "submit-type":"submit"};
+logindata["kijiji"] =        {"url":"https://kijiji.ca/t-login.html",
+                              "login-id":"LoginEmailOrNickname",
+                              "password-id":"login-password",
+                              "submit-id":"SignInButton"};
 // TODO: nice
 logindata["quora"] =    {"url":""};
 

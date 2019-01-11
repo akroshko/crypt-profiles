@@ -1025,10 +1025,10 @@ master-privacy () {
                 fi
             done
             local IMAGETMP="$HOME/tmp/image-tmp"
-            if [[ -d  "${IMAGETMP}" ]]; then
+            if [[ -d  "$IMAGETMP" ]]; then
                 if [[ -n "$(find $tmplocation -iname \"*.git\" -type d)" ]]; then
                     msg "Killing ${IMAGETMP}"
-                    kill-recursive "${IMAGETMP}"
+                    kill-recursive "$IMAGETMP"
                 else
                     warn "The location $IMAGETMP appears to contain git repos!!!"
                 fi
