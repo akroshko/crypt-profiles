@@ -209,7 +209,7 @@ crypt-profile-switch () {
         echo $USAGE
         return 1
     fi
-    while read -r -t 0;do read -r; done;
+    while read -r -t 0;do read -r; done
     read -n 1 -p 'Is it OK to delete ~/.ssh/config (y/n)? ' YN
     if [[ "$YN" != "y" ]]; then
         yell 'Must be able to replace ~/.ssh/config!'
@@ -483,19 +483,19 @@ encrypt-file-password () {
     # suspected
     local TOPSECRET=$(super-password-easy)
     msg "Password is: $TOPSECRET"
-    while read -r -t 0;do read -r; done;
+    while read -r -t 0;do read -r; done
     read -n 1 -s -r -p "Please write down the password and press any key to continue... "
     export TRYAGAIN=
     while [[ $TRYAGAIN != "y" ]]; do
         clear
         # TODO: not sure if I should really do this twice
-        while read -r -t 0;do read -r; done;
+        while read -r -t 0;do read -r; done
         read -e -p "Re-enter password: " TOPSECRET1
         if [[ $TOPSECRET != $TOPSECRET1 ]]; then
             # TODO: try again
             warn "Password does not match!!! Write down again!!!"
             warn "Password is: $TOPSECRET"
-            while read -r -t 0;do read -r; done;
+            while read -r -t 0;do read -r; done
             read -n 1 -s -r -p "Press any key to continue... "
             local TRYAGAIN="n"
             continue
@@ -860,7 +860,7 @@ master-privacy-trash () {
     if [[ -d "$HOME/tmp/trash" ]] && ls -A "$HOME/tmp/trash/*" &>/dev/null; then
         msg  "Contents of ~/tmp/trash:"
         ls -A "$HOME"/tmp/trash/*
-        while read -r -t 0;do read -r; done;
+        while read -r -t 0;do read -r; done
         # TODO: add a countdown here
         if ask_yn "Do you want to delete ~/tmp/trash?";then
             kill-directory-contents "$HOME/tmp/trash"
@@ -1002,7 +1002,7 @@ master-privacy () {
         # TODO: any argument will do, not just --batch
         if [[ -z "$1" ]]; then
             h1 "Delete things that need user input"
-            while read -r -t 0;do read -r; done;
+            while read -r -t 0;do read -r; done
             # TODO: check if an sqllite exists before asking
             read -n 1 -p "Do you want to delete all Firefox places.sqlite? (y/n) " ynfirefox
             echo ""
@@ -1078,7 +1078,7 @@ master-privacy () {
         kill-file "$HOME/.config/autostart/dropbox.desktop"
         kill-file "$HOME/.config/autostart/skypeforlinux.desktop"
         # XXXX: these are killed by bleachbit
-        # kill-recursive ~/.local/share/*xbel*;
+        # kill-recursive ~/.local/share/*xbel*
         kill-file-contents "$HOME/.local/share/user-places.xbel"
         kill-recent-files-line '/\[Recent Files\]/,/^\s*$/{d}' "$HOME/.kde/share/config/arkrc"
         kill-matching-line     '/Recent Urls/d'                "$HOME/.kde/share/config/dragonplayerrc"
@@ -1087,7 +1087,7 @@ master-privacy () {
         kill-recent-files-line "$HOME/.kde/share/config/okularrc"
         # TODO: find out if these are really killed otherwise
         # h2  "Clearing tracker/indexers"
-        # kill-directory-contents-preserve-structure "$HOME"/.local/share/tracker;
+        # kill-directory-contents-preserve-structure "$HOME"/.local/share/tracker
         # kill-directory-contents "$HOME"/.local/share/zeitgeist
         # kill-directory-contents ~/.kde/share/apps/gwenview/recentfolders/*
         # bleachbit --overwrite --clean thumbnails.cache
