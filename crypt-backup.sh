@@ -49,13 +49,13 @@ crypt-luks-headers-backup-here () {
              local OUTPUT=$(sudo cryptsetup luksDump "/dev/$Z" 2>&1)
              if [[ $? == 0 ]]; then
                  h2 /dev/"$Z"
-                 sudo cryptsetup luksHeaderBackup /dev/"$Z"        --header-backup-file=./luks-header-backup-"${HOSTNAME}"-"$Z"-$(date-time-stamp).bin
+                 sudo cryptsetup luksHeaderBackup /dev/"$Z"        --header-backup-file=./luks-header-backup-"$HOSTNAME"-"$Z"-$(date-time-stamp).bin
              fi
          elif [[ -e /dev/mapper/"$Z" ]]; then
              local OUTPUT=$(sudo cryptsetup luksDump "/dev/mapper/$Z" 2>&1)
              if [[ $? == 0 ]]; then
                  h2 /dev/mapper/"$Z"
-                 sudo cryptsetup luksHeaderBackup /dev/mapper/"$Z" --header-backup-file=./luks-header-backup-"${HOSTNAME}"-"$Z"-$(date-time-stamp).bin
+                 sudo cryptsetup luksHeaderBackup /dev/mapper/"$Z" --header-backup-file=./luks-header-backup-"$HOSTNAME"-"$Z"-$(date-time-stamp).bin
              fi
          else
              msg "Can't find $Z!!!"
@@ -91,7 +91,7 @@ main () {
     if [[ $@ == *"--reset"* ]]; then
         # TODO: try all of these even if some are errors
         sudo umount /mnt-snapshot
-        [[ "${HOSTNAME}" == "$BACKUPHOSTNAME" ]] && sudo lvremove /dev/crypt-main/backup-snapshot
+        [[ "$HOSTNAME" == "$BACKUPHOSTNAME" ]] && sudo lvremove /dev/crypt-main/backup-snapshot
         return 0
     fi
     if [[ $@ == *"--headers-only"* ]]; then
@@ -102,7 +102,7 @@ main () {
         #       but not before here
         set -e
         # XXXX: hard coded to ensure script does not screw anything up
-        if [[ "${HOSTNAME}" == "$BACKUPHOSTNAME" ]]; then
+        if [[ "$HOSTNAME" == "$BACKUPHOSTNAME" ]]; then
             # TODO: bail if sudo not correct
             sudo true || return 1
             echo "Creating snapshot of /dev/crypt-main/home"
@@ -183,7 +183,7 @@ main () {
         # TODO: do not want || return 1, figure out
         sudo true
         sudo umount /mnt-snapshot
-        [[ "${HOSTNAME}" == "$BACKUPHOSTNAME" ]] && sudo lvremove /dev/crypt-main/backup-snapshot
+        [[ "$HOSTNAME" == "$BACKUPHOSTNAME" ]] && sudo lvremove /dev/crypt-main/backup-snapshot
     fi
 }
 main "$@"

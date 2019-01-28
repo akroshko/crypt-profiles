@@ -5,7 +5,7 @@
 // Author: Andrew Kroshko
 // Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 // Created: Mon Jun 20, 2016
-// Version: 20181216
+// Version: 20190115
 // URL: https://github.com/akroshko/crypt-profiles
 //
 // This program is free software; you can redistribute it and/or
@@ -62,8 +62,9 @@ var g_thelogouturi=null;
 var g_initialstate=0;
 // promises and hooks
 var g_thedeferred_logout=null;
-var g_thedeferred_final=null;
-var g_thedeferred_final2=null;
+var g_thedeferred_login_page=null;
+var g_the_deferred_login1=null;
+var g_the_deferred_login2=null;
 var g_thedeferred_timeout=null;
 // TODO: may not want these anymore
 
@@ -204,13 +205,14 @@ logindata["ebay"]    =       {"url":"https://signin.ebay.ca/ws/eBayISAPI.dll?Sig
                               "password-id":"pass",
                               "submit-id":"sgnBt"};
 // TODO: submit can only be identified by inner html
-logindata["twitch"]  =       {"url":"https://www.twitch.tv/login"// ,
+logindata["twitch"]  =       {"url":"https://www.twitch.tv/login",
                               // "login-element":"input",
                               // "login-type":"text",
                               // "password-element":"input",
                               // "password-type":"password",
                               // "submit-element":"button"
-                             };
+                              // this avoids pulling up websites with spoilers from people I do not follow
+                              "post-login-url":"https://www.twitch.tv/directory/following"};
 logindata["discord"]    =    {"url":"https://discordapp.com/login",
                               "login-element":"input",
                               "login-type":"email",
@@ -304,18 +306,23 @@ function logout_resolve_hook_function () {
     g_thedeferred_logout.resolve();
 }
 
-function login_resolve_hook_function () {
+function login_page_resolve_hook_function () {
     // TODO check if buffer is loading and correct one
     // TODO: would love to add some delays in, but not yet
     // sleep_async(1000).then(() => {
-    //     g_thedeferred_final.resolve();
+    //     g_thedeferred_login_page.resolve();
     // });
-    g_thedeferred_final.resolve();
+    g_thedeferred_login_page.resolve();
+}
+
+function login_resolve_hook_function1 () {
+    // TODO check if buffer is loading and correct one
+    g_the_deferred_login1.resolve();
 }
 
 function login_resolve_hook_function2 () {
     // TODO check if buffer is loading and correct one
-    g_thedeferred_final2.resolve();
+    g_the_deferred_login2.resolve();
 }
 
 function timeout_resolve_callback () {
@@ -339,31 +346,45 @@ function auto_login (I, open_new_buffer=false) {
         var thepromise=get_current_password_login(I,g_selection,open_new_buffer);
         return thepromise;
     }).then(function(result) {
-        g_thedeferred_final=Promise.defer();
-        add_hook.call(I.window.buffers.current, "content_buffer_finished_loading_hook", login_resolve_hook_function);
-        return g_thedeferred_final.promise;
+        g_thedeferred_login_page=Promise.defer();
+        add_hook.call(I.window.buffers.current, "content_buffer_finished_loading_hook", login_page_resolve_hook_function);
+        return g_thedeferred_login_page.promise;
     // XXXX: still non-functional, need to find way to do this, probably a callback that lets command return
     // }).then(function (result) {
     //     var g_thedeferred_timeout=Promise.defer();
     //     call_after_timeout(timeout_resolve_callback,10000);
     //     return g_thedeferred_timeout;
     }).then(function(result) {
-        remove_hook.call(I.window.buffers.current, "content_buffer_finished_loading_hook", login_resolve_hook_function);
+        remove_hook.call(I.window.buffers.current, "content_buffer_finished_loading_hook", login_page_resolve_hook_function);
         insert_current_password(I);
-        g_thedeferred_final2=Promise.defer();
+        g_the_deferred_login1=Promise.defer();
         if ( g_theloginkey == "gmail" || g_theloginkey == "youtube" ) {
-            add_hook.call(I.window.buffers.current, "content_buffer_finished_loading_hook", login_resolve_hook_function2);
+            add_hook.call(I.window.buffers.current, "content_buffer_finished_loading_hook", login_resolve_hook_function1);
         } else {
-            g_thedeferred_final2.resolve();
+            g_the_deferred_login1.resolve();
         }
-        return g_thedeferred_final2.promise;
+        return g_the_deferred_login1.promise;
         // if (open_new_buffer==true) {
         //     // TODO: non-functional
         //     reload(I.window.buffers.current,true,null,null);
         // }
     }).then(function(result) {
-        remove_hook.call(I.window.buffers.current, "content_buffer_finished_loading_hook", login_resolve_hook_function2);
+        remove_hook.call(I.window.buffers.current, "content_buffer_finished_loading_hook", login_resolve_hook_function1);
         insert_current_password(I);
+        // TODO: non-functional way of going to a different page after login
+        // TODO: will have to do something different with hooks
+        // g_the_deferred_login2=Promise.defer();
+        // if ( typeof logindata[g_theloginkey]["post-login-url"] != "undefined") {
+        //     add_hook.call(I.window.buffers.current, "content_buffer_finished_loading_hook", login_resolve_hook_function2);
+        // } else {
+        //     g_the_deferred_login2.resolve();
+        // }
+        // return g_the_deferred_login2;
+    // }).then(function (result) {
+    //     if ( typeof logindata[g_theloginkey]["post-login-url"] != "undefined") {
+    //         var spec = load_spec(logindata[g_theloginkey]["post-login-url"]);
+    //         I.buffer.load(spec);
+    //     }
     });
     yield co_return(thepromise_signout);
 }
@@ -483,7 +504,8 @@ define_key(content_buffer_normal_keymap, "C-u s-6", "auto-login-6-new-buffer");
 
 function remove_old_hooks(I) {
     remove_hook.call(I.window.buffers.current, "content_buffer_finished_loading_hook", logout_resolve_hook_function);
-    remove_hook.call(I.window.buffers.current, "content_buffer_finished_loading_hook", login_resolve_hook_function);
+    remove_hook.call(I.window.buffers.current, "content_buffer_finished_loading_hook", login_page_resolve_hook_function);
+    remove_hook.call(I.window.buffers.current, "content_buffer_finished_loading_hook", login_resolve_hook_function1);
     remove_hook.call(I.window.buffers.current, "content_buffer_finished_loading_hook", login_resolve_hook_function2);
 }
 
