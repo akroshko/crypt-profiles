@@ -59,8 +59,8 @@ crypt-create-profile () {
     fi
     killall-agents
     local MASTERPROFILE="$1"
-    mkdir -p "${MASTERPROFILE}"
-    fix-crypt-permissions "${MASTERPROFILE}"
+    mkdir -p "$MASTERPROFILE"
+    fix-crypt-permissions "$MASTERPROFILE"
     # do no make this directory because we use cp
     local PRIMARYPROFILE="$2"
     local WORKINGPROFILE="$3"
@@ -90,7 +90,7 @@ crypt-create-profile () {
         # TODO: retry if fail to build public key, e.g., password is bad
         DISPLAY= gpg-batch --homedir "$MASTERPROFILE" --expert --gen-key
         # put gpg password into the secrets file
-        DISPLAY= echo ${GPGPASSWORD} | gpg-batch --homedir "$MASTERPROFILE" --recipient ${RECIPIENT} --encrypt --passphrase "$GPGPASSWORD" --output ${KEYSLOCATION}/secrets.txt.gpg -
+        DISPLAY= echo "$GPGPASSWORD" | gpg-batch --homedir "$MASTERPROFILE" --recipient "$RECIPIENT" --encrypt --passphrase "$GPGPASSWORD" --output "$KEYSLOCATION/secrets.txt.gpg" -
         # add a new subkey to the master profile
         h1
         msg "Use the addkey command twice:"
@@ -99,7 +99,7 @@ crypt-create-profile () {
         msg "Use the save command to finish"
         echo ""
         # TODO: retry if fail
-        DISPLAY= gpg-batch --homedir "$MASTERPROFILE" --expert --edit-key "${RECIPIENT}"
+        DISPLAY= gpg-batch --homedir "$MASTERPROFILE" --expert --edit-key "$RECIPIENT"
     fi
     # XXXX: if true for debugging purposes
     if true; then
@@ -110,18 +110,18 @@ crypt-create-profile () {
         # create the ssh key
         ssh-keygen-rsa "$MASTERPROFILE" "$PASSWORD"
         # use gpg key to encrypt the password
-        DISPLAY= echo "$PASSWORD" | gpg-batch --homedir "$MASTERPROFILE" --recipient ${RECIPIENT} --encrypt --passphrase "$GPGPASSWORD" --output "$MASTERPROFILE"/id_rsa.txt.gpg -
+        DISPLAY= echo "$PASSWORD" | gpg-batch --homedir "$MASTERPROFILE" --recipient "$RECIPIENT" --encrypt --passphrase "$GPGPASSWORD" --output "$MASTERPROFILE"/id_rsa.txt.gpg -
         # generate a password id_ed25519
         local PASSWORD=$(super-password)
         # create the ssh key
         ssh-keygen-ed25519 "$MASTERPROFILE" "$PASSWORD"
         # use gpg key to encrypt the password
-        DISPLAY= echo "$PASSWORD" | gpg-batch --homedir "$MASTERPROFILE" --recipient ${RECIPIENT} --encrypt --passphrase "$GPGPASSWORD" --output "$MASTERPROFILE"/id_ed25519.txt.gpg -
+        DISPLAY= echo "$PASSWORD" | gpg-batch --homedir "$MASTERPROFILE" --recipient "$RECIPIENT" --encrypt --passphrase "$GPGPASSWORD" --output "$MASTERPROFILE"/id_ed25519.txt.gpg -
     fi
     # XXXX: if true for debugging purposes
     if true; then
         cp -r "$MASTERPROFILE" "$WORKINGPROFILE"
-        fix-crypt-permissions "${WORKINGPROFILE}"
+        fix-crypt-permissions "$WORKINGPROFILE"
         gpg-batch --homedir "$WORKINGPROFILE" --export-secret-subkeys "$RECIPIENT" > "$HOME/crypt-profiles-secret-keys"
         h1
         msg "Answer (y)es to delete secret key"
@@ -182,10 +182,10 @@ crypt-add-secret-to-profile () {
     # get the password from the current secrets
     local GPGPASSPHRASE=$(gpg-batch --decrypt ~/.secrets/secrets.txt.gpg 2>/dev/null | head -n 1)
     # create the secret
-    if [[ -n "${THESECRET}" && -n "${RECIPIENT}" && -n "$GPGPASSPHRASE" && -n "$SECRETNAME" ]]; then
+    if [[ -n "$THESECRET" && -n "$RECIPIENT" && -n "$GPGPASSPHRASE" && -n "$SECRETNAME" ]]; then
         # TODO: there is an issue with message "You need a passphrase to unlock the secret key for "
         #       issue temporarily solved by using --batch when decrypting
-        echo ${THESECRET} | gpg2 --recipient "${RECIPIENT}" --encrypt --passphrase "${GPGPASSPHRASE}" --output "$PRIMARYPROFILE"/"$SECRETNAME"-secrets.txt.gpg -
+        echo "$THESECRET" | gpg2 --recipient "$RECIPIENT" --encrypt --passphrase "$GPGPASSPHRASE" --output "$PRIMARYPROFILE"/"$SECRETNAME"-secrets.txt.gpg -
     else
         yell "Something went wrong before final encryption!"
     fi
@@ -271,18 +271,18 @@ crypt-profile-printable () {
     # TODO: need actual "$1" argument and to sort out whether master,primary,working
     # TODO: not $KEYSLOCATION variable
     # create a printable version of the profile, only print appropriate things
-    if [[ -f "${KEYSLOCATION}"/pubring.gpg ]]; then
+    if [[ -f "$KEYSLOCATION"/pubring.gpg ]]; then
         local NAMES=()
         # get all gpg public keys ids
         while read LINE; do
             local REGEX='uid[[:space:]](.*)'
-            [[ "${LINE}" =~ $REGEX ]] && NAMES+=( "${BASH_REMATCH[1]}" )
+            [[ "$LINE" =~ $REGEX ]] && NAMES+=( "${BASH_REMATCH[1]}" )
         done < <(gpg --list-keys --keyid-format 0xlong --no-default-keyring --keyring ${KEYSLOCATION}/pubring.gpg)
         # now get name and fingerprint for all keyids
         for NAME in "${NAMES[@]}"; do
             # echo "here"
-            # echo "${NAME}"
-            # echo $(gpg --list-keys --fingerprint --keyid-format 0xlong --no-default-keyring --keyring ${KEYSLOCATION}/pubring.gpg "${NAME}")
+            # echo "$NAME"
+            # echo $(gpg --list-keys --fingerprint --keyid-format 0xlong --no-default-keyring --keyring ${KEYSLOCATION}/pubring.gpg "$NAME")
             # echo "there"
             local STRIPNAME=$(sed -e 's/^ *//g' -e 's/ *$//g' <<< "$NAME")
             local KEYIDS=()
@@ -295,34 +295,34 @@ crypt-profile-printable () {
                     # TODO: does this line always run?
                     local KEYFINGERPRINT="${BASH_REMATCH[1]}"
                 fi
-            done < <(gpg --list-keys --fingerprint --keyid-format 0xlong --no-default-keyring --keyring ${KEYSLOCATION}/pubring.gpg "${NAME}")
+            done < <(gpg --list-keys --fingerprint --keyid-format 0xlong --no-default-keyring --keyring ${KEYSLOCATION}/pubring.gpg "$NAME")
             # get the ascii representation of the key
             for KEYID in ${KEYIDS[@]}; do
                 # output printable versions of the keys
                 # TODO any reason to output just fingerprints... useful without public key?
-                echo -n "" > "${KEYSLOCATION}"/"${STRIPNAME}"--"${KEYID}"--public.txt
-                echo -n "" > "${KEYSLOCATION}"/"${STRIPNAME}"--"${KEYID}"--private.txt
-                echo ${NAME} >> "${KEYSLOCATION}"/"${STRIPNAME}"--"${KEYID}"--public.txt
-                echo ${NAME} >> "${KEYSLOCATION}"/"${STRIPNAME}"--"${KEYID}"--private.txt
-                echo "" >> "${KEYSLOCATION}"/"${STRIPNAME}"--"${KEYID}"--public.txt
-                echo "" >> "${KEYSLOCATION}"/"${STRIPNAME}"--"${KEYID}"--private.txt
-                echo ${KEYID} >> "${KEYSLOCATION}"/"${STRIPNAME}"--"${KEYID}"--public.txt
-                echo ${KEYID} >> "${KEYSLOCATION}"/"${STRIPNAME}"--"${KEYID}"--private.txt
-                echo "" >> "${KEYSLOCATION}"/"${STRIPNAME}"--"${KEYID}"--public.txt
-                echo "" >> "${KEYSLOCATION}"/"${STRIPNAME}"--"${KEYID}"--private.txt
-                echo ${KEYFINGERPRINT} >> "${KEYSLOCATION}"/"${STRIPNAME}"--"${KEYID}"--public.txt
-                echo ${KEYFINGERPRINT} >> "${KEYSLOCATION}"/"${STRIPNAME}"--"${KEYID}"--private.txt
-                echo "" >> "${KEYSLOCATION}"/"${STRIPNAME}"--"${KEYID}"--public.txt
-                echo "" >> "${KEYSLOCATION}"/"${STRIPNAME}"--"${KEYID}"--private.txt
-                gpg2 --export -a "${KEYID}" >> "${KEYSLOCATION}"/"${STRIPNAME}"--"${KEYID}"--public.txt
-                gpg2 --export-secret-keys -a "${KEYID}" >> "${KEYSLOCATION}"/"${STRIPNAME}"--"${KEYID}"--private.txt
+                echo -n "" > "$KEYSLOCATION/$STRIPNAME--$KEYID--public.txt"
+                echo -n "" > "$KEYSLOCATION/$STRIPNAME--$KEYID--private.txt"
+                echo "$NAME" >> "$KEYSLOCATION/$STRIPNAME--$KEYID--public.txt"
+                echo "$NAME" >> "$KEYSLOCATION/$STRIPNAME--$KEYID--private.txt"
+                echo "" >> "$KEYSLOCATION/$STRIPNAME--$KEYID--public.txt"
+                echo "" >> "$KEYSLOCATION/$STRIPNAME--$KEYID--private.txt"
+                echo "$KEYID" >> "$KEYSLOCATION/$STRIPNAME--$KEYID--public.txt"
+                echo "$KEYID" >> "$KEYSLOCATION/$STRIPNAME--$KEYID--private.txt"
+                echo "" >> "$KEYSLOCATION/$STRIPNAME--$KEYID--public.txt"
+                echo "" >> "$KEYSLOCATION/$STRIPNAME--$KEYID--private.txt"
+                echo "$KEYFINGERPRINT" >> "$KEYSLOCATION/$STRIPNAME--$KEYID--public.txt"
+                echo "$KEYFINGERPRINT" >> "$KEYSLOCATION/$STRIPNAME--$KEYID--private.txt"
+                echo "" >> "$KEYSLOCATION/$STRIPNAME--$KEYID--public.txt"
+                echo "" >> "$KEYSLOCATION/$STRIPNAME--$KEYID--private.txt"
+                gpg2 --export -a "$KEYID" >> "$KEYSLOCATION/$STRIPNAME--$KEYID--public.txt"
+                gpg2 --export-secret-keys -a "$KEYID" >> "$KEYSLOCATION/$STRIPNAME--$KEYID--private.txt"
             done
 
-            # echo "${NAME}"
+            # echo "$NAME"
             # echo "${KEYIDS[@]}"
             # echo "${KEYFINGERPRINTS[@]}"
-            # echo "${KEYASCII}"
-            # echo "${PRIVATEASCII}"
+            # echo "$KEYASCII"
+            # echo "$PRIVATEASCII"
             # echo "================================================================================"
         done
     fi
@@ -336,7 +336,7 @@ killall-agents () {
     # XXXX: not completely desirable, but kill gnome keychain because it often interferes
     pkill -9 -f gnome-keyring-daemon
     # this is hopefully enough to purge it
-    [[ -e "$HOME/.gnupg/gpg-agent-info-${HOSTNAME}" ]] && rm "$HOME/.gnupg/gpg-agent-info-${HOSTNAME}"
+    [[ -e "$HOME/.gnupg/gpg-agent-info-$HOSTNAME" ]] && rm "$HOME/.gnupg/gpg-agent-info-$HOSTNAME"
     # TODO: not sure if I ever need this?
     [[ -e "$HOME/.gpg-agent-info" ]] && rm "$HOME/.gpg-agent-info"
     # TODO: delete only things I own?
@@ -367,10 +367,10 @@ ssh-keygen-ed25519 () {
         local KEYPATH="$1"/id_ed25519
     fi
     if [[ -z "$2" ]]; then
-        ssh-keygen -b 521 -t ed25519 -C "$(id -un)@${HOSTNAME}-$(date --rfc-3339=date)" -f "${KEYPATH}"
+        ssh-keygen -b 521 -t ed25519 -C "$(id -un)@${HOSTNAME}-$(date --rfc-3339=date)" -f "$KEYPATH"
     else
         local PASSWORD="$2"
-        ssh-keygen -b 521 -t ed25519 -C "$(id -un)@${HOSTNAME}-$(date --rfc-3339=date)" -P "${PASSWORD}" -f "${KEYPATH}"
+        ssh-keygen -b 521 -t ed25519 -C "$(id -un)@${HOSTNAME}-$(date --rfc-3339=date)" -P "$PASSWORD" -f "$KEYPATH"
     fi
 }
 
@@ -386,10 +386,10 @@ ssh-keygen-rsa () {
         local KEYPATH="$1"/id_rsa
     fi
     if [[ -z "$2" ]]; then
-        ssh-keygen -b 4096 -t rsa -C "$(id -un)@${HOSTNAME}-$(date --rfc-3339=date)" -f "${KEYPATH}"
+        ssh-keygen -b 4096 -t rsa -C "$(id -un)@${HOSTNAME}-$(date --rfc-3339=date)" -f "$KEYPATH"
     else
         local PASSWORD="$2"
-        ssh-keygen -b 4096 -t rsa -C "$(id -un)@${HOSTNAME}-$(date --rfc-3339=date)" -P "${PASSWORD}" -f "${KEYPATH}"
+        ssh-keygen -b 4096 -t rsa -C "$(id -un)@${HOSTNAME}-$(date --rfc-3339=date)" -P "$PASSWORD" -f "$KEYPATH"
     fi
 }
 
@@ -406,7 +406,7 @@ bootstrap-temporary-ssh () {
     fi
     # XXXX: only do this if an id_rsa does not already exist on host machine
     # create a temporary ssh key without a password, based on
-    ssh-keygen -b 4096 -t rsa -C "Temporary key to login to ${HOSTNAME}-$(date --rfc-3339=date)" -f "$HOME/.ssh/id_rsa_temp"
+    ssh-keygen -b 4096 -t rsa -C "Temporary key to login to $HOSTNAME-$(date --rfc-3339=date)" -f "$HOME/.ssh/id_rsa_temp"
     # copy private key to the host machine
     ssh $(whoami)@"$1" mkdir -p "$HOME/.ssh"
     scp "$HOME/.ssh/id_rsa_temp" $(whoami)@"$1:$HOME/.ssh/id_rsa"
@@ -524,11 +524,11 @@ decrypt-file () {
     local TMPPATH=$(mktemp -d -p .)
     msg "Decrypting $1 into ${TMPPATH}"
     # XXXX: assuming successful
-    gpg-batch --decrypt "$1" | tar -xvzf - --directory "${TMPPATH}"
+    gpg-batch --decrypt "$1" | tar -xvzf - --directory "$TMPPATH"
     msg "Exit status: $? || Pipe status: ${PIPESTATUS[*]}"
     \mv --backup=t -- ${TMPPATH}/* .
     # TODO: want to fail completely if not able to remove?
-    rmdir "${TMPPATH}"
+    rmdir "$TMPPATH"
     verify-operation "Decrypt OK? Do you wish to delete the encrypted file? (y/n) " "Really keep encrypted? (y/n) " "$1"
 }
 
@@ -540,11 +540,11 @@ decrypt-file-password () {
     fi
     local TMPPATH=$(mktemp -d -p .)
     msg "Decrypting $1 into ${TMPPATH}"
-    gpg-batch --decrypt "$1" | tar -xvzf - --directory "${TMPPATH}"
+    gpg-batch --decrypt "$1" | tar -xvzf - --directory "$TMPPATH"
     msg "Exit status: $? || Pipe status: ${PIPESTATUS[*]}"
     \mv --backup=t -- ${TMPPATH}/* .
     # TODO: want to fail completely if not able to remove?
-    rmdir "${TMPPATH}"
+    rmdir "$TMPPATH"
 }
 
 decrypt-flatten () {
@@ -852,7 +852,7 @@ master-privacy-brief () {
 
 master-privacy-all () {
     # XXXX: requires crypt-profiles to be in path
-    sudo env "PATH=$PATH" master-privacy-all.sh "${USER}"
+    sudo env "PATH=$PATH" master-privacy-all.sh "$USER"
 }
 
 master-privacy-trash () {

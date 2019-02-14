@@ -57,7 +57,7 @@ kill-freespace-random-file () {
     # TODO: it fluxuates, not sure why this is?
     # TODO: run filling as root, but optionally don't use root and/or su to current user
     # TODO: consider possibility of a small file too
-    # use ${USERNAME} to ensure that things are good
+    # use $USERNAME to ensure that things are good
     if (( $(cat /proc/meminfo | grep --color=never MemTotal | awk '{print $2}') < "4194304" )); then
        local BUFSIZE=512M
     else
@@ -348,7 +348,7 @@ crypt-device-image-to-here () {
     # TODO: will need to create and test a restore thing
     #       mbuffer limtted to easily fit on machines with 1G Ram
     # TODO: change to lzop, I find it better for realtime compression on my machines
-    sudo dd if=/dev/"$1" bs=64k conv=noerror,sync | lz4 | mbuffer -m 256M | gpg-batch --compress-algo none --cipher-algo AES256 --recipient "${CRYPTGPGUSER}" --output - --encrypt - | mbuffer -q -m 256M -s 64k -o ./"$HOSTNAME"-"$1"--$(date +%Y%m%d%H%M%S).lz4.gpg
+    sudo dd if=/dev/"$1" bs=64k conv=noerror,sync | lz4 | mbuffer -m 256M | gpg-batch --compress-algo none --cipher-algo AES256 --recipient "$CRYPTGPGUSER" --output - --encrypt - | mbuffer -q -m 256M -s 64k -o ./"$HOSTNAME"-"$1"--$(date +%Y%m%d%H%M%S).lz4.gpg
 }
 
 ssh-clear-all-controlmaster () {
@@ -364,7 +364,7 @@ ssh-kill-offending-key () {
         local LINENO=$(cut -d':' -f2 <<< "$1")
         if [[ -n "$HOSTSFILE" && -n "$LINENO" ]];then
             # delete appropriate line
-            echo "Deleting ${LINENO} in ${HOSTSFILE}!!!"
+            echo "Deleting $LINENO in $HOSTSFILE!!!"
             sed -i -e "${LINENO}d" "$HOSTSFILE"
         fi
     else

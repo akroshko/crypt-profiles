@@ -124,20 +124,20 @@ main () {
         # TODO: possibly need to test for gpg-preset-passphrase working properly
         #       will clearing the agent deal with sleep and hibernation issues?
         # TODO: not working here, PRESETGPGKEYS not being loaded
-        [[ -z ${PRESETGPGKEYS} ]] && warn "No preset keys!"
+        [[ -z "$PRESETGPGKEYS" ]] && warn "No preset keys!"
         for PRESETKEY in ${PRESETGPGKEYS}; do
             msg "Presetting: $PRESETKEY"
             /usr/lib/gnupg2/gpg-preset-passphrase --verbose --preset "$PRESETKEY" <<< "$GNUPGPWD"
         done
-        if [[ -f "$HOME/.gnupg/gpg-agent-info-${HOSTNAME}" ]]; then
-            source "$HOME/.gnupg/gpg-agent-info-${HOSTNAME}"
+        if [[ -f "$HOME/.gnupg/gpg-agent-info-$HOSTNAME" ]]; then
+            source "$HOME/.gnupg/gpg-agent-info-$HOSTNAME"
             export GPG_AGENT_INFO
         fi
         ################################################################################
         ## initialize ssh keys only if agent is live
         # read in all id_*.txt.gpg
         for PWDFILE in $HOME/.secrets/id_*.txt.gpg; do
-            if [[ -f "${PWDFILE}" ]]; then
+            if [[ -f "$PWDFILE" ]]; then
                 local KEYFILE=$(basename ${PWDFILE%.txt.gpg})
                 h2 "key for ${KEYFILE}"
                 local TOPSECRET=$(DISPLAY= gpg-batch --no-tty --decrypt --use-agent "$PWDFILE")

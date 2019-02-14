@@ -85,7 +85,7 @@ main () {
 
     # XXXX: these must be set externally
     if [[ $@ == *"--help"* || -z "$CRYPTGPGKEY" || -z "$CRYPTGPGUSER" || -z "$BACKUPHOSTNAME" || -z "$BACKUPUUID" ]]; then
-        echo "${HELPTEXT}"
+        echo "$HELPTEXT"
         return 1
     fi
     if [[ $@ == *"--reset"* ]]; then
@@ -116,17 +116,17 @@ main () {
             echo "Wrong host for this script!"
             return 1
         fi
-        local BACKUPPATH=$(mount-disk-uuid "${BACKUPUUID}")
+        local BACKUPPATH=$(mount-disk-uuid "$BACKUPUUID")
         if [[ $? != 0 ]]; then
             warn "Disk cannot be mounted or already mounted!!!"
             return 1
         fi
-        if ! gpg --list-keys "${CRYPTGPGUSER}"; then
-            gpg --import "${CRYPTGPGKEY}"
+        if ! gpg --list-keys "$CRYPTGPGUSER"; then
+            gpg --import "$CRYPTGPGKEY"
         fi
         pushd . >/dev/null
         # TODO: make this more flexible, replace down below
-        cd /mnt-snapshot/"${USER}"
+        cd "/mnt-snapshot/$USER"
         # use pigz or http://compression.ca/pbzip2/ ???
         # http://dbahire.com/which-compression-tool-should-i-use-for-my-database-backups-part-ii-decompression/
         # http://www.krazyworks.com/multithreaded-encryption-and-compression/
@@ -166,7 +166,7 @@ main () {
         # https://stackoverflow.com/questions/24197955/tar-excludes-option-to-exclude-only-the-directory-at-current-working-directory
         # https://unix.stackexchange.com/questions/32845/tar-exclude-doesnt-exclude-why
         # --verbose
-        time tar "$@" --create  --file - . | mbuffer -m 2048M | "$COMPRESSPROG" "$COMPRESSLEVEL" | gpg-batch --compress-algo none --cipher-algo AES256 --recipient "$CRYPTGPGUSER" --output - --encrypt - | mbuffer -q -m 2048M -s 64k -o "${BACKUPPATH}/${HOSTNAME}"-home--$(date +%Y%m%d%H%M%S)."$COMPRESSEXT".gpg
+        time tar "$@" --create  --file - . | mbuffer -m 2048M | "$COMPRESSPROG" "$COMPRESSLEVEL" | gpg-batch --compress-algo none --cipher-algo AES256 --recipient "$CRYPTGPGUSER" --output - --encrypt - | mbuffer -q -m 2048M -s 64k -o "${BACKUPPATH}/$HOSTNAME"-home--$(date +%Y%m%d%H%M%S)."$COMPRESSEXT".gpg
         # local COMPRESSLEVEL="$3"
         popd >/dev/null
         # backup any luks headers here
