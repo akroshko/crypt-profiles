@@ -872,8 +872,8 @@ master-privacy-trash () {
         msg "Contents of ~/.local/share/Trash/files:"
         ls -A "$HOME/.local/share/Trash/files"
         # TODO: check if empty?
-        if ask_yn "Do you want to delete ~/.local/share/Trash/files?"; then
-            bleachbit --overwrite --clean system.trash
+        if ask_yn "Do you want to delete ~/.local/share/Trash/?"; then
+            kill-recursive "$HOME/.local/share/Trash"
         fi
         # TODO: add a countdown here
         # kill-directory-contents "$HOME"/.local/share/Trash/files
