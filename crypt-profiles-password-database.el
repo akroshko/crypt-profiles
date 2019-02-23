@@ -90,7 +90,7 @@ this for every line."
 (defun crypt-profiles-get-matching-password (base64-url &optional alternate)
   ;; TODO make sure file decrypts before proceeding
   ;; TODO: hard coding is bad
-  (with-current-file-min crypt-profiles-password-database-path
+  (with-current-file-transient-min crypt-profiles-password-database-path
     ;; goto heading
     (cond ((equal alternate 6)
            (cic:org-find-headline "Website Logins 6"))
