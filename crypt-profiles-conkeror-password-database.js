@@ -271,6 +271,7 @@ function get_current_password_login(I, logintype, open_new_buffer=false) {
     } else {
         I.window.alert("Invalid logintype!");
     }
+    I.window.minibuffer.message(cmd_str);
     // credit where credit is due
     // http://conkeror.org/Tips#Using_an_external_password_manager
     var out = "";

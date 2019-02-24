@@ -35,7 +35,6 @@
 (require 'cl)
 (require 'json)
 
-
 ;; TODO: not sure this will work for everyone, this is just what I use in my config files
 (when (file-exists-p "~/.gpg-agent-info.env")
   (let ((gpg-agent
@@ -49,10 +48,14 @@
       epg-gpg-program "/usr/bin/gpg2")
 (epa-file-enable)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TODO: eliminate double definitions of standard functions
+
 ;; XXXX: set filename filter if not already set, used for filenames in
 ;; special formats that may be declared late
 (unless (fboundp 'with-filename-filter)
   (fset 'with-filename-filter 'identity))
+
 
 (defun s-trim-full (str)
   "Strip full leading and trailing whitespace from STR.  Does
@@ -62,14 +65,29 @@ this for every line."
     (setq str (replace-match "" t t str)))
   str)
 
-(defmacro with-current-file-min (filename &rest body)
+;; (defmacro with-current-file-min (filename &rest body)
+;;   "Like with-current-file, but always go to point-min."
+;;   (declare (indent 1) ;; (debug t)
+;;            )
+;;   `(save-excursion
+;;      (set-buffer (find-file-noselect (with-filename-filter ,filename)))
+;;      (goto-char (point-min))
+;;      ,@body))
+
+(defmacro with-current-file-transient-min (filename &rest body)
   "Like with-current-file, but always go to point-min."
   (declare (indent 1) ;; (debug t)
            )
   `(save-excursion
-     (set-buffer (find-file-noselect (with-filename-filter ,filename)))
-     (goto-char (point-min))
-     ,@body))
+     (let ((already-existing-buffer (get-file-buffer ,filename))
+           (current-file-buffer (find-file-noselect (with-filename-filter ,filename))))
+       (set-buffer current-file-buffer)
+       (goto-char (point-min))
+       (let ((the-return (progn
+                           ,@body)))
+         (unless already-existing-buffer
+           (kill-buffer current-file-buffer))
+         the-return))))
 
 (defun cic:org-find-headline (headline &optional buffer)
   "Find a particular HEADLINE in BUFFER."
@@ -86,7 +104,6 @@ this for every line."
 (when (file-exists-p "~/.crypt-database-path.el")
   (load "~/.crypt-database-path.el"))
 
-;; (crypt-profiles-get-matching-password "aHR0cHM6Ly93d3cudHdpdHRlci5jb20=" 3)
 (defun crypt-profiles-get-matching-password (base64-url &optional alternate)
   ;; TODO make sure file decrypts before proceeding
   ;; TODO: hard coding is bad
