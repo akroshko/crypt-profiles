@@ -1,6 +1,6 @@
 /// crypt-profiles-conkeror-password-database.js
 //
-// Copyright (C) 2016-2018, Andrew Kroshko, all rights reserved.
+// Copyright (C) 2016-2019, Andrew Kroshko, all rights reserved.
 //
 // Author: Andrew Kroshko
 // Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
@@ -776,10 +776,15 @@ function current_signout (I) {
             I.window.buffers.current.load(spec);
         } else if (theurl.match(/twitter.com/)) {
             // https://twitter.com/logout except it confirms and have to press button anyways
-            var thebutton =  I.window.buffers.current.document.getElementsByClassName("js-signout-button");
-            if (typeof thebutton != "undefined" && typeof thebutton[0] != "undefined") {
+            var thebuttons =  I.window.buffers.current.document.querySelectorAll('button');
+            for (let e in thebuttons) {
+                if (typeof thebuttons[e].innerText != "undefined" && thebuttons[e].innerText.search(/log out/i) != -1) {
+                    var thebutton = thebuttons[e];
+                }
+            }
+            if (typeof thebutton != "undefined") {
                 I.window.minibuffer.message("Logging out: " + g_thelogoutkey);
-                thebutton[0].click();
+                thebutton.click();
             } else {
                 I.window.minibuffer.message("Can't logout: " + g_thelogoutkey);
                 // TODO: not sure why this is needed
