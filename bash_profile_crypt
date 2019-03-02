@@ -77,7 +77,7 @@ main () {
         fi
         # run keychain after we see if we need to kill agents
         if type -P keychain &>/dev/null; then
-            `type -P keychain` --nogui --agents ssh
+            $(type -P keychain) --nogui --agents ssh
             source $HOME/.keychain/*-sh >/dev/null
         fi
         msg "Keychain done!"
@@ -118,7 +118,7 @@ main () {
         # add identity to gpg-agent
         if [[ -z $GNUPGPWD ]]; then
             msg "Retrieving master password!"
-            local GNUPGPWD=`sed -n '1p' <<< "$TOPSECRET"`
+            local GNUPGPWD=$(sed -n '1p' <<< "$TOPSECRET")
         fi
         # need to do with fingerprints for both main and subkeys!!!!
         # TODO: possibly need to test for gpg-preset-passphrase working properly

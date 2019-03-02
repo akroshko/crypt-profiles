@@ -65,15 +65,6 @@ this for every line."
     (setq str (replace-match "" t t str)))
   str)
 
-;; (defmacro with-current-file-min (filename &rest body)
-;;   "Like with-current-file, but always go to point-min."
-;;   (declare (indent 1) ;; (debug t)
-;;            )
-;;   `(save-excursion
-;;      (set-buffer (find-file-noselect (with-filename-filter ,filename)))
-;;      (goto-char (point-min))
-;;      ,@body))
-
 (defmacro with-current-file-transient-min (filename &rest body)
   "Like with-current-file, but always go to point-min."
   (declare (indent 1) ;; (debug t)
