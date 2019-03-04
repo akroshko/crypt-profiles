@@ -5,7 +5,7 @@
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20190228
+# Version: 20190304
 # URL: https://github.com/akroshko/crypt-profiles
 #
 # This program is free software: you can redistribute it and/or modify
@@ -124,7 +124,7 @@ write-random-data-stdout () {
     fi
 }
 
-# TODO: decide whether elevated privileages is necessary for these commands
+# TODO: decide whether elevated privilages are necessary for these commands
 
 kill-file () {
     # XXXX: dangerous functions for convenience in batch mode
@@ -133,7 +133,6 @@ kill-file () {
             yell "Cannot kill-file symlink $1!!!"
         else
             msg "Killing $1 with kill-file"
-            # bleachbit --shred "$1"
             shred --iterations=3 --remove "$1"
         fi
     else
@@ -232,7 +231,7 @@ kill-find-matching () {
             if [[ -h "$1" ]];then
                 yell "Cannot kill-find-matching symlink $1!!!"
             else
-                # TODO: add more safeties against symlink
+                # TODO: add more safeties against shredding linked or symlinked files?
                 find "$1" -type f -name "$2" -printf "Shredding: %p\n" -exec shred --iterations=3 --remove {} \;
             fi
         else

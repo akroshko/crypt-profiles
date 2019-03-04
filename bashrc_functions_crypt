@@ -1036,13 +1036,11 @@ master-privacy () {
             fi
         fi
         # TODO: reset so gnome does not give errors
-        h1 "Bleachbit browsers"
+        h1 "Clearing browser information"
         master-privacy-chromium
         master-privacy-firefox
         master-privacy-conkeror
         master-privacy-palemoon
-         # TODO: ask to delete filefox places due to bug
-        # bleachbit --overwrite --clean
         h2 "Flash"
         bleachbit --overwrite --clean flash.*
         # secondary browsers
@@ -1051,7 +1049,8 @@ master-privacy () {
         h1 "Bleachbit system"
         h2 "Recent application files"
         # TODO: be as severe as possible on anything I don't use
-        bleachbit --overwrite --clean adobe_reader.* amsn.* amule.* audacious.* easytag.* evolution.* filezilla.* gedit.* google_chrome.* google_earth.* google_toolbar.* gwenview.* java.* openofficeorg.* pidgin.* realplayer.* rhythmbox.* skype.* thunderbird.* vlc.*
+        # TODO: vlc.* deleted for now because this kills symlinked extensions
+        bleachbit --overwrite --clean adobe_reader.* amsn.* amule.* audacious.* easytag.* evolution.* filezilla.* gedit.* google_chrome.* google_earth.* google_toolbar.* gwenview.* java.* openofficeorg.* pidgin.* realplayer.* rhythmbox.* skype.* thunderbird.*
         h2 "Gnome"
         bleachbit --overwrite --clean gnome.* nautilus.*
         h2 "KDE"
@@ -1077,8 +1076,7 @@ master-privacy () {
         kill-file "$HOME/.config/mimeapps.list"
         kill-file "$HOME/.config/autostart/dropbox.desktop"
         kill-file "$HOME/.config/autostart/skypeforlinux.desktop"
-        # XXXX: these are killed by bleachbit
-        # kill-recursive ~/.local/share/*xbel*
+        kill-recursive '$HOME/.local/share/*xbel*'
         kill-file-contents "$HOME/.local/share/user-places.xbel"
         kill-recent-files-line '/\[Recent Files\]/,/^\s*$/{d}' "$HOME/.kde/share/config/arkrc"
         kill-matching-line     '/Recent Urls/d'                "$HOME/.kde/share/config/dragonplayerrc"
@@ -1109,7 +1107,8 @@ master-privacy () {
             kill-recursive  "$HOME/.local/share/data/qpdfview"
             kill-recursive "$HOME/.local/share/evolution"
             # TODO: possibly do less, so preserve vlc options
-            kill-directory-contents "$HOME/.local/share/vlc"
+            # TODO: this kills some exensions I use
+            # kill-directory-contents "$HOME/.local/share/vlc"
             kill-directory-contents "$HOME/.abobe"
             kill-directory-contents "$HOME/.cr3"
             # TODO: program I once tested, remove
@@ -1122,10 +1121,11 @@ master-privacy () {
             # TODO: do I want this in batch mode or not
             #       can I just kill it and ones that look like it
             kill-file-contents "$HOME/.local/share/recently-used.xbel"
-            # TODO: clear xsession...
+            # TODO: the above just brings back the file... so this redundant right now
+            # kill-find-matching "$HOME/.local/share/" 'recently-used.xbel*'
+            # TODO: clear xsession... or just truncate like my other script????
             # kill-file-contents "$HOME"/.xsession-errors
-            # TODO: want a robust kill matching files, see if a function I wrote works here
-            [[ -d "$HOME/.local/share/" ]] && find "$HOME/.local/share/" -maxdepth 1 -type f -iname "recently-used.xbel.*" -exec bleachbit --shred {} \;
+
             # TODO:
         fi
         h2 "Re-caching programs such as Sage and Python"
