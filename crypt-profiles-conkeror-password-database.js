@@ -5,7 +5,7 @@
 // Author: Andrew Kroshko
 // Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 // Created: Mon Jun 20, 2016
-// Version: 20190228
+// Version: 20190309
 // URL: https://github.com/akroshko/crypt-profiles
 //
 // This program is free software; you can redistribute it and/or
@@ -43,9 +43,7 @@
 /// Code:
 
 // TODO: Many more websites.
-
 // TODO: Simplify login links where possible.
-
 // TODO: Better format for logindata database.
 
 // global variables
@@ -77,30 +75,6 @@ function sleep(milliseconds) {
   }
 }
 
-// // https://stackoverflow.com/questions/951021/what-is-the-javascript-version-of-sleep
-// using sleep(<<delay>>).then()
-function sleep_async (time) {
-    // TODO: why does setTimeout I see on the web not work
-    return new Promise((resolve) => call_after_timeout(resolve, time));
-}
-
-// TODO: not a great way to get hostname, but serves its purpose for now
-define_variable("current_hostname","",
-    "Holds the current hostname");
-// TODO: want to do this without interactive.
-interactive("myhost",
-    "Set the current hostname",
-    function set_hostname () {
-        // TODO: need to remember how this works
-        //       definitely need better way for shell command output
-        var thecmd = "hostname";
-        var out = "";
-        var result = yield shell_command(thecmd,
-                                         $fds=[{output: async_binary_string_writer("")},
-                                               {input:  async_binary_reader(function (s) out += s || "") }]);
-        current_hostname=out.trim();
-    });
-
 var logindata;
 // allow defining this elsewhere
 if (typeof logindata == "undefined") {
@@ -129,10 +103,12 @@ logindata["instagram"] =     {"url":"https://www.instagram.com/accounts/login/?f
                               "logout-url":"https://instagram.com/accounts/logout"};
 logindata["amazonca"] =      {"url":"https://www.amazon.ca/ap/signin?_encoding=UTF8&openid.assoc_handle=caflex&openid.claimed_id=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.identity=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.mode=checkid_setup&openid.ns=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0&openid.ns.pape=http%3A%2F%2Fspecs.openid.net%2Fextensions%2Fpape%2F1.0&openid.pape.max_auth_age=0&openid.return_to=https%3A%2F%2Fwww.amazon.ca%2Fgp%2Fcss%2Fhomepage.html%2Fref%3Dnav_signin",
                               "login-id":"ap_email",
-                              "password-id":"ap_password"};
+                              "password-id":"ap_password",
+                              "submit-id":"signInSubmit"};
 logindata["amazoncom"] =     {"url":"https://www.amazon.com/ap/signin?_encoding=UTF8&openid.assoc_handle=usflex&openid.claimed_id=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.identity=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.mode=checkid_setup&openid.ns=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0&openid.ns.pape=http%3A%2F%2Fspecs.openid.net%2Fextensions%2Fpape%2F1.0&openid.pape.max_auth_age=0&openid.return_to=https%3A%2F%2Fwww.amazon.com%2Fgp%2Fyourstore%2Fhome%3Fie%3DUTF8%26action%3Dsign-out%26path%3D%252Fgp%252Fyourstore%252Fhome%26ref_%3Dnav_youraccount_signout%26signIn%3D1%26useRedirectOnSuccess%3D1",
                               "login-id":"ap_email",
-                              "password-id":"ap_password"};
+                              "password-id":"ap_password",
+                              "submit-id":"signInSubmit"};
 logindata["usask"] =         {"url":"https://pawscas.usask.ca/cas-web/login?service=https%3A%2F%2Fpaws5.usask.ca%2Fc%2Fportal%2Flogin",
                               "login-id":"username",
                               "password-id":"password",
@@ -310,9 +286,6 @@ function logout_resolve_hook_function () {
 function login_page_resolve_hook_function () {
     // TODO check if buffer is loading and correct one
     // TODO: would love to add some delays in, but not yet
-    // sleep_async(1000).then(() => {
-    //     g_thedeferred_login_page.resolve();
-    // });
     g_thedeferred_login_page.resolve();
 }
 
@@ -570,17 +543,18 @@ function insert_current_password(I) {
         }
     } else if ( g_theloginkey == "amazonca" || g_theloginkey == "amazoncom" ) {
         var n1 = login_document.getElementById("ap_email");
-        if ( n1 == null || g_initialstate == 1 ) {
-            var n2 = login_document.getElementById("ap_password");
+        var n2 = login_document.getElementById("ap_password");
+        if ( n1 == null ) {
             browser_element_focus(I.window.buffers.current, n2);
             type_manually(I,g_theloginpassword);
-            var theform = login_document.getElementsByClassName("a-button-input")[0];
+            var theform = login_document.getElementById("signInSubmit");
             theform.click();
         } else {
             browser_element_focus(I.window.buffers.current, n1);
             type_manually(I,g_theloginuser);
-            g_initialstate = 1;
-            var theform = login_document.getElementsByClassName("a-button-input")[0];
+            browser_element_focus(I.window.buffers.current, n2);
+            type_manually(I,g_theloginpassword);
+            var theform = login_document.getElementById("signInSubmit");
             theform.click();
         }
     } else if ( g_theloginkey == "pixiv" ) {
