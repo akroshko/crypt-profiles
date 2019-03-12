@@ -1213,7 +1213,7 @@ ssh-crypt-profile-batch-cmd () {
 }
 
 crypt-luks-headers-dump () {
-    sudo true || return 1
+    sudo true || { echo "Failed to sudo!"; return 1; }
     (IFS=$'\n'
      for Z in $(lsblk -l -o name | tail -n +2); do
          if [[ -e /dev/"$Z" ]]; then

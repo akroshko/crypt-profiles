@@ -40,7 +40,7 @@ source "$HOME/.bash_library"
 # TODO: generalize with crypt-luks-headers-dump
 crypt-luks-headers-backup-here () {
     # TODO: do I want this?
-    sudo true || return 1
+    sudo true || { echo "Failed to sudo!"; return 1; }
     (IFS=$'\n'
      # XXXX: | sort | uniq means only one of a raid arry gets it's luks headers gets backed up
      # TODO: make sure this is OK
@@ -104,7 +104,7 @@ main () {
         # XXXX: hard coded to ensure script does not screw anything up
         if [[ "$HOSTNAME" == "$BACKUPHOSTNAME" ]]; then
             # TODO: bail if sudo not correct
-            sudo true || return 1
+            sudo true || { echo "Failed to sudo!"; return 1; }
             echo "Creating snapshot of /dev/crypt-main/home"
             # TODO: is this necessary?
             sync; sleep 10; sync
