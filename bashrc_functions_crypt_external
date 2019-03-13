@@ -5,7 +5,7 @@
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20190304
+# Version: 20190313
 # URL: https://github.com/akroshko/crypt-profiles
 #
 # This program is free software: you can redistribute it and/or modify
@@ -39,7 +39,7 @@ kill-freespace-random-file () {
     # References
     # http://serverfault.com/questions/6440/is-there-an-alternative-to-dev-urandom
     # time openssl enc -aes-256-ctr -pass pass:"$(dd if=/dev/urandom bs=128 count=1 2>/dev/null | base64)" -nosalt < /dev/zero | pv -pterb > ~/randomfile.bin
-    local ROOTPATH=$(readlink -f "$1")
+    local ROOTPATH=$(readlink -f -- "$1")
     if [[ -z "$ROOTPATH" ]]; then
         echo "Must specify directory corresponding to device to kill space on!!!"
         return 1
@@ -401,7 +401,7 @@ container-create-encrypted () {
     # TODO: error checking!!!
     sudo true || { echo "Failed to sudo!"; return 1; }
     local USAGE="Usage: container-create-encrypted <<size>> <<container filename>>"
-    if [[ -z "$3" ]];then
+    if [[ -z "$3" ]]; then
         echo "$USAGE"
         return 1
     fi
@@ -410,13 +410,13 @@ container-create-encrypted () {
     local THENUMBERBLOCKS=$(( "$THESIZEBITS" / 65535 ))
     local THEFNAME="$2"
     # TODO: get rid of any extension
-    local THECONTAINERNAME=$(basename "$2")
-    if [[ -e "$THEFNAME" ]];then
+    local THECONTAINERNAME=$(basename -- "$2")
+    if [[ -e "$THEFNAME" ]]; then
         echo "Filename $THEFNAME cannot exist!"
         echo "$USAGE"
         return 1
     fi
-    if [[ ! $(readlink -f "$THEFNAME") =~ $HOME ]];then
+    if [[ ! $(readlink -f -- "$THEFNAME") =~ $HOME ]];then
         echo "Filename must be created in home directory!"
         return 1
     fi

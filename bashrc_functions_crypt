@@ -5,7 +5,7 @@
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20190228
+# Version: 20190313
 # URL: https://github.com/akroshko/crypt-profiles
 #
 # This program is free software: you can redistribute it and/or modify
@@ -131,18 +131,18 @@ crypt-create-profile () {
         # create the actually working profile
         # TODO: add some checks here
         mkdir -p "$PRIMARYPROFILE"
-        mv "$WORKINGPROFILE"/pubring.gpg "$PRIMARYPROFILE"
-        ln -s "$PRIMARYPROFILE"/pubring.gpg "$WORKINGPROFILE"/pubring.gpg
-        mv "$WORKINGPROFILE"/secring.gpg "$PRIMARYPROFILE"
-        ln -s "$PRIMARYPROFILE"/secring.gpg "$WORKINGPROFILE"/secring.gpg
-        mv "$WORKINGPROFILE"/trustdb.gpg "$PRIMARYPROFILE"
-        ln -s "$PRIMARYPROFILE"/trustdb.gpg "$WORKINGPROFILE"/trustdb.gpg
-        mv "$MASTERPROFILE"/id_rsa.txt.gpg "$PRIMARYPROFILE"
-        mv "$MASTERPROFILE"/id_rsa "$PRIMARYPROFILE"
-        mv "$MASTERPROFILE"/id_rsa.pub "$PRIMARYPROFILE"
-        mv "$MASTERPROFILE"/id_ed25519.txt.gpg "$PRIMARYPROFILE"
-        mv "$MASTERPROFILE"/id_ed25519 "$PRIMARYPROFILE"
-        mv "$MASTERPROFILE"/id_ed25519.pub "$PRIMARYPROFILE"
+        \mv --no-clobber "$WORKINGPROFILE/pubring.gpg" "$PRIMARYPROFILE"
+        ln -s "$PRIMARYPROFILE/pubring.gpg" "$WORKINGPROFILE/pubring.gpg"
+        \mv --no-clobber "$WORKINGPROFILE/secring.gpg" "$PRIMARYPROFILE"
+        ln -s "$PRIMARYPROFILE/secring.gpg" "$WORKINGPROFILE/secring.gpg"
+        \mv --no-clobber "$WORKINGPROFILE/trustdb.gpg" "$PRIMARYPROFILE"
+        ln -s "$PRIMARYPROFILE/trustdb.gpg" "$WORKINGPROFILE/trustdb.gpg"
+        \mv --no-clobber "$MASTERPROFILE/id_rsa.txt.gpg" "$PRIMARYPROFILE"
+        \mv --no-clobber "$MASTERPROFILE/id_rsa" "$PRIMARYPROFILE"
+        \mv --no-clobber "$MASTERPROFILE/id_rsa.pub" "$PRIMARYPROFILE"
+        \mv --no-clobber "$MASTERPROFILE/id_ed25519.txt.gpg" "$PRIMARYPROFILE"
+        \mv --no-clobber "$MASTERPROFILE/id_ed25519" "$PRIMARYPROFILE"
+        \mv --no-clobber "$MASTERPROFILE/id_ed25519.pub" "$PRIMARYPROFILE"
         # TODO: not sure I need this or where the best place is
         # fix-gpg-ssh-permissions
     fi
@@ -235,11 +235,13 @@ crypt-profile-switch () {
     # a loop to create symlinks
     for THESECRETFILE in $PRIMARYPROFILE/*; do
         [[ $THESECRETFILE =~ secrets || $THESECRETFILE =~ openvpn ]]  || continue
-        need_new_symlink "$THESECRETFILE" "$HOME/.secrets/$(basename $THESECRETFILE)"
+        local THEBASENAME=$(basename -- "$THESECRETFILE")
+        need_new_symlink "$THESECRETFILE" "$HOME/.secrets/$THEBASENAME"
     done
     # XXXX: just use secrets for itself, use last word in directory
     # TODO: document this and possibly make a better way to do this
-    need_new_symlink "$PRIMARYPROFILE/secrets.txt.gpg"    "$HOME"/.secrets/$(basename ${PRIMARYPROFILE##*-}).txt.gpg
+    local THEBASENAME=$(basename -- "${PRIMARYPROFILE##*-}")
+    need_new_symlink "$PRIMARYPROFILE/secrets.txt.gpg"    "$HOME/.secrets/$THEBASENAME.txt.gpg"
     need_new_symlink "$PRIMARYPROFILE/id_rsa.txt.gpg"     "$HOME/.secrets/id_rsa.txt.gpg"
     need_new_symlink "$PRIMARYPROFILE/id_ecdsa.txt.gpg"   "$HOME/.secrets/id_ecdsa.txt.gpg"
     need_new_symlink "$PRIMARYPROFILE/id_ed25519.txt.gpg" "$HOME/.secrets/id_ed25519.txt.gpg"
@@ -367,10 +369,10 @@ ssh-keygen-ed25519 () {
         local KEYPATH="$1"/id_ed25519
     fi
     if [[ -z "$2" ]]; then
-        ssh-keygen -b 521 -t ed25519 -C "$(id -un)@${HOSTNAME}-$(date --rfc-3339=date)" -f "$KEYPATH"
+        ssh-keygen -b 521 -t ed25519 -C "$(id -un)@$HOSTNAME-$(date --rfc-3339=date)" -f "$KEYPATH"
     else
         local PASSWORD="$2"
-        ssh-keygen -b 521 -t ed25519 -C "$(id -un)@${HOSTNAME}-$(date --rfc-3339=date)" -P "$PASSWORD" -f "$KEYPATH"
+        ssh-keygen -b 521 -t ed25519 -C "$(id -un)@$HOSTNAME-$(date --rfc-3339=date)" -P "$PASSWORD" -f "$KEYPATH"
     fi
 }
 
@@ -386,10 +388,10 @@ ssh-keygen-rsa () {
         local KEYPATH="$1"/id_rsa
     fi
     if [[ -z "$2" ]]; then
-        ssh-keygen -b 4096 -t rsa -C "$(id -un)@${HOSTNAME}-$(date --rfc-3339=date)" -f "$KEYPATH"
+        ssh-keygen -b 4096 -t rsa -C "$(id -un)@$HOSTNAME-$(date --rfc-3339=date)" -f "$KEYPATH"
     else
         local PASSWORD="$2"
-        ssh-keygen -b 4096 -t rsa -C "$(id -un)@${HOSTNAME}-$(date --rfc-3339=date)" -P "$PASSWORD" -f "$KEYPATH"
+        ssh-keygen -b 4096 -t rsa -C "$(id -un)@$HOSTNAME-$(date --rfc-3339=date)" -P "$PASSWORD" -f "$KEYPATH"
     fi
 }
 
@@ -574,11 +576,12 @@ container-mount () {
         echo "$USAGE"
         return 1
     fi
-    if [[ ! -e /dev/mapper/"$(basename $1)" ]]; then
-        msg "Opening $(basename "$1")!"
-        sudo cryptsetup luksOpen "$1" "$(basename $1)"
+    local THEBASENAME=$(basename -- "$1")
+    if [[ ! -e "/dev/mapper/$THEBASENAME" ]]; then
+        msg "Opening $THEBASENAME!"
+        sudo cryptsetup luksOpen "$1" "$THEBASENAME"
     else
-        warn "Container $(basename $1) is already mapped!"
+        warn "Container $THEBASENAME is already mapped!"
         true
     fi
     # TODO: add more error checking?
@@ -586,9 +589,9 @@ container-mount () {
         sudo mkdir -p "$2"
         # TODO: do better than this
         if ! mountpoint -q "$2"; then
-            sudo mount /dev/mapper/"$(basename $1)" "$2"
+            sudo mount "/dev/mapper/$THEBASENAME" "$2"
             # TODO: should this be default
-            sudo chown -R ${USER}:${USER} "$2"
+            sudo chown -R "$USER:$USER" "$2"
         else
             warn "Mount point $2 already mounted!"
         fi
@@ -616,7 +619,7 @@ container-umount () {
     fi
     if [[ -d "$1" ]]; then
         if mountpoint -q "$1"; then
-            local MOUNTPOINT=$(readlink -f "$1")
+            local MOUNTPOINT=$(readlink -f -- "$1")
             local MAPPER=$(findmnt -nr -o source "$MOUNTPOINT")
         else
             yell "Nothing mounted at $1!"
@@ -655,11 +658,12 @@ open-vg () {
         return 1
     fi
     if [[ -e "$1" ]]; then
-        if [[ ! -e /dev/mapper/$(basename "$1") ]]; then
-            msg "Opening $(basename "$1")!"
-            sudo cryptsetup luksOpen "$1" $(basename "$1")
+        local THEBASENAME=$(basename -- "$1")
+        if [[ ! -e "/dev/mapper/$THEBASENAME" ]]; then
+            msg "Opening $THEBASENAME!"
+            sudo cryptsetup luksOpen "$1" "$THEBASENAME"
         else
-            warn "Device /dev/mapper/$(basename "$1") already mapped!"
+            warn "Device /dev/mapper/$THEBASENAME already mapped!"
         fi
         # TODO: should I still activate volumes anyways, even if already mapped?
         sudo vgchange -a y "$2"
@@ -682,11 +686,12 @@ open-vg-maintenance () {
         return 1
     fi
     if [[ -e "$1" ]]; then
-        if [[ ! -e /dev/mapper/$(basename "$1") ]]; then
-            msg "Opening $(basename "$1")!"
-            sudo cryptsetup luksOpen "$1" $(basename "$1")
+        local THEBASENAME=$(basename -- "$1")
+        if [[ ! -e "/dev/mapper/$THEBASENAME" ]]; then
+            msg "Opening $THEBASENAME!"
+            sudo cryptsetup luksOpen "$1" "$THEBASENAME"
         else
-            warn "Device /dev/mapper/$(basename "$1") already mapped!"
+            warn "Device /dev/mapper/$THEBASENAME already mapped!"
         fi
         # TODO: warn if already mapped
     else
@@ -719,15 +724,16 @@ vg-container-expand () {
             # dd if=/dev/urandom bs=1M count="$SIZEADD" | cat - >> "$CONTAINER"
             write-random-data-stdout "$SIZEADD" | cat - >> "$CONTAINER"
             # mount the encrypted container to resize (does this have to happen on loopback)
-            sudo cryptsetup luksOpen "$CONTAINER" "$(basename $CONTAINER)"
-            sudo cryptsetup resize "$(basename $CONTAINER)"
+            local THEBASENAME=$(basename -- "$CONTAINER")
+            sudo cryptsetup luksOpen "$CONTAINER" ""
+            sudo cryptsetup resize "$THEBASENAME"
             # expand the physical volume
-            sudo /sbin/pvresize /dev/mapper/"$(basename $CONTAINER)"
+            sudo /sbin/pvresize "/dev/mapper/$THEBASENAME"
             # finally close everything down
             # TODO: not quite working yet, how do I know archive name to close it down properly?
             #       do I even need to do this
-            sudo vgchange -a n /dev/mapper/"$(basename $CONTAINER)"
-            sudo cryptsetup luksClose "$(basename $CONTAINER)"
+            sudo vgchange -a n "/dev/mapper/$THEBASENAME"
+            sudo cryptsetup luksClose "$THEBASENAME"
         else
             yell "Container does not exist!!!"
         fi
@@ -748,10 +754,11 @@ close-vg () {
         echo "$USAGE"
         return 1
     fi
-    if [[ -e /dev/mapper/$(basename "$1") ]]; then
+    local THEBASENAME=$(basename -- "$1")
+    if [[ -e "/dev/mapper/$THEBASENAME" ]]; then
         sudo vgchange -a n "$2"
-        msg "Closing $(basename $1)!"
-        sudo cryptsetup luksClose $(basename "$1")
+        msg "Closing $THEBASENAME!"
+        sudo cryptsetup luksClose "$THEBASENAME"
     else
         warn "Device $1 does not exist!"
     fi
@@ -768,16 +775,17 @@ mount-vg-img () {
         echo "$USAGE"
         return 1
     fi
-    if [[ -e /dev/mapper/"$1" ]]; then
-        msg "Opening $(basename "$2")!"
-        sudo cryptsetup luksOpen /dev/mapper/"$1" $(basename "$2")
+    local THEBASENAME=$(basename -- "$2")
+    if [[ -e "/dev/mapper/$1" ]]; then
+        msg "Opening $THEBASENAME!"
+        sudo cryptsetup luksOpen "/dev/mapper/$1" "$THEBASENAME"
     else
         warn "Device /dev/mapper/$1 already mapped!"
     fi
     if ! mountpoint -q "$2"; then
         mkdir -p "$2"
-        sudo mount /dev/mapper/$(basename "$2") "$2"
-        sudo chown -R ${USER}:${USER} "$2"
+        sudo mount "/dev/mapper/$THEBASENAME" "$2"
+        sudo chown -R "$USER:$USER" "$2"
     else
         warn "Device /dev/mapper/$1 already mounted!"
     fi
@@ -806,11 +814,12 @@ umount-vg-img () {
         # XXXX: get rid of directory anyways
         rmdir "$2"
     fi
-    if [[ -e /dev/mapper/$(basename "$2") ]]; then
-        msg "Closing $(basename $2)!"
-        sudo cryptsetup luksClose "$(basename $2)"
+    local THEBASENAME=$(basename -- "$2")
+    if [[ -e "/dev/mapper/$THEBASENAME" ]]; then
+        msg "Closing $THEBASENAME!"
+        sudo cryptsetup luksClose "$THEBASENAME"
     else
-        warn "Container "$(basename $2)" not mapped!"
+        warn "Container $THEBASENAME not mapped!"
     fi
 }
 

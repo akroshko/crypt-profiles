@@ -5,7 +5,7 @@
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20190228
+# Version: 20190313
 # URL: https://github.com/akroshko/crypt-profiles
 #
 # This program is free software: you can redistribute it and/or modify
@@ -42,14 +42,14 @@ main () {
     # get entered password if necessary
     [[ -n "$1" ]] && local GNUPGPWD="$1"
     # stop this from being run as root, just in case
-    h1 "Running $(basename $BASH_SOURCE)"
+    h1 "Running "$(basename -- "$BASH_SOURCE")
     if [[ $EUID -ne 0 ]]; then
         # XXXX: don't want something so severe in the future
         pkill -9 -f gnome-keyring-daemon
         pkill -9 pinentry
         # initializes and add important functions
-        source $(dirname "${BASH_SOURCE[0]}")/bash_env_crypt
-        source $(dirname "${BASH_SOURCE[0]}")/bashrc_functions_crypt
+        source $(dirname -- "${BASH_SOURCE[0]}")/bash_env_crypt
+        source $(dirname -- "${BASH_SOURCE[0]}")/bashrc_functions_crypt
         # test if we can decrypt, make non-interactive by linking linking pinentry to /bin/false
         if [[ -f "$HOME/bin/pinentry-select" ]]; then
             rm -f "$HOME/bin/pinentry-select"
@@ -138,7 +138,7 @@ main () {
         # read in all id_*.txt.gpg
         for PWDFILE in $HOME/.secrets/id_*.txt.gpg; do
             if [[ -f "$PWDFILE" ]]; then
-                local KEYFILE=$(basename ${PWDFILE%.txt.gpg})
+                local KEYFILE=$(basename -- "${PWDFILE%.txt.gpg}")
                 h2 "key for ${KEYFILE}"
                 local TOPSECRET=$(DISPLAY= gpg-batch --no-tty --decrypt --use-agent "$PWDFILE")
                 if [[ $? == 0 ]]; then
@@ -166,6 +166,6 @@ main () {
         # TODO: pinentry-x11 is cool too
         ln -s /usr/bin/pinentry-gtk-2 "$HOME/bin/pinentry-select"
     fi
-    h1-end "Finishing $(basename $BASH_SOURCE)"
+    h1-end "Finishing "$(basename -- "$BASH_SOURCE")
 }
 main "$1"
