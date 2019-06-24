@@ -5,8 +5,8 @@
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20190313
-# URL: https://github.com/akroshko/bash-stdlib
+# Version: 20190624
+# URL: https://github.com/akroshko/cic-bash-common
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

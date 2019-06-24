@@ -5,7 +5,7 @@
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20190313
+# Version: 20190624
 # URL: https://github.com/akroshko/crypt-profiles
 #
 # This program is free software: you can redistribute it and/or modify
@@ -40,17 +40,11 @@ kill-freespace-random-file () {
     # http://serverfault.com/questions/6440/is-there-an-alternative-to-dev-urandom
     # time openssl enc -aes-256-ctr -pass pass:"$(dd if=/dev/urandom bs=128 count=1 2>/dev/null | base64)" -nosalt < /dev/zero | pv -pterb > ~/randomfile.bin
     local ROOTPATH=$(readlink -f -- "$1")
-    if [[ -z "$ROOTPATH" ]]; then
-        echo "Must specify directory corresponding to device to kill space on!!!"
-        return 1
-    fi
-    if [[ ! -d "$ROOTPATH" ]]; then
+    if [[ -z "$ROOTPATH" || ! -d "$ROOTPATH" ]]; then
         echo "Must specify valid directory corresponding to device to kill space on!!!"
         return 1
     fi
-    if [[ -e "$ROOTPATH"/randomfile.bin ]]; then
-        rm "$ROOTPATH"/randomfile.bin
-    fi
+    [[ -e "$ROOTPATH"/randomfile.bin ]] && rm "$ROOTPATH"/randomfile.bin
     # check if I can run a command with elevated priveleges
     # TODO:: not sure mbuffer is necessary
     # time openssl enc -aes-256-ctr -pass pass:"$(dd if=/dev/urandom bs=128 count=1 2>/dev/null | base64)" -nosalt < /dev/zero | mbuffer -D 16384M -m 2048M -s 64k -A /bin/false -f -o "$ROOTPATH"/randomfile.bin
@@ -142,7 +136,7 @@ kill-file () {
 }
 
 kill-recursive () {
-    # XXXX: dangerous functions for convenience in batch mode
+    # Xxxx: dangerous functions for convenience in batch mode
     if [[ -d "$1" ]]; then
         if [[ -h "$1" ]]; then
             yell "Cannot kill-recursive symlink $1!!!"
@@ -175,13 +169,13 @@ kill-directory-contents () {
         if [[ -h "$1" ]];then
             yell "Cannot kill-directory-conents symlink $1!!!"
         else
-            # TODO: might have problem if spaces somewhere, but this commands works well anyways
-            #       runs the find command if anything appears
-            if [[ -n $(ls -A "$1") ]]; then
+            # safer command
+            # https://stackoverflow.com/questions/20456666/bash-checking-if-folder-has-contents
+            if find "$1/" -mindepth 1 -print -quit 2>/dev/null | grep -q .; then
                 msg "Unlinking all symlinks of depth 1 in directory $1 with kill-directory-contents"
-                find "$1" -mindepth 1 -type l -printf "Unlinking: %p\n" -delete
+                find "$1/" -mindepth 1 -type l -printf "Unlinking: %p\n" -delete
                 msg "Clearing directory contents $1 with kill-directory-contents"
-                find "$1" -mindepth 1 -type f -printf "Shredding: %p\n" -exec shred --iterations=3 --remove {} \;
+                find "$1/" -mindepth 1 -type f -printf "Shredding: %p\n" -exec shred --iterations=3 --remove {} \;
             else
                 warn "Directory $1 empty and not cleared!"
             fi
@@ -201,9 +195,9 @@ kill-directory-files () {
             yell "Cannot kill-directory-files symlink $1!!!"
         else
             msg "Unlinking all symlinks of depth 1 in directory $1 with kill-directory-files"
-            find "$1" -mindepth 1 -type l -printf "Unlinking: %p\n" -delete
+            find "$1/" -mindepth 1 -type l -printf "Unlinking: %p\n" -delete
             msg "Clearing directory files $1 with kill-directory-files"
-            find "$1" -mindepth 1 -maxdepth 1 -type f -printf "Shredding: %p\n" -exec shred --iterations=3 --remove {} \;
+            find "$1/" -mindepth 1 -maxdepth 1 -type f -printf "Shredding: %p\n" -exec shred --iterations=3 --remove {} \;
         fi
     fi
 }
@@ -216,9 +210,9 @@ kill-directory-contents-preserve-structure () {
         else
             # TODO: does this go into dot directories
             msg "Unlinking all symlinks of in directory $1 with kill-directory-contents-preserve-structure"
-            find "$1" -mindepth 1 -type l -printf "Unlinking: %p\n" -delete
+            find "$1/" -mindepth 1 -type l -printf "Unlinking: %p\n" -delete
             msg "Clearing directory contents in $1 with kill-directory-contents-preserve-structure"
-            find "$1" -type f -printf "Shredding: %p\n" -exec shred --iterations=3 --remove {} \;
+            find "$1/" -type f -printf "Shredding: %p\n" -exec shred --iterations=3 --remove {} \;
         fi
     fi
 }
@@ -244,7 +238,25 @@ kill-find-matching () {
 
 kill-matching-line () {
     # XXXX: dangerous functions for convenience in batch mode
-    [[ -f "$1" ]] && sed -i "/${1}/d" "$2"
+    [[ -f "$1" ]] && sed -i "/$1/d" "$2"
+}
+
+mv-directory-contents-to-tmp-shred () {
+    if [[ -d "$1" ]]; then
+        THEDIR_CONTENTS=$(find "$1" -mindepth 1 -maxdepth 1)
+        if [[ $(wc -l <<< "$THEDIR_CONTENTS") -gt "1" ]]; then
+            local THEBASENAME=$(basename "$1")
+            local SHREDDIR="$HOME/tmp/tmp-shred/$(date-time-stamp)-$THEBASENAME"
+            mv "$1" "$SHREDDIR"
+            # recreate directory
+            mkdir -p "$1"
+            msg "Move of contents of $1 to $SHREDDIR successful!"
+        else
+            warn "Directory $1 appears to be empty and contents not moved to $HOME/tmp/tmp-shred!"
+        fi
+    else
+        warn "Directory $1 does not exist and contents cannot be moved to $HOME/tmp/tmp-shred!"
+    fi
 }
 
 super-password () {
@@ -379,7 +391,7 @@ crypt-password-database-retrieve-primary () {
     # TODO: base64 decode
     local URL="$1"
     # load appropriate org-file heading into memory
-    sed -n '/^\* Website Logins$/,/^\*/p' <<< $(gpg2 --no-verbose --quiet --batch --yes --decrypt "${CRYPT_PASSWORD_DATABASE}" 2>/dev/null)
+    sed -n '/^\* Website Logins$/,/^\*/p' <<< $(gpg2 --no-verbose --quiet --batch --yes --decrypt "$CRYPT_PASSWORD_DATABASE" 2>/dev/null)
 }
 
 # TODO: non-functional

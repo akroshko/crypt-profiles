@@ -5,7 +5,7 @@
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20190313
+# Version: 20190624
 # URL: https://github.com/akroshko/crypt-profiles
 #
 # This program is free software: you can redistribute it and/or modify
@@ -106,17 +106,9 @@ crypt-create-profile () {
         # generate ssh keys, possibly want this to be a little better
         # TODO: setup authorized keys later, maybe have a way to see who can mutually login to whom
         # generate a password for id_rsa
-        local PASSWORD=$(super-password)
-        # create the ssh key
-        ssh-keygen-rsa "$MASTERPROFILE" "$PASSWORD"
-        # use gpg key to encrypt the password
-        DISPLAY= echo "$PASSWORD" | gpg-batch --homedir "$MASTERPROFILE" --recipient "$RECIPIENT" --encrypt --passphrase "$GPGPASSWORD" --output "$MASTERPROFILE"/id_rsa.txt.gpg -
-        # generate a password id_ed25519
-        local PASSWORD=$(super-password)
-        # create the ssh key
-        ssh-keygen-ed25519 "$MASTERPROFILE" "$PASSWORD"
-        # use gpg key to encrypt the password
-        DISPLAY= echo "$PASSWORD" | gpg-batch --homedir "$MASTERPROFILE" --recipient "$RECIPIENT" --encrypt --passphrase "$GPGPASSWORD" --output "$MASTERPROFILE"/id_ed25519.txt.gpg -
+        crypt-create-rsa-keys "$MASTERPROFILE" "$RECIPIENT" "$GPGPASSWORD"
+        # generate a password for id_ed25519
+        crypt_create-ed25519-keys "$MASTERPROFILE" "$RECIPIENT" "$GPGPASSWORD"
     fi
     # XXXX: if true for debugging purposes
     if true; then
@@ -146,6 +138,39 @@ crypt-create-profile () {
         # TODO: not sure I need this or where the best place is
         # fix-gpg-ssh-permissions
     fi
+}
+
+crypt-create-rsa-keys () {
+    # fail without leaving dangling files when some command does not work
+    if [[ -z "$1" || -z "$2" || -z "$2" ]];then
+        echo "Must specify <<MASTERPROFILE>> <<RECIPIENT>> <<GPGPASSWORD>>"
+        return 1
+    fi
+    local MASTERPROFILE="$1"
+    local RECIPIENT="$2"
+    local GPGPASSWORD="$3"
+    local PASSWORD=$(super-password)
+    # create the ssh key
+    ssh-keygen-rsa "$MASTERPROFILE" "$PASSWORD"
+    # use gpg key to encrypt the password
+    DISPLAY= echo "$PASSWORD" | gpg-batch --homedir "$MASTERPROFILE" --recipient "$RECIPIENT" --encrypt --passphrase "$GPGPASSWORD" --output "$MASTERPROFILE/id_rsa.txt.gpg" -
+}
+
+crypt-create-ed25519-keys () {
+    # fail without leaving dangling files when some command does not work
+    if [[ -z "$1" || -z "$2" || -z "$2" ]];then
+        echo "Must specify <<MASTERPROFILE>> <<RECIPIENT>> <<GPGPASSWORD>>"
+        return 1
+    fi
+    local MASTERPROFILE="$1"
+    local RECIPIENT="$2"
+    local GPGPASSWORD="$3"
+    # generate a password id_ed25519
+    local PASSWORD=$(super-password)
+    # create the ssh key
+    ssh-keygen-ed25519 "$MASTERPROFILE" "$PASSWORD"
+    # use gpg key to encrypt the password
+    DISPLAY= echo "$PASSWORD" | gpg-batch --homedir "$MASTERPROFILE" --recipient "$RECIPIENT" --encrypt --passphrase "$GPGPASSWORD" --output "$MASTERPROFILE/id_ed25519.txt.gpg" -
 }
 
 # TODO: will eventually want to be able to modify secret files
@@ -185,7 +210,7 @@ crypt-add-secret-to-profile () {
     if [[ -n "$THESECRET" && -n "$RECIPIENT" && -n "$GPGPASSPHRASE" && -n "$SECRETNAME" ]]; then
         # TODO: there is an issue with message "You need a passphrase to unlock the secret key for "
         #       issue temporarily solved by using --batch when decrypting
-        echo "$THESECRET" | gpg2 --recipient "$RECIPIENT" --encrypt --passphrase "$GPGPASSPHRASE" --output "$PRIMARYPROFILE"/"$SECRETNAME"-secrets.txt.gpg -
+        echo "$THESECRET" | gpg2 --recipient "$RECIPIENT" --encrypt --passphrase "$GPGPASSPHRASE" --output "$PRIMARYPROFILE/$SECRETNAME"-secrets.txt.gpg -
     else
         yell "Something went wrong before final encryption!"
     fi
@@ -211,6 +236,7 @@ crypt-profile-switch () {
     fi
     while read -r -t 0;do read -r; done
     read -n 1 -p 'Is it OK to delete ~/.ssh/config (y/n)? ' YN
+    echo ""
     if [[ "$YN" != "y" ]]; then
         yell 'Must be able to replace ~/.ssh/config!'
     fi
@@ -269,22 +295,24 @@ crypt-profile-backup () {
     false
 }
 
+# TODO: this is non-functional
 crypt-profile-printable () {
     # TODO: need actual "$1" argument and to sort out whether master,primary,working
     # TODO: not $KEYSLOCATION variable
     # create a printable version of the profile, only print appropriate things
+    local KEYSLOCATION="$1"
     if [[ -f "$KEYSLOCATION"/pubring.gpg ]]; then
         local NAMES=()
         # get all gpg public keys ids
         while read LINE; do
             local REGEX='uid[[:space:]](.*)'
             [[ "$LINE" =~ $REGEX ]] && NAMES+=( "${BASH_REMATCH[1]}" )
-        done < <(gpg --list-keys --keyid-format 0xlong --no-default-keyring --keyring ${KEYSLOCATION}/pubring.gpg)
+        done < <(gpg --list-keys --keyid-format 0xlong --no-default-keyring --keyring "$KEYSLOCATION/pubring.gpg")
         # now get name and fingerprint for all keyids
-        for NAME in "${NAMES[@]}"; do
+        for NAME in ${NAMES[@]}; do
             # echo "here"
             # echo "$NAME"
-            # echo $(gpg --list-keys --fingerprint --keyid-format 0xlong --no-default-keyring --keyring ${KEYSLOCATION}/pubring.gpg "$NAME")
+            # echo $(gpg --list-keys --fingerprint --keyid-format 0xlong --no-default-keyring --keyring "$KEYSLOCATION/pubring.gpg" "$NAME")
             # echo "there"
             local STRIPNAME=$(sed -e 's/^ *//g' -e 's/ *$//g' <<< "$NAME")
             local KEYIDS=()
@@ -297,7 +325,7 @@ crypt-profile-printable () {
                     # TODO: does this line always run?
                     local KEYFINGERPRINT="${BASH_REMATCH[1]}"
                 fi
-            done < <(gpg --list-keys --fingerprint --keyid-format 0xlong --no-default-keyring --keyring ${KEYSLOCATION}/pubring.gpg "$NAME")
+            done < <(gpg --list-keys --fingerprint --keyid-format 0xlong --no-default-keyring --keyring "$KEYSLOCATION/pubring.gpg" "$NAME")
             # get the ascii representation of the key
             for KEYID in ${KEYIDS[@]}; do
                 # output printable versions of the keys
@@ -524,11 +552,11 @@ decrypt-file () {
     fi
     # create random tmp directory here
     local TMPPATH=$(mktemp -d -p .)
-    msg "Decrypting $1 into ${TMPPATH}"
+    msg "Decrypting $1 into $TMPPATH"
     # XXXX: assuming successful
     gpg-batch --decrypt "$1" | tar -xvzf - --directory "$TMPPATH"
     msg "Exit status: $? || Pipe status: ${PIPESTATUS[*]}"
-    \mv --backup=t -- ${TMPPATH}/* .
+    \mv --backup=t -- "$TMPPATH/"* .
     # TODO: want to fail completely if not able to remove?
     rmdir "$TMPPATH"
     verify-operation "Decrypt OK? Do you wish to delete the encrypted file? (y/n) " "Really keep encrypted? (y/n) " "$1"
@@ -541,10 +569,10 @@ decrypt-file-password () {
         return 1
     fi
     local TMPPATH=$(mktemp -d -p .)
-    msg "Decrypting $1 into ${TMPPATH}"
+    msg "Decrypting $1 into $TMPPATH"
     gpg-batch --decrypt "$1" | tar -xvzf - --directory "$TMPPATH"
     msg "Exit status: $? || Pipe status: ${PIPESTATUS[*]}"
-    \mv --backup=t -- ${TMPPATH}/* .
+    \mv --backup=t -- "$TMPPATH"/* .
     # TODO: want to fail completely if not able to remove?
     rmdir "$TMPPATH"
 }
@@ -848,12 +876,12 @@ master-privacy-brief () {
         # delete benign things, that shouldn't cause too much trouble
         # XXXX: seems to cause issues with long downloads in firefox
         # TODO: are things running that I don't want to clear privacy for
-        # TODO: better test.... conkeror was bad...
-        if ! pgrep firefox-esr >/dev/null; then
+        # TODO: add things like vlc to test, or check if anything is currently using places to be shred
+        if ! ps -ef | grep '[f]irefox\|[i]ceweasel\|[p]alemoon\|[w]aterfox' >/dev/null; then
             master-privacy --batch
             echo "$(date-time-stamp) Success" >> "$HOME/.myprivacy.log"
         else
-            warn "Programs running! Will do later!"
+            warn "Programs running! Will do master-privacy-brief later!"
             echo "$(date-time-stamp) Delayed" >> "$HOME/.myprivacy.log"
         fi
     fi
@@ -866,7 +894,7 @@ master-privacy-all () {
 
 master-privacy-trash () {
     h2 "Clearing trash"
-    if [[ -d "$HOME/tmp/trash" ]] && ls -A "$HOME/tmp/trash/*" &>/dev/null; then
+    if [[ -d "$HOME/tmp/trash/" ]] && find "$HOME/tmp/trash/" -mindepth 1 -print -quit 2>/dev/null | grep -q .; then
         msg  "Contents of ~/tmp/trash:"
         ls -A "$HOME"/tmp/trash/*
         while read -r -t 0;do read -r; done
@@ -877,18 +905,48 @@ master-privacy-trash () {
     else
         warn "Nothing in ~/tmp/trash"
     fi
-    if [[ -d "$HOME/.local/share/Trash/files" ]] && ls -A -d "$HOME"/.local/share/Trash/files/* &>/dev/null; then
-        msg "Contents of ~/.local/share/Trash/files:"
-        ls -A "$HOME/.local/share/Trash/files"
+    if [[ -d "$HOME/tmp/screenshots/" ]] && find "$HOME/tmp/screenshots/" -mindepth 1 -print -quit 2>/dev/null | grep -q .; then
+        msg  "Contents of ~/tmp/screenshots:"
+        ls -A "$HOME"/tmp/screenshots/*
+        while read -r -t 0;do read -r; done
+        # TODO: add a countdown here
+        if ask_yn "Do you want to delete ~/tmp/screenshots?";then
+            kill-directory-contents "$HOME/tmp/screenshots"
+        fi
+    else
+        warn "Nothing in ~/tmp/screenshots"
+    fi
+    if [[ -d "$HOME/.local/share/Trash/files/" ]] && find "$HOME/.local/share/Trash/files/" -mindepth 1 -print -quit 2>/dev/null | grep -q .; then
+        msg "Contents of ~/.local/share/Trash/files/:"
+        ls -A "$HOME/.local/share/Trash/files/"
         # TODO: check if empty?
         if ask_yn "Do you want to delete ~/.local/share/Trash/?"; then
-            kill-recursive "$HOME/.local/share/Trash"
+            kill-recursive "$HOME/.local/share/Trash/"
         fi
-        # TODO: add a countdown here
-        # kill-directory-contents "$HOME"/.local/share/Trash/files
-        # kill-directory-contents "$HOME"/.local/share/Trash/info
     else
-        warn "Nothing in $HOME/.local/share/Trash/files"
+        warn "Nothing in $HOME/.local/share/Trash/files/"
+    fi
+    master-privacy-tmp-shred
+}
+
+master-privacy-tmp-shred () {
+    # TODO: make interactive
+    if [[ -d "$HOME/tmp/tmp-shred/" ]] && find "$HOME/tmp/tmp-shred/" -mindepth 1 -print -quit 2>/dev/null | grep -q .; then
+        msg "Contents of ~/tmp/tmp-shred/:"
+        ls -A "$HOME/tmp/tmp-shred/"
+        # TODO: check if empty?
+        if [[ -z "$1" ]] && ask_yn "Do you want to delete ~/tmp/tmp-shred/?"; then
+            kill-recursive "$HOME/tmp/tmp-shred/"
+        fi
+    fi
+    need_new_directory "$HOME/tmp/tmp-shred/"
+    if [[ -d "$HOME/mnt-secondary/tmp/imagemagick-tmp/" ]] && find "$HOME/mnt-secondary/tmp/imagemagick-tmp/" -mindepth 1 -print -quit 2>/dev/null | grep -q .; then
+        kill-recursive "$HOME/mnt-secondary/tmp/imagemagick-tmp/"
+        need_new_directory "$HOME/mnt-secondary/tmp/imagemagick-tmp/"
+    fi
+    if [[ -d "$HOME/mnt-secondary/tmp/cic-preview-tmp/" ]] && find "$HOME/mnt-secondary/tmp/cic-preview-tmp/" -mindepth 1 -print -quit 2>/dev/null | grep -q .; then
+        kill-recursive "$HOME/mnt-secondary/tmp/cic-preview-tmp/"
+        need_new_directory "$HOME/mnt-secondary/tmp/cic-preview-tmp/"
     fi
 }
 
@@ -896,7 +954,20 @@ master-privacy-conkeror () {
     h2 "Conkeror"
     # XXXX: I now use a password manager and just clear everything
     if ! check-firefox; then
-        if [[ -d "$HOME/.conkeror.mozdev.org/" ]]; then
+        if [[ -n "$CONKERORTEMPLATEPATH" && -d "$CONKERORTEMPLATEPATH" ]]; then
+            THEDEFAULTDIR=$(find "$HOME/.conkeror.mozdev.org/conkeror/" -mindepth 1 -maxdepth 1 -type d -iname "*.default")
+            if [[ $(wc -l <<< "$THEDEFAULTDIR") == "1" && -d "$THEDEFAULTDIR" ]]; then
+                SHREDDIR="$HOME/tmp/tmp-shred/$(date-time-stamp)-profile"
+                need_new_directory "$SHREDDIR"
+                mv "$THEDEFAULTDIR" "$SHREDDIR"
+                echo "Trashed old profile at $THEDEFAULTDIR if it existed!"
+                mkdir -p "$THEDEFAULTDIR"
+                cp -r "$CONKERORTEMPLATEPATH"/* "$THEDEFAULTDIR"
+                echo "Copied a new profile as $THEDEFAULTDIR!"
+            else
+                echo "Old conkeror profile not found so nothing trashed!"
+            fi
+        elif [[ -d "$HOME/.conkeror.mozdev.org/" ]]; then
             msg "Clearing firefox-based browsers OK!"
             # XXXX: preserve as much as possible, like adblocker
             # TODO: keep shredding more
@@ -927,7 +998,7 @@ master-privacy-conkeror () {
             kill-directory-contents "$HOME/.cache/mozilla/"
         fi
     else
-        warn "Firefox or similar running!"
+        warn "Firefox or similar program running!"
     fi
 }
 
@@ -941,11 +1012,12 @@ master-privacy-firefox () {
     # TODO: do I still want to ask?
     if [[ "$ynfirefox" =~ y ]]; then
         # TODO: terrible way to do this
-        if export-firefox-bookmarks >/dev/null; then
-            export-firefox-bookmarks >> ~/Downloads/firefox-bookmarks-$(date-time-stamp).txt
-        else
-            warn "Cannot export Firefox bookmarks, places.sqlite probably does not exist!"
-        fi
+        # TODO: no more firefox bookmarks need to be saved
+        # if export-firefox-bookmarks >/dev/null; then
+        #     export-firefox-bookmarks >> ~/Downloads/firefox-bookmarks-$(date-time-stamp).txt
+        # else
+        #     warn "Cannot export Firefox bookmarks, places.sqlite probably does not exist!"
+        # fi
         # XXXX: this kills all bookmarks
         kill-find-matching "$HOME/.mozilla/firefox places.sqlite"
         kill-recursive "$HOME/.mozilla/firefox/Crash Reports"
@@ -954,52 +1026,16 @@ master-privacy-firefox () {
     fi
 }
 
-master-privacy-palemoon () {
-    h2 "Pale moon"
-    # TODO: check specifically for pale moon
-    if ! check-firefox; then
-        kill-find-matching "$HOME/.moonchild productions/pale moon" cookies.sqlite
-        kill-find-matching "$HOME/.moonchild productions/pale moon" content-prefs.sqlite
-        kill-find-matching "$HOME/.moonchild productions/pale moon" permissions.sqlite
-        kill-find-matching "$HOME/.moonchild productions/pale moon" places.sqlite
-        kill-find-matching "$HOME/.moonchild productions/pale moon" places.sqlite-shm
-        kill-find-matching "$HOME/.moonchild productions/pale moon" places.sqlite-wal
-        kill-find-matching "$HOME/.moonchild productions/pale moon" prefs.js
-        kill-find-matching "$HOME/.moonchild productions/pale moon" sessionCheckpoints.json
-        kill-find-matching "$HOME/.moonchild productions/pale moon" sessionstore.bak
-        kill-find-matching "$HOME/.moonchild productions/pale moon" sessionstore.json
-        kill-find-matching "$HOME/.moonchild productions/pale moon" webappstore.sqlite
-        kill-find-matching "$HOME/.moonchild productions/pale moon" xulstore.json
-    else
-        warn "Firefox running or not clearing due to no input.!"
-    fi
-}
-
 master-privacy-chromium () {
     h2 "Chromium"
-    # XXXX: I only use chromium as a secondary browser, shreding most things, but keeping adblock?
-    # TODO: can I auto-reinstall adblock after shred?
+    # XXXX: I only use chromium as a secondary browser, shredding most things, but keeping adblock?
     if ! check-chromium; then
-        kill-directory-contents "$HOME/.config/chromium/Crash Reports"
-        kill-file               "$HOME/.config/chromium/Default/Cookies"
-        kill-file               "$HOME/.config/chromium/Default/Cookies-journal"
-        kill-file               "$HOME/.config/chromium/Default/Cookies Session"
-        kill-file               "$HOME/.config/chromium/Default/Cookies Tabs"
-        kill-file               "$HOME/.config/chromium/Default/Favicons"
-        kill-file               "$HOME/.config/chromium/Default/Favicons-journal"
-        kill-directory-contents "$HOME/.config/chromium/Default/File System"
-        kill-file               "$HOME/.config/chromium/Default/History"
-        kill-file               "$HOME/.config/chromium/Default/Historyjournal"
-        kill-file               "$HOME/.config/chromium/Default/Last Session"
-        kill-file               "$HOME/.config/chromium/Default/Last Tabs"
-        kill-file               "$HOME/.config/chromium/Default/Login Data"
-        kill-file               "$HOME/.config/chromium/Default/Login Data-journal"
-        kill-file               "$HOME/.config/chromium/Default/Shortcuts"
-        kill-file               "$HOME/.config/chromium/Default/Shortcuts-journal"
-        kill-file               "$HOME/.config/chromium/Default/Visited Links"
-        kill-file               "$HOME/.config/chromium/Default/Web Data"
-        kill-file               "$HOME/.config/chromium/Default/Web Data-journal"
-        kill-directory-contents "$HOME/.cache/chromium/"
+        # TODO: any more I want?
+        mv-directory-contents-to-tmp-shred "$HOME/.config/chromium/Default/"
+        mv-directory-contents-to-tmp-shred "$HOME/.config/chromium/Subresource Filter/"
+        mv-directory-contents-to-tmp-shred "$HOME/.config/chromium/ShaderCache/"
+        mv-directory-contents-to-tmp-shred "$HOME/.config/chromium/BrowserMetrics/"
+        mv-directory-contents-to-tmp-shred "$HOME/.cache/chromium/*"
     else
         warn "Chromium running!"
     fi
@@ -1008,6 +1044,14 @@ master-privacy-chromium () {
 
 master-privacy () {
     time {
+        # TODO: ask first...
+        # take out any leftover randomfiles used for filling hard drive with junk
+        [[ -e "$HOME/randomfile.bin" ]] && rm "$HOME/randomfile.bin"
+        # TODO: reset so gnome does not give errors
+        h1 "Clearing browser information"
+        master-privacy-chromium
+        master-privacy-firefox
+        master-privacy-conkeror
         # TODO: any argument will do, not just --batch
         if [[ -z "$1" ]]; then
             h1 "Delete things that need user input"
@@ -1036,26 +1080,27 @@ master-privacy () {
             local IMAGETMP="$HOME/tmp/image-tmp"
             if [[ -d  "$IMAGETMP" ]]; then
                 if [[ -n "$(find $tmplocation -iname \"*.git\" -type d)" ]]; then
-                    msg "Killing ${IMAGETMP}"
+                    msg "Killing $IMAGETMP"
                     kill-recursive "$IMAGETMP"
                 else
                     warn "The location $IMAGETMP appears to contain git repos!!!"
                 fi
 
             fi
+        else
+            # clear $HOME/tmp/tmp-shred automatically, it is a good dumping ground for private files
+            master-privacy-tmp-shred "$1"
         fi
-        # TODO: reset so gnome does not give errors
-        h1 "Clearing browser information"
-        master-privacy-chromium
-        master-privacy-firefox
-        master-privacy-conkeror
-        master-privacy-palemoon
+        # master-privacy-palemoon
         h2 "Flash"
         bleachbit --overwrite --clean flash.*
         # secondary browsers
-        h2 "Google Chrome, Konqueror, Epiphany, and Elinks"
+        h2 "Google Chrome"
+        kill-directory-contents "$HOME/.config/google-chrome"
+        kill-directory-contents "$HOME/.cache/google-chrome"
+        h2 "Konqueror, Epiphany, and Elinks"
         bleachbit --overwrite --clean elinks.* epiphany.* google_chrome.* konqueror.*
-        h1 "Bleachbit system"
+        h1 "Bleachbit (mostly) system"
         h2 "Recent application files"
         # TODO: be as severe as possible on anything I don't use
         # TODO: vlc.* deleted for now because this kills symlinked extensions
@@ -1070,7 +1115,8 @@ master-privacy () {
         h2 "System-wide"
         # TODO: reinstate these
         # XXXX: not system.tmp!!! interferes with many many things
-        bleachbit --overwrite --clean system.cache system.clipboard system.recent_documents thumbnails.*
+        bleachbit --overwrite --clean system.cache system.clipboard system.recent_documents
+        kill-directory-contents "$HOME/.thumbnails"
         # destroy files that could leak privacy data
         # XXXX: this is a dangerous function that really nukes everything!!!
         # TODO: do I want umount-all type-function here?

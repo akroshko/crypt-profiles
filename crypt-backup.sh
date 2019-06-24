@@ -5,7 +5,7 @@
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20190313
+# Version: 20190624
 # URL: https://github.com/akroshko/crypt-profiles
 #
 # This program is free software: you can redistribute it and/or modify
@@ -21,7 +21,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 
-# XXXX: assumes my bash-stdlib library is installed, but can it be run as root?
+# XXXX: assumes my cic-bash-common library is installed, but can it be run as root?
 source "$HOME/.bash_library"
 # This script backs up a directory a disk of a particular uuid.
 #

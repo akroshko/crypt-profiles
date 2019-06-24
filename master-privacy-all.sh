@@ -33,7 +33,7 @@ main() {
             local THEBUFFERSIZE="2048M"
         fi
         echo "Using $ROOTPATH"
-        echo "Using buffer size ${THEBUFFERSIZE}!"
+        echo "Using buffer size $THEBUFFERSIZE!"
         time openssl enc -aes-256-ctr -pass pass:"$(dd if=/dev/urandom bs=128 count=1 2>/dev/null | base64)" -nosalt < /dev/zero | mbuffer -m "$THEBUFFERSIZE" -s 64k -A /bin/false -f -o "$ROOTPATH"/randomfile.bin
         sync
         sleep 60

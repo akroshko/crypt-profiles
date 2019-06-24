@@ -5,7 +5,7 @@
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20190313
+# Version: 20190624
 # URL: https://github.com/akroshko/crypt-profiles
 #
 # This program is free software: you can redistribute it and/or modify
@@ -139,11 +139,11 @@ main () {
         for PWDFILE in $HOME/.secrets/id_*.txt.gpg; do
             if [[ -f "$PWDFILE" ]]; then
                 local KEYFILE=$(basename -- "${PWDFILE%.txt.gpg}")
-                h2 "key for ${KEYFILE}"
+                h2 "key for $KEYFILE"
                 local TOPSECRET=$(DISPLAY= gpg-batch --no-tty --decrypt --use-agent "$PWDFILE")
                 if [[ $? == 0 ]]; then
                     local KEYPWD=$(sed -n '1p' <<< "$TOPSECRET")
-                    empty -f -i in.fifo -o out.fifo -p empty.pid -L /tmp/empty-bash-profile-crypt.log ssh-add -t 2419200 "$HOME/.ssh/${KEYFILE}"
+                    empty -f -i in.fifo -o out.fifo -p empty.pid -L /tmp/empty-bash-profile-crypt.log ssh-add -t 2419200 "$HOME/.ssh/$KEYFILE"
                     empty -w -i out.fifo -o in.fifo 'nter passphrase' "$KEYPWD\r"
 # expect << EOF
 #   spawn ssh-add -t 2419200 $HOME/.ssh/${KEYFILE}
@@ -151,9 +151,9 @@ main () {
 #   send "$KEYPWD\r"
 #   expect eof
 # EOF
-                    msg "Decrypt successful for ${PWDFILE}!"
+                    msg "Decrypt successful for $PWDFILE!"
                 else
-                    warn "Decrypt failed for ${PWDFILE}!"
+                    warn "Decrypt failed for $PWDFILE!"
                 fi
             fi
         done
@@ -161,11 +161,11 @@ main () {
         warn "Skipping initialization of passwords!!!"
     fi
     # reset curses pinentry for this particular program
-    if [[ -f "$HOME/bin/pinentry-select" && -f /usr/bin/pinentry-gtk-2 ]]; then
-        rm -f "$HOME/bin/pinentry-select"
-        # TODO: pinentry-x11 is cool too
-        ln -s /usr/bin/pinentry-gtk-2 "$HOME/bin/pinentry-select"
-    fi
+    # TODO: why is this here?
+    # if [[ -f "$HOME/bin/pinentry-select" && -f /usr/bin/pinentry-gtk-2 ]]; then
+    #     rm -f "$HOME/bin/pinentry-select"
+    #     ln -s /usr/bin/pinentry-gtk-2 "$HOME/bin/pinentry-select"
+    # fi
     h1-end "Finishing "$(basename -- "$BASH_SOURCE")
 }
 main "$1"

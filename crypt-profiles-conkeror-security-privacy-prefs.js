@@ -1,4 +1,4 @@
-// Modified from https://www.ghacks.net/download/130328/ to include only conkeror/palemoon specific settings.
+// Modified from https://www.ghacks.net/download/130328/ to include only conkeror/waterfox specific settings.
 
 // No license found on original, but license of this is same as
 // original plus copyright Andrew Kroshko 2018.
@@ -32,14 +32,6 @@ session_pref("toolkit.telemetry.unifiedIsOptIn", true); // (hidden pref)
 session_pref("toolkit.telemetry.server", "");
 // 0341: disable Mozilla permission to silently opt you into tests
 session_pref("network.allow-experiments", false);
-// 0374: disable "social" integration
-// TODO: remove above in favour of this
-// https://developer.mozilla.org/en-US/docs/Mozilla/Projects/Social_API
-session_pref("social.enabled", false); // (hidden pref)
-session_pref("social.whitelist", "");
-session_pref("social.remote-install.enabled", false);
-session_pref("social.toast-notifications.enabled", false);
-session_pref("social.directories", "");
 
 // TODO: do these at some point, need to figure out if I have a blocklist for palemoon/conkeror
 // 0401: DON'T disable extension blocklist, but sanitize blocklist url - SECURITY

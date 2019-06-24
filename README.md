@@ -19,130 +19,23 @@ private keys without passwords) I set out to see if it was possible to
 do better by using a small amount of code (mostly shell scripting) to
 help manage these commonly used tools.
 
-The purpose of this package is to see if I can seamlessly integrate
-tools such as OpenSSH and GnuPG into my everyday workflow, while still
-maintaining the best possible security practices.  Secure remote
-computer use that OpenSSH provides and the public key/private
-key/password infrastructure that GnuPG provides, should be a part of
-everyday computing for everyone.  To see how this might be possible
-starts out by seeing how well particular individual can do these
-things it for myself.  Although many refinements and helper tools will
-eventually be necessary for others to use this software package
-efficiently, these goals are possible.
-
 New development includes an encrypted password database using an
 Emacs [org-mode](http://orgmode.org/) file, with two keystrokes to
 open login pages and insert login data into the appropriate input
 fields in the [Conkeror](http://conkeror.org/) web browser.  This
-allows fairly straightforward use of large random passwords.  The
-drawbacks are:
-
-- GPG must be installed on a device to read the password file,
-  although with some work this is readily done.
-
-- In any situation where Emacs and Conkeror are not being used it
-  requires manually entering difficult passwords.
-
-However, there are many open source password databases available.  In
-order to contribute effectively, it was felt that a password database
-that integrates with a tool for synchronization of keys across
-multiple hosts and tries to work as well as possible with the specific
-software chosen (Emacs and Conkeror) would be most worthwhile.
-Because of the small code base and the use of shell script based
-tools, this password database could easily be extended to other
-software tools or purposes.
-
-WARNING: This project is an experiment in high-level usability of
-common cryptography tools for everyday use, rather than being a secure
-system for production use.  Despite being better and more convenient
-than insecurely used private keys; there is still much to be desired
-in terms of completeness, robustness, and security.  IT WOULD NOT
-CURRENTLY PASS CLOSE INSPECTION OF A SECURITY PROFESSIONAL.  USE AT
-YOUR OWN RISK!
+allows fairly straightforward use of large random passwords.
 
 Requirements
 ============
 
-This package has been mostly tested on *Debian Linux(Jessie) 8.2*.
+This package has been mostly tested on *Debian Linux(Stretch) 9.0*.
 The packages required, given by a convenient installation command are:
 
-    sudo apt-get install bleachbit expect gnupg gnupg-agent keychain openssh-client openssh-server openssl pinentry-curses pinentry-gtk2 secure_delete
+    sudo apt-get install expect gnupg gnupg-agent keychain openssh-client openssh-server openssl pinentry-curses pinentry-gtk2
 
 Also required for the
 [crypt-backup.sh](http://github.com/akroshko/crypt-profiles/crypt-backup.sh)
 script is an encrypted LVM volume group with free space.
-
-Detailed description
-====================
-
-From the website, [GnuPG](https://gnupg.org):
-
-"GnuPG allows you to encrypt and sign your data and communication,
-features a versatile key management system as well as access modules
-for all kinds of public key directories."
-
-[OpenSSH](http://www.openssh.com/) is a secure, trusted, and popular
-software package for remotely logging into computers that is used by
-industry, academia, and hobbyists.  In particular, I use it for
-scientific simulation, for either cluster computing or when widely
-dispersed and heterogeneous computing resources are required.
-
-Automatically generating and managing multiple sets of keys targeted
-to different purposes for GnuPG and OpenSSH can be problematic.  The
-*crypt-profiles* package is an attempt to make managing multiple SSH
-keys for different purposes much easier and provide helper functions
-for working with agent-stored GnuPG and SSH private keys.  I have
-found I can easily work with a dozen different computers and set up
-new ones, while only having to enter passwords once a day (unless
-rebooting or for the initial login to a remote host).  Functions are
-also provided for tasks such as file encryption and backups using only
-the GnuPG public key.
-
-In order to avoid entering passwords too regularly (especially when
-using automated or unattended scripts), public/private keypairs are
-widely used for SSH authentication.  However, to be secure the SSH
-private key itself requires a password that either must be entered
-every time or stored in memory with an agent that can be inconvenient
-to set up.  Due to this, in practice, many SSH private keys are
-generated without passwords and are often synchronized insecurely
-(such as via email).
-
-## A `crypt-profile`
-
-Each `crypt-profile` is based on a master GnuPG key that is secured
-with a user-remembered password and stored in the GnuPG agent.  The
-associated SSH private keys are each secured using a 30-character
-random password that is stored in a GnuPG-encrypted file.  All
-passwords are stored in the appropriate agents so only the GnuPG
-master password needs to be remembered and entered periodically.
-
-This also ensures only the master password for the GnuPG private key
-needs to be kept secure, although keeping the GnuPG and SSH private
-keys secure would still be good practice.
-
-Each `crypt-profile` resides in its own directory, that can easily be
-synced to other computers, and includes a working directory that is
-specific to the computer.  A simple bash command
-`crypt-profile-switch` can select the new directories corresponding to
-a different `crypt-profile` and reinitialize any running GnuPG or SSH
-agents.
-
-Additional functions provided include:
-
-- file encryption using only a public GnuPG key and easy decryption
-once in a safe environment with the appropriate GnuPG private key
-
-- use of encrypted LUKS containers, alone and on an encrypted volume
-group container
-
-- a backup script that uses only a GnuPG public-key, which allows
-  online backing up or archiving of a directory in an insecure
-  environment
-
-- filling free space on a hard drive with random numbers
-
-- wiping common places on a *Linux* system where private information
-  (thumbnails, history, etc.) is cached
 
 Environment variables and configuration
 =======================================
@@ -250,89 +143,3 @@ Already mentioned, but also important is the `$CRYPTGPGCONFIGPATH`
 environment variable that contain the standard GnuPG files `gpg.conf`
 and `gpg-agent.conf` files.  The `$CRYPTSSHCONFIGPATH` contains the
 standard SSH client configuration file `config`.
-
-Encrypted containers and volume groups
-======================================
-
-TODO: add instructions
-
-Encrypted backups
-=================
-
-TODO: add instructions
-
-Conkeror/Emacs GPG encrypted password database
-==============================================
-
-TODO: add instructions
-
-
-Planned development
-===================
-
-Public key and password distribution can be a very difficult problem
-even the case in a single-user many-computer setting.
-
-- allow automatic rotation and of passwords and keys between profiles
-
-- make it easier to have a public-key-only profile, for instance, for
-  mobile or travel applications where information can be encrypted and
-  later decrypted in a secure environment
-
-- sharing of public GPG and SSH keys among profiles with minimal
-  difficulty
-
-- sharing of and setting up appropriate authorized SSH public keys
-  with minimal issues
-
-- better sharing of and acquisition of key fingerprints, including a
-  master database
-
-- incorporation of a gpg-encrypted password database (under
-  development but not included yet)
-
-- override the `$CRYPTGPGCONFIGPATH` and `$CRYPTSSHCONFIGPATH`
-  environment with command-line options
-
-- better interface to the `crypt-create-profile` function and only one
-  password entry required
-
-- better handling of "paper" copies of keys for backup purposes
-
-- add instructions on using backups and actually ensuring keys are
-  available to restore
-
-- add instructions concerning containers and volume groups
-
-- address isses for syncing a `crypt-profile`
-
-- manage client certificates for web browsers
-
-- add things like (encrypted) preshared keys, e.g., for OpenVPN, after
-  profile has been created
-
-- create a one-time password encrypted method for sharing private key
-  (or crypt-profile) initially via USB key
-
-## Bugs
-
-- find an elegant way to deal with conflicts with the GNOME keyring
-
-- more robust recovery from errors
-
-- script to check and modify `sshd_config`, and similar files, to be
-  more secure
-
-- allow
-  [crypt-backup.sh](http://github.com/akroshko/crypt-profiles/crypt-backup.sh)
-  to be run as root and make it more flexible where it is run
-
-- there are issues with reinitializing after a hibernation or sleep
-  (often required opening and closing several terminals and running
-  `harm-crypt` several times)
-
-- evaluate any issues that might occur because `<<crypt-profile-name>>-master`
-  lies dormant while `<<crypt-profile-name>>-primary` gets used and
-  changed
-
-- some serious consideration of security issues with this package
