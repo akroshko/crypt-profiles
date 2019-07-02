@@ -661,7 +661,8 @@ container-umount () {
             local MAPPER="/dev/mapper/$1"
             local MOUNTPOINT=$(findmnt -nr -o target "$MAPPER")
         else
-            yell "No device found correpsonding to $1!"
+            warn "No device found correpsonding to $1!"
+            return 1
         fi
     fi
     msg "Unmounting $MOUNTPOINT!"
@@ -887,10 +888,10 @@ master-privacy-brief () {
     fi
 }
 
-master-privacy-all () {
-    # XXXX: requires crypt-profiles to be in path
-    sudo env "PATH=$PATH" master-privacy-all.sh "$USER"
-}
+# master-privacy-all () {
+#     # XXXX: requires crypt-profiles to be in path
+#     sudo env "PATH=$PATH" master-privacy-all.sh "$USER"
+# }
 
 master-privacy-trash () {
     h2 "Clearing trash"
@@ -926,7 +927,8 @@ master-privacy-trash () {
     else
         warn "Nothing in $HOME/.local/share/Trash/files/"
     fi
-    master-privacy-tmp-shred
+    # always shred tmp-shred if called automatically
+    master-privacy-tmp-shred "$1"
 }
 
 master-privacy-tmp-shred () {
@@ -935,7 +937,7 @@ master-privacy-tmp-shred () {
         msg "Contents of ~/tmp/tmp-shred/:"
         ls -A "$HOME/tmp/tmp-shred/"
         # TODO: check if empty?
-        if [[ -z "$1" ]] && ask_yn "Do you want to delete ~/tmp/tmp-shred/?"; then
+        if [[ -n "$1" ]] || ask_yn "Do you want to delete ~/tmp/tmp-shred/?"; then
             kill-recursive "$HOME/tmp/tmp-shred/"
         fi
     fi
@@ -1059,7 +1061,8 @@ master-privacy () {
             # TODO: check if an sqllite exists before asking
             read -n 1 -p "Do you want to delete all Firefox places.sqlite? (y/n) " ynfirefox
             echo ""
-            master-privacy-trash
+            # this enables always shredding tmp-shred automatically
+            master-privacy-trash 1
             # XXXX: these are specific to other unreleased scripts I have
             h1 "Automatically deleting temporary files"
             for tmplocation in "$HOME"/tmp/*; do
