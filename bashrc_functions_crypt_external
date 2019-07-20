@@ -244,7 +244,7 @@ kill-matching-line () {
 mv-directory-contents-to-tmp-shred () {
     if [[ -d "$1" ]]; then
         THEDIR_CONTENTS=$(find "$1" -mindepth 1 -maxdepth 1)
-        if [[ $(wc -l <<< "$THEDIR_CONTENTS") -gt "1" ]]; then
+        if [[ $(wc -l <<< "$THEDIR_CONTENTS") -gt "0" ]]; then
             local THEBASENAME=$(basename "$1")
             local SHREDDIR="$HOME/tmp/tmp-shred/$(date-time-stamp)-$THEBASENAME"
             mv "$1" "$SHREDDIR"

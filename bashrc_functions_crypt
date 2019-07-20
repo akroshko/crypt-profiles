@@ -1007,25 +1007,32 @@ master-privacy-conkeror () {
 master-privacy-firefox () {
     h2 "Firefox"
     if ! check-firefox; then
-        # XXXX: this preserves any bookmarks
-        bleachbit --overwrite --clean firefox.backup firefox.cache firefox.crash_reports firefox.forms firefox.download_history firefox.session_restore firefox.url_history firefox.vacuum
+        local FIREFOXPATH_DEFAULT=$(find "$HOME/.mozilla/firefox" -mindepth 1 -maxdepth 1 -type d -iname "*.default")
+        if [[ $(wc -l <<< "$FIREFOXPATH_DEFAULT") == "1" && -d "$FIREFOXPATH_DEFAULT" ]]; then
+            echo "Found Firefox profile at: $FIREFOXPATH_DEFAULT"
+            local SHREDDIR="$HOME/tmp/tmp-shred/$(date-time-stamp)-firefox-profile"
+            need_new_directory "$SHREDDIR"
+            mv-directory-contents-to-tmp-shred "$FIREFOXPATH_DEFAULT"
+            echo "Trashed old Firefox 'default' profile if it existed"
+        else
+            echo "Old firefox 'default' profile not found so nothing trashed!"
+        fi
     fi
-    #
     # TODO: do I still want to ask?
-    if [[ "$ynfirefox" =~ y ]]; then
-        # TODO: terrible way to do this
-        # TODO: no more firefox bookmarks need to be saved
-        # if export-firefox-bookmarks >/dev/null; then
-        #     export-firefox-bookmarks >> ~/Downloads/firefox-bookmarks-$(date-time-stamp).txt
-        # else
-        #     warn "Cannot export Firefox bookmarks, places.sqlite probably does not exist!"
-        # fi
-        # XXXX: this kills all bookmarks
-        kill-find-matching "$HOME/.mozilla/firefox places.sqlite"
-        kill-recursive "$HOME/.mozilla/firefox/Crash Reports"
-    else
-        warn "Firefox running or not clearing due to no input.!"
-    fi
+    # if [[ "$ynfirefox" =~ y ]]; then
+    #     # TODO: terrible way to do this
+    #     # TODO: no more firefox bookmarks need to be saved
+    #     # if export-firefox-bookmarks >/dev/null; then
+    #     #     export-firefox-bookmarks >> ~/Downloads/firefox-bookmarks-$(date-time-stamp).txt
+    #     # else
+    #     #     warn "Cannot export Firefox bookmarks, places.sqlite probably does not exist!"
+    #     # fi
+    #     # XXXX: this kills all bookmarks
+    #     kill-find-matching "$HOME/.mozilla/firefox places.sqlite"
+    #     kill-recursive "$HOME/.mozilla/firefox/Crash Reports"
+    # else
+    #     warn "Firefox running or not clearing due to no input.!"
+    # fi
 }
 
 master-privacy-chromium () {
@@ -1037,7 +1044,7 @@ master-privacy-chromium () {
         mv-directory-contents-to-tmp-shred "$HOME/.config/chromium/Subresource Filter/"
         mv-directory-contents-to-tmp-shred "$HOME/.config/chromium/ShaderCache/"
         mv-directory-contents-to-tmp-shred "$HOME/.config/chromium/BrowserMetrics/"
-        mv-directory-contents-to-tmp-shred "$HOME/.cache/chromium/*"
+        mv-directory-contents-to-tmp-shred "$HOME/.cache/chromium/"
     else
         warn "Chromium running!"
     fi
@@ -1057,12 +1064,17 @@ master-privacy () {
         # TODO: any argument will do, not just --batch
         if [[ -z "$1" ]]; then
             h1 "Delete things that need user input"
-            while read -r -t 0;do read -r; done
-            # TODO: check if an sqllite exists before asking
-            read -n 1 -p "Do you want to delete all Firefox places.sqlite? (y/n) " ynfirefox
-            echo ""
+            # while read -r -t 0;do read -r; done
+            # # TODO: check if an sqllite exists before asking
+            # read -n 1 -p "Do you want to delete all Firefox places.sqlite? (y/n) " ynfirefox
+            # echo ""
             # this enables always shredding tmp-shred automatically
-            master-privacy-trash 1
+            if [[ -n "$1" ]] || ask_yn "Do you want to delete ~/tmp/tmp-shred/?"; then
+                master-privacy-trash 1
+                local DELETEDTMPSHRED=1
+            else
+                local DELETEDTMPSHRED=
+            fi
             # XXXX: these are specific to other unreleased scripts I have
             h1 "Automatically deleting temporary files"
             for tmplocation in "$HOME"/tmp/*; do
@@ -1092,43 +1104,39 @@ master-privacy () {
             fi
         else
             # clear $HOME/tmp/tmp-shred automatically, it is a good dumping ground for private files
-            master-privacy-tmp-shred "$1"
+            if [[ -n "$DELETEDTMPSHRED" ]]; then
+                master-privacy-tmp-shred 1
+            fi
         fi
         # master-privacy-palemoon
         h2 "Flash"
-        bleachbit --overwrite --clean flash.*
+        # TODO: replace with something if flash is ever installed
+        kill-directory-contents "$HOME/.abobe/Flash_Player"
+        kill-directory-contents "$HOME/.macromedia/Flash_Player"
         # secondary browsers
         h2 "Google Chrome"
         kill-directory-contents "$HOME/.config/google-chrome"
         kill-directory-contents "$HOME/.cache/google-chrome"
-        h2 "Konqueror, Epiphany, and Elinks"
-        bleachbit --overwrite --clean elinks.* epiphany.* google_chrome.* konqueror.*
-        h1 "Bleachbit (mostly) system"
+        # TODO: fill this up, need elinks and w3m
+        h2 "Links and other text-based browsers"
+        kill-directory-contents "$HOME/.links2"
+        kill-directory-contents "$HOME/.w3m"
         h2 "Recent application files"
-        # TODO: be as severe as possible on anything I don't use
-        # TODO: vlc.* deleted for now because this kills symlinked extensions
-        bleachbit --overwrite --clean adobe_reader.* amsn.* amule.* audacious.* easytag.* evolution.* filezilla.* gedit.* google_chrome.* google_earth.* google_toolbar.* gwenview.* java.* openofficeorg.* pidgin.* realplayer.* rhythmbox.* skype.* thunderbird.*
-        h2 "Gnome"
-        bleachbit --overwrite --clean gnome.* nautilus.*
         h2 "KDE"
         kill-directory-contents "$HOME"/.kde/share/apps/RecentDocuments/*
-        bleachbit --overwrite --clean kde.*
+        # TODO: may never use this again
         kill-directory-contents "$HOME/.kde/share/apps/okular/docdata"
         kill-directory-contents "$HOME/.kde/share/apps/kconf_update/log"
         h2 "System-wide"
-        # TODO: reinstate these
-        # XXXX: not system.tmp!!! interferes with many many things
-        bleachbit --overwrite --clean system.cache system.clipboard system.recent_documents
         kill-directory-contents "$HOME/.thumbnails"
+        kill-directory-contents "$HOME/.cache/fontconfig"
+        # TODO: want to kill "$HOME/.cache/event-sound-cache.*" "$HOME/.cache/qt_compose_cache_*" $HOME/.cache/gegl-"
         # destroy files that could leak privacy data
         # XXXX: this is a dangerous function that really nukes everything!!!
         # TODO: do I want umount-all type-function here?
-        # TODO: replace as much as possible with bleachbit
-        # TODO: do better job at this?
         # clean out recently used lists
         h2 "Clearing recently used"
         kill-file "$HOME/.recently-used"
-        # kill-file ~/.config/epiphany/ephy-history.db
         kill-file "$HOME/.config/gxine/playlist"
         # causes problems on my system
         kill-file "$HOME/.config/mimeapps.list"
@@ -1142,14 +1150,9 @@ master-privacy () {
         kill-recent-files-line "$HOME/.kde/share/config/katerc"
         kill-recent-files-line "$HOME/.kde/share/config/okularrc"
         # TODO: find out if these are really killed otherwise
-        # h2  "Clearing tracker/indexers"
-        # kill-directory-contents-preserve-structure "$HOME"/.local/share/tracker
-        # kill-directory-contents "$HOME"/.local/share/zeitgeist
-        # kill-directory-contents ~/.kde/share/apps/gwenview/recentfolders/*
-        # bleachbit --overwrite --clean thumbnails.cache
-        # kill-directory-contents-preserve-structure ~/.cache/thumbnails
-        # dragonplayer
-        # ~/.kde/share/config/dragonplayerrc
+        h2  "Clearing tracker/indexers"
+        kill-directory-contents-preserve-structure "$HOME"/.local/share/tracker
+        kill-directory-contents "$HOME"/.local/share/zeitgeist
         # https://unix.stackexchange.com/questions/192465/remove-paragraph-from-file
         # TODO: need a delete paragraph function
         # clear my personal trash
@@ -1167,6 +1170,7 @@ master-privacy () {
             # TODO: possibly do less, so preserve vlc options
             # TODO: this kills some exensions I use
             # kill-directory-contents "$HOME/.local/share/vlc"
+            kill-directory-contents "$HOME/.cache/vlc"
             kill-directory-contents "$HOME/.abobe"
             kill-directory-contents "$HOME/.cr3"
             # TODO: program I once tested, remove
@@ -1176,15 +1180,19 @@ master-privacy () {
             kill-directory-contents "$HOME/.openshot"
             # TODO: if I seriously use this, fix
             kill-directory-contents "$HOME/.mypaint"
+            kill-directory-contents "$HOME/.cache/matplotlib/"
+            kill-directory-contents "$HOME/.cache/glances/"
+            # TODO: "$HOME/.cache/openbox"
             # TODO: do I want this in batch mode or not
             #       can I just kill it and ones that look like it
             kill-file-contents "$HOME/.local/share/recently-used.xbel"
-            # TODO: the above just brings back the file... so this redundant right now
-            # kill-find-matching "$HOME/.local/share/" 'recently-used.xbel*'
             # TODO: clear xsession... or just truncate like my other script????
             # kill-file-contents "$HOME"/.xsession-errors
-
-            # TODO:
+        fi
+        # clear $HOME/tmp/tmp-shred automatically, it is a good dumping ground for private files
+        # this is done again at the end just in case it is used
+        if [[ -n "$DELETEDTMPSHRED" ]]; then
+            master-privacy-tmp-shred 1
         fi
         h2 "Re-caching programs such as Sage and Python"
         # rerun/recomple python and sage if they exist, to restore cached stuff
