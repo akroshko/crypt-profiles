@@ -5,7 +5,7 @@
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20190624
+# Version: 20190804
 # URL: https://github.com/akroshko/crypt-profiles
 #
 # This program is free software: you can redistribute it and/or modify
@@ -44,7 +44,6 @@ kill-freespace-random-file () {
         echo "Must specify valid directory corresponding to device to kill space on!!!"
         return 1
     fi
-    [[ -e "$ROOTPATH"/randomfile.bin ]] && rm "$ROOTPATH"/randomfile.bin
     # check if I can run a command with elevated priveleges
     # TODO:: not sure mbuffer is necessary
     # time openssl enc -aes-256-ctr -pass pass:"$(dd if=/dev/urandom bs=128 count=1 2>/dev/null | base64)" -nosalt < /dev/zero | mbuffer -D 16384M -m 2048M -s 64k -A /bin/false -f -o "$ROOTPATH"/randomfile.bin
@@ -59,6 +58,8 @@ kill-freespace-random-file () {
     fi
     echo "Using buffer size $BUFSIZE!"
     sudo true || { echo "Failed to sudo!"; return 1; }
+    # TOD:O move down? get rid of sudo?
+    [[ -e "$ROOTPATH"/randomfile.bin ]] && sudo rm "$ROOTPATH"/randomfile.bin
     sudo -i su root <<EOF
 time openssl enc -aes-256-ctr -pass pass:"$(dd if=/dev/urandom bs=128 count=1 2>/dev/null | base64)" -nosalt < /dev/zero | mbuffer -m "$BUFSIZE" -s 64k -A /bin/false -f -o "$ROOTPATH"/randomfile.bin
 sync
@@ -171,7 +172,7 @@ kill-directory-contents () {
         else
             # safer command
             # https://stackoverflow.com/questions/20456666/bash-checking-if-folder-has-contents
-            if find "$1/" -mindepth 1 -print -quit 2>/dev/null | grep -q .; then
+            if find "$1/" -mindepth 1 -print -quit 2>/dev/null | grep --color=never -q .; then
                 msg "Unlinking all symlinks of depth 1 in directory $1 with kill-directory-contents"
                 find "$1/" -mindepth 1 -type l -printf "Unlinking: %p\n" -delete
                 msg "Clearing directory contents $1 with kill-directory-contents"
@@ -221,7 +222,7 @@ kill-find-matching () {
     # XXXX: dangerous functions for convenience in batch mode
     if [[ -d "$1" ]]; then
         # XXXX: double find a few milliseconds slower but gives good error messages
-        if find "$1" -name "$2" | grep '.' >/dev/null; then
+        if find "$1" -name "$2" | grep --color=never '.' >/dev/null; then
             if [[ -h "$1" ]];then
                 yell "Cannot kill-find-matching symlink $1!!!"
             else
@@ -243,10 +244,15 @@ kill-matching-line () {
 
 mv-directory-contents-to-tmp-shred () {
     if [[ -d "$1" ]]; then
-        THEDIR_CONTENTS=$(find "$1" -mindepth 1 -maxdepth 1)
+        local THESTEMNAME="$2"
+        local THEDIR_CONTENTS=$(find "$1" -mindepth 1 -maxdepth 1)
         if [[ $(wc -l <<< "$THEDIR_CONTENTS") -gt "0" ]]; then
             local THEBASENAME=$(basename "$1")
-            local SHREDDIR="$HOME/tmp/tmp-shred/$(date-time-stamp)-$THEBASENAME"
+            if [[ -n "$THESTEMNAME" ]]; then
+                local SHREDDIR="$HOME/tmp/tmp-shred/$(date-time-stamp)-$THESTEMNAME-$THEBASENAME"
+            else
+                local SHREDDIR="$HOME/tmp/tmp-shred/$(date-time-stamp)-$THEBASENAME"
+            fi
             mv "$1" "$SHREDDIR"
             # recreate directory
             mkdir -p "$1"
@@ -362,8 +368,26 @@ crypt-device-image-to-here () {
     sudo dd if=/dev/"$1" bs=64k conv=noerror,sync | lz4 | mbuffer -m 256M | gpg-batch --compress-algo none --cipher-algo AES256 --recipient "$CRYPTGPGUSER" --output - --encrypt - | mbuffer -q -m 256M -s 64k -o ./"$HOSTNAME"-"$1"--$(date +%Y%m%d%H%M%S).lz4.gpg
 }
 
-ssh-clear-all-controlmaster () {
-    true
+ssh-controlmaster-kill-all () {
+    \rm "$HOME/.ssh/controlmasters/"*
+}
+
+ssh-controlmaster-kill () {
+    local CONTROLMASTERS=$(\ls --color=never -1 "$HOME/.ssh/controlmasters/")
+    if [[ -n "$CONTROLMASTERS" ]]; then
+        IFS=$'\n'
+        local count=1
+        for item in $CONTROLMASTERS; do
+            echo "$count) $item"
+            local count=$(( $count + 1 ))
+        done
+        while read -r -t 0;do read -r; done
+        read -n 1 -p "Enter the controlmaster to kill: " CONTROLMASTERSELECT
+        echo ""
+        ssh -O exit $((sed -n "$CONTROLMASTERSELECT"p | sed 's/:.*//g') <<< "$CONTROLMASTERS")
+    else
+        echo "$HOME/.ssh/controlmasters is empty!"
+    fi
 }
 
 ssh-kill-offending-key () {

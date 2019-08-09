@@ -5,7 +5,7 @@
 // Author: Andrew Kroshko
 // Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 // Created: Mon Jun 20, 2016
-// Version: 20190624
+// Version: 20190804
 // URL: https://github.com/akroshko/crypt-profiles
 //
 // This program is free software; you can redistribute it and/or
@@ -44,7 +44,7 @@
 
 // TODO: Many more websites.
 // TODO: Simplify login links where possible.
-// TODO: Better format for logindata database.
+// TODO: Better format for g_logindata database.
 
 // debug, leaks security badly but sometimes that has to be done
 var g_debug=false;
@@ -82,116 +82,119 @@ function sleep(milliseconds) {
   }
 }
 
-var logindata;
+var g_logindata;
 // allow defining this elsewhere
-if (typeof logindata == "undefined") {
-    logindata = {};
+if (typeof g_logindata == "undefined") {
+    g_logindata = {};
 }
 
-logindata["twitter"] =       {"url":"https://twitter.com/login/",
+g_logindata["twitter"] =       {"url":"https://twitter.com/login/",
                               "login-class":"js-username-field email-input js-initial-focus",
                               "password-class":"js-password-field",
                               "submit-narrow":".signin-wrapper",
                               "submit-element":"button",
                               "submit-type":"submit",
                               "logout-url":"https://twitter.com/logout/"};
-logindata["facebook"] =      {"url":"https://www.facebook.com/login.php",
+g_logindata["facebook"] =      {"url":"https://www.facebook.com/login.php",
                               "login-id":"email",
                               "password-id":"pass",
                               "submit-id":"loginbutton"};
-logindata["gmail"] =         {"url":"https://accounts.google.com/ServiceLogin?sacu=1&scc=1&continue=https%3A%2F%2Fmail.google.com%2Fmail%2F&service=mail&ltmpl=default",
+g_logindata["gmail"] =         {"url":"https://accounts.google.com/ServiceLogin?sacu=1&scc=1&continue=https%3A%2F%2Fmail.google.com%2Fmail%2F&service=mail&ltmpl=default",
                               "logout-url":"https://mail.google.com/mail/logout?hl=en"};
-logindata["youtube"] =       {"url":"https://accounts.google.com/ServiceLogin?service=youtube&sacu=1&continue=https%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26app%3Ddesktop%26next%3D%252Ffeed%252Fsubscriptions%26hl%3Den-GB%26feature%3Dredirect_login",
+g_logindata["youtube"] =       {"url":"https://accounts.google.com/ServiceLogin?service=youtube&sacu=1&continue=https%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26app%3Ddesktop%26next%3D%252Ffeed%252Fsubscriptions%26hl%3Den-GB%26feature%3Dredirect_login",
                               "logout-url":"https://www.youtube.com/logout"};
-logindata["instagram"] =     {"url":"https://www.instagram.com/accounts/login/?force_classic_login",
+g_logindata["instagram"] =     {"url":"https://www.instagram.com/accounts/login/?force_classic_login",
                               "login-id":"id_username",
                               'password-id':"id_password",
                               'submit-element':'input',
                               'submit-type':'submit',
                               "logout-url":"https://instagram.com/accounts/logout"};
-logindata["amazonca"] =      {"url":"https://www.amazon.ca/ap/signin?_encoding=UTF8&openid.assoc_handle=caflex&openid.claimed_id=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.identity=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.mode=checkid_setup&openid.ns=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0&openid.ns.pape=http%3A%2F%2Fspecs.openid.net%2Fextensions%2Fpape%2F1.0&openid.pape.max_auth_age=0&openid.return_to=https%3A%2F%2Fwww.amazon.ca%2Fgp%2Fcss%2Fhomepage.html%2Fref%3Dnav_signin",
+g_logindata["amazonca"] =      {"url":"https://www.amazon.ca/ap/signin?_encoding=UTF8&openid.assoc_handle=caflex&openid.claimed_id=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.identity=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.mode=checkid_setup&openid.ns=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0&openid.ns.pape=http%3A%2F%2Fspecs.openid.net%2Fextensions%2Fpape%2F1.0&openid.pape.max_auth_age=0&openid.return_to=https%3A%2F%2Fwww.amazon.ca%2Fgp%2Fcss%2Fhomepage.html%2Fref%3Dnav_signin",
                               "login-id":"ap_email",
                               "password-id":"ap_password",
                               "submit-id":"signInSubmit"};
-logindata["amazoncom"] =     {"url":"https://www.amazon.com/ap/signin?_encoding=UTF8&openid.assoc_handle=usflex&openid.claimed_id=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.identity=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.mode=checkid_setup&openid.ns=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0&openid.ns.pape=http%3A%2F%2Fspecs.openid.net%2Fextensions%2Fpape%2F1.0&openid.pape.max_auth_age=0&openid.return_to=https%3A%2F%2Fwww.amazon.com%2Fgp%2Fyourstore%2Fhome%3Fie%3DUTF8%26action%3Dsign-out%26path%3D%252Fgp%252Fyourstore%252Fhome%26ref_%3Dnav_youraccount_signout%26signIn%3D1%26useRedirectOnSuccess%3D1",
+g_logindata["amazoncom"] =     {"url":"https://www.amazon.com/ap/signin?_encoding=UTF8&openid.assoc_handle=usflex&openid.claimed_id=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.identity=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.mode=checkid_setup&openid.ns=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0&openid.ns.pape=http%3A%2F%2Fspecs.openid.net%2Fextensions%2Fpape%2F1.0&openid.pape.max_auth_age=0&openid.return_to=https%3A%2F%2Fwww.amazon.com%2Fgp%2Fyourstore%2Fhome%3Fie%3DUTF8%26action%3Dsign-out%26path%3D%252Fgp%252Fyourstore%252Fhome%26ref_%3Dnav_youraccount_signout%26signIn%3D1%26useRedirectOnSuccess%3D1",
                               "login-id":"ap_email",
                               "password-id":"ap_password",
                               "submit-id":"signInSubmit"};
-logindata["usask"] =         {"url":"https://pawscas.usask.ca/cas-web/login?service=https%3A%2F%2Fpaws5.usask.ca%2Fc%2Fportal%2Flogin",
+g_logindata["usask"] =         {"url":"https://pawscas.usask.ca/cas-web/login?service=https%3A%2F%2Fpaws5.usask.ca%2Fc%2Fportal%2Flogin",
                               "login-id":"username",
                               "password-id":"password",
                               "submit-class":"btn btn-primary btn-block mbmd",
                               "logout-url":"https://pawscas.usask.ca/cas-web/logout"};
-logindata["tdcanadatrust"] = {"url":"https://easyweb.td.com/waw/idp/login.htm",
+g_logindata["tdcanadatrust"] = {"url":"https://easyweb.td.com/waw/idp/login.htm",
                               "login-id":"username100",
                               "password-id":"password"
                               // "submit-element":"button",
                               // "submit-type":"submit"
                              };
-logindata["vimeo"] =         {"url":"https://vimeo.com/log_in",
+g_logindata["vimeo"] =         {"url":"https://vimeo.com/log_in",
                               "login-id":"signup_email",
                               "password-id":"login_password",
                               "submit-element":"input",
                               "submit-value":"Log in with email"};
-logindata["pcmastercard"] =  {"url":"https://online.pcmastercard.ca/PCB_Consumer/Login.do?LAN=EN",
+g_logindata["pcmastercard"] =  {"url":"https://online.pcmastercard.ca/PCB_Consumer/Login.do?LAN=EN",
                               "login-id":"md-input-0",
                               "password-id":"md-input-1",
                               "submit-narrow":"form[name=login_form]",
                               "submit-element":"button"};
 // TODO: needs a special function
-logindata["mec"] =           {"url":"https://www.mec.ca/Membership/login.jsp",
+g_logindata["mec"] =           {"url":"https://www.mec.ca/Membership/login.jsp",
                               "login-id":"j_username",
                               "password-id":"j_password",
                               "submit-class":"btn btn-primary btn-block js-btn-modal-sign-in js-form-submit"};
-logindata["telusmobility"] = {"url":"https://telusidentity.telus.com/as/authorization.oauth2?client_id=uni_portal&response_type=code&scope=priceplaninfo+securitymgmt+usagedetails+profilemanagement+invoiceinfo+usagemanagement+accountactivity+subscriberinfo+paymentmanagement+paymentprocessing+accountinfo+devicemanagement+serviceeligibility+loyaltyandrewards+recommendationmanagement+profileinfohighdetail+usagepreferencemanagement+usagemeter+usagenotificationacceptancehistory+usageblockmanagement+tvrequisition+tvsusbscriptioninfo+internetservicemanagement+customerinfo&redirect_uri=https%3A%2F%2Fwww.telus.com%2Fmy-account%2Foauth_callback",
+g_logindata["telusmobility"] = {"url":"https://telusidentity.telus.com/as/authorization.oauth2?client_id=uni_portal&response_type=code&scope=priceplaninfo+securitymgmt+usagedetails+profilemanagement+invoiceinfo+usagemanagement+accountactivity+subscriberinfo+paymentmanagement+paymentprocessing+accountinfo+devicemanagement+serviceeligibility+loyaltyandrewards+recommendationmanagement+profileinfohighdetail+usagepreferencemanagement+usagemeter+usagenotificationacceptancehistory+usageblockmanagement+tvrequisition+tvsusbscriptioninfo+internetservicemanagement+customerinfo&redirect_uri=https%3A%2F%2Fwww.telus.com%2Fmy-account%2Foauth_callback",
                               "login-id":"idtoken1",
                               "password-id":"idtoken2",
                               "submit-narrow":"form#login",
                               "submit-element":"button",
                               "submit-type":"submit"};
-logindata["findmespot"] =    {"url":"https://login.findmespot.com/spot-main-web/auth/login.html",
+g_logindata["findmespot"] =    {"url":"https://login.findmespot.com/spot-main-web/auth/login.html",
                               "login-id":"j_username",
                               "password-id":"j_password",
                               "submit-id":"login"};
-logindata["flickr"] =        {"url":"https://login.yahoo.com/config/login?.src=flickrsignin"};
-logindata["github"] =        {"url":"https://github.com/login",
+g_logindata["flickr"] =        {"url":"https://login.yahoo.com/config/login?.src=flickrsignin"};
+g_logindata["github"] =        {"url":"https://github.com/login",
                               "login-id":"login_field",
                               "password-id":"password",
                               "submit-element":"input",
                               "submit-type":"submit",
                               // TODO: will need additional click
                               "logout-url":"https://github.com/logout"};
-logindata["newegg"] =        {"url":"https://secure.newegg.ca/NewMyAccount/AccountLogin.aspx",
+g_logindata["newegg"] =        {"url":"https://secure.newegg.ca/NewMyAccount/AccountLogin.aspx",
                               "login-id":"UserName",
                               "password-id":"UserPwd"// ,
                               // "submit-id":"submitLogin"
                              };
-logindata["abebooks"] =      {"url":"https://www.abebooks.com/servlet/SignOnPL?msg=You+are+not+authorized+to+view+this+page.++Either+you+have+not+signed+on+or+you+are+trying+to+access+a+page+that+requires+a+higher+level+of+authority.&cm_sp=TopNav-_-Home-_-MMM&goto=MembersMainMenu%3F",
+g_logindata["abebooks"] =      {"url":"https://www.abebooks.com/servlet/SignOnPL?msg=You+are+not+authorized+to+view+this+page.++Either+you+have+not+signed+on+or+you+are+trying+to+access+a+page+that+requires+a+higher+level+of+authority.&cm_sp=TopNav-_-Home-_-MMM&goto=MembersMainMenu%3F",
                               "login-id":"email",
                               "password-id":"password",
                               "submit-id":"signon-button"};
 // TODO: here
-logindata["memoryexpress"] = {"url":"https://www.memoryexpress.com/User/Login.aspx"};
-logindata["clubtread"] =     {"url":"http://forums.clubtread.com/register.php",
+g_logindata["memoryexpress"] = {"url":"https://www.memoryexpress.com/User/Login.aspx"};
+g_logindata["clubtread"] =     {"url":"http://forums.clubtread.com/register.php",
                               "login-id":"navbar_username",
                               "password-id":"navbar_password",
                               "submit-class":"button"};
-logindata["strava"] =        {"url":"https://www.strava.com/login",
+g_logindata["strava"] =        {"url":"https://www.strava.com/login",
                               "login-id":"email",
                               "password-id":"password",
                               "submit-id":"login-button"};
-logindata["buyapi"] =        {"url":"https://www.buyapi.ca/my-account/",
+g_logindata["buyapi"] =        {"url":"https://www.buyapi.ca/my-account/",
                               "login-id":"username",
                               "password-id":"password",
                               "submit-class":"woocommerce-Button button"};
-// TODO: nonfunctional
-logindata["digikey"] =       {"url":"https://www.digikey.ca/MyDigiKey/Login"};
-logindata["ebay"]    =       {"url":"https://signin.ebay.ca/ws/eBayISAPI.dll?SignIn&ru=http%3A%2F%2Fwww.ebay.ca%2F",
+// TODO: nonfunctional, needs work, probably in some wierd iframe
+g_logindata["digikey"] =       {"url":"https://www.digikey.ca/MyDigiKey/Login",
+                              "login-id":"username",
+                              "password-id":"password",
+                              "submit-id":"btnPostLogin"};
+g_logindata["ebay"]    =       {"url":"https://signin.ebay.ca/ws/eBayISAPI.dll?SignIn&ru=http%3A%2F%2Fwww.ebay.ca%2F",
                               "login-id":"userid",
                               "password-id":"pass",
                               "submit-id":"sgnBt"};
 // TODO: submit can only be identified by inner html
-logindata["twitch"]  =       {"url":"https://www.twitch.tv/login",
+g_logindata["twitch"]  =       {"url":"https://www.twitch.tv/login",
                               // "login-element":"input",
                               // "login-type":"text",
                               // "password-element":"input",
@@ -199,55 +202,52 @@ logindata["twitch"]  =       {"url":"https://www.twitch.tv/login",
                               // "submit-element":"button"
                               // this avoids pulling up websites with spoilers from people I do not follow
                               "post-login-url":"https://www.twitch.tv/directory/following"};
-logindata["discord"]    =    {"url":"https://discordapp.com/login",
+g_logindata["discord"]    =    {"url":"https://discordapp.com/login",
                               "login-element":"input",
                               "login-type":"email",
                               "password-element":"input",
                               "password-type":"password",
                               "submit-element":"button",
                               "submit-type":"submit"};
-logindata["deviantart"] =    {"url":"https://www.deviantart.com/users/login",
+g_logindata["deviantart"] =    {"url":"https://www.deviantart.com/users/login",
                               "login-id":"login_username",
                               "password-id":"login_password",
                               "submit-class":"smbutton smbutton-size-default smbutton-shadow smbutton-blue"}
 // TODO: need to hit key in field for this one too
-logindata["linkedin"] =    {"url":"https://www.linkedin.com/uas/login?trk=guest_homepage-basic_nav-header-signin",
+g_logindata["linkedin"] =    {"url":"https://www.linkedin.com/uas/login?trk=guest_homepage-basic_nav-header-signin",
                             "login-id":"username",
                             "password-id":"password"
                             // ,
                             // "submit-class":"login-submit"
                            }
-logindata["pixiv"] =    {"url":"https://accounts.pixiv.net/login?lang=en&source=pc&view_type=page"}
+g_logindata["pixiv"] =    {"url":"https://accounts.pixiv.net/login?lang=en&source=pc&view_type=page"}
 // TODO: might be an issue
-logindata["soundcloud"] =    {"url":"https://soundcloud.com/signin"};
-logindata["noip"] =          {"url":"https://www.noip.com/login",
+g_logindata["soundcloud"] =    {"url":"https://soundcloud.com/signin"};
+g_logindata["noip"] =          {"url":"https://www.noip.com/login",
                               "login-element":"input",
                               "login-type":"text",
                               "password-element":"input",
                               "password-type":"password",
                               "submit-element":"button",
                               "submit-type":"submit"};
-logindata["kijiji"] =        {"url":"https://kijiji.ca/t-login.html",
+g_logindata["kijiji"] =        {"url":"https://kijiji.ca/t-login.html",
                               "login-id":"LoginEmailOrNickname",
                               "password-id":"login-password",
                               "submit-id":"SignInButton"};
 // TODO: nice
-logindata["quora"] =    {"url":""};
-logindata["steam"] =    {"url":"https://store.steampowered.com/login/?redir=&redir_ssl=1",
+g_logindata["quora"] =    {"url":""};
+g_logindata["steam"] =    {"url":"https://store.steampowered.com/login/?redir=&redir_ssl=1",
                          "login-id":"input_username",
                          "password-id":"input_password",
                          "submit-narrow":"div#login_btn_signin",
                          "submit-element":"button",
                          "submit-type":"submit"}
 // TODO: non-functional, might have to wait for multiple reloads
-logindata["psn"]   =    {"url":"https://account.sonyentertainmentnetwork.com/",
+g_logindata["psn"]   =    {"url":"https://account.sonyentertainmentnetwork.com/",
                         "login-id":"ember18",
                         "password-id":"ember20",
                         "submit-id":"ember22"}
 
-define_key(content_buffer_normal_keymap, "C-x s-1", "get-current-password-login");
-define_key(content_buffer_normal_keymap, "C-x s-2", "get-current-password-login-alternate");
-define_key(content_buffer_normal_keymap, "C-x s-3", "get-current-password-login-tertiary");
 define_key(content_buffer_normal_keymap, "s-`",     "current-signout");
 define_key(content_buffer_normal_keymap, "",        "insert-current-password");
 function get_current_password_login(I, logintype, open_new_buffer=false, login_here=false) {
@@ -288,7 +288,7 @@ function get_current_password_login(I, logintype, open_new_buffer=false, login_h
         I.window.minibuffer.message("Found login for: " + g_theloginkey);
         g_theloginuser = thejson[1];
         g_theloginpassword = get_password_obfusicated_json(thejson[2][0],thejson[2][1]);
-        g_theloginuri = logindata[g_theloginkey]["url"];
+        g_theloginuri = g_logindata[g_theloginkey]["url"];
         g_initialstate = 0;
         I.window.minibuffer.message("");
         var spec = load_spec(g_theloginuri);
@@ -382,15 +382,15 @@ function auto_login (I, open_new_buffer=false, login_here=false) {
         // TODO: non-functional way of going to a different page after login
         // TODO: will have to do something different with hooks
         // g_the_deferred_login2=Promise.defer();
-        // if ( typeof logindata[g_theloginkey]["post-login-url"] != "undefined") {
+        // if ( typeof g_logindata[g_theloginkey]["post-login-url"] != "undefined") {
         //     add_hook.call(I.window.buffers.current, "content_buffer_finished_loading_hook", login_resolve_hook_function2);
         // } else {
         //     g_the_deferred_login2.resolve();
         // }
         // return g_the_deferred_login2;
     // }).then(function (result) {
-    //     if ( typeof logindata[g_theloginkey]["post-login-url"] != "undefined") {
-    //         var spec = load_spec(logindata[g_theloginkey]["post-login-url"]);
+    //     if ( typeof g_logindata[g_theloginkey]["post-login-url"] != "undefined") {
+    //         var spec = load_spec(g_logindata[g_theloginkey]["post-login-url"]);
     //         I.buffer.load(spec);
     //     }
     });
@@ -415,6 +415,7 @@ interactive("insert-stored-login","Insert the stored login.",
 define_key(content_buffer_form_keymap, "C-x l", "insert-stored-login");
 define_key(content_buffer_text_keymap, "C-x l", "insert-stored-login");
 
+
 interactive("insert-stored-password","Insert the stored password.",
     function (I) {
         if (check_password_database_disabled(I) == false) {
@@ -423,6 +424,7 @@ interactive("insert-stored-password","Insert the stored password.",
     });
 define_key(content_buffer_form_keymap, "C-x p", "insert-stored-password");
 define_key(content_buffer_text_keymap, "C-x p", "insert-stored-password");
+
 
 interactive("auto-login-primary","Login to primary fully automatically.",
     function (I) {
@@ -457,6 +459,29 @@ interactive("auto-login-primary-here","Login to primary fully automatically, kee
     });
 define_key(content_buffer_normal_keymap, "C-u s-1", "auto-login-primary-here");
 define_key(minibuffer_keymap,            "C-u s-1", "minibuffer-abort");
+define_key(content_buffer_normal_keymap, "C-x s-1", "get-current-password-login");
+
+// TODO: way to not do certain things
+interactive("get-login-select-1","Select the login to do.",
+    function (I) {
+        remove_old_hooks(I);
+        g_selection=1;
+        var loginurl = yield I.minibuffer.read(
+            $prompt = "Login: ",
+            $completer = new all_word_completer($completions = Object.keys(g_logindata).sort(),
+                                                $get_string = function (x) x,
+                                                $get_description = function (x) g_logindata[x]["url"],
+                                                $get_value = function (x) g_logindata[x]["url"]),
+            $auto_complete = true,
+            $auto_complete_initial = true,
+            $auto_complete_delay = 0,
+            $require_match = true);
+        I.buffer.load(load_spec(loginurl));
+        // TODO: wiat here?
+        yield auto_login(I);
+    }
+);
+define_key(content_buffer_normal_keymap, "s-j s-1", "get-login-select-1");
 
 interactive("get-current-password-login-alternate","Get the login for the secondary account for particular sites.",
     function (I) {
@@ -475,6 +500,9 @@ interactive("auto-login-2","Login to account profile 2 fully automatically.",
     });
 define_key(content_buffer_normal_keymap, "s-2", "auto-login-2");
 define_key(minibuffer_keymap,            "s-2", "minibuffer-abort");
+define_key(content_buffer_normal_keymap, "C-x s-2", "get-current-password-login-alternate");
+
+
 
 interactive("auto-login-2-new-buffer","Login to account profile 2 fully automatically.",
     function (I) {
@@ -504,6 +532,7 @@ interactive("auto-login-3","Login to account profile 3 fully automatically.",
     });
 define_key(content_buffer_normal_keymap, "s-3", "auto-login-3");
 define_key(minibuffer_keymap,            "s-3", "minibuffer-abort");
+define_key(content_buffer_normal_keymap, "C-x s-3", "get-current-password-login-tertiary");
 
 interactive("auto-login-3-new-buffer","Login to account profile 3 fully automatically.",
     function (I) {
@@ -581,6 +610,50 @@ interactive("auto-login-6-new-buffer","Login to account profile 6 fully automati
     });
 define_key(content_buffer_normal_keymap, "C-c s-6", "auto-login-6-new-buffer");
 define_key(minibuffer_keymap,            "C-c s-6", "minibuffer-abort");
+
+interactive("auto-login-11","Login to account profile 11 fully automatically.",
+    function (I) {
+        if (check_password_database_disabled(I) == false) {
+            remove_old_hooks(I);
+            g_selection=11;
+            yield auto_login(I);
+        }
+    });
+define_key(content_buffer_normal_keymap, "s-f1", "auto-login-11");
+define_key(minibuffer_keymap,            "s-f1", "minibuffer-abort");
+
+interactive("auto-login-11-new-buffer","Login to account profile 11 fully automatically.",
+    function (I) {
+        if (check_password_database_disabled(I) == false) {
+            remove_old_hooks(I);
+            g_selection=11;
+            yield auto_login(I,true);
+        }
+    });
+define_key(content_buffer_normal_keymap, "C-c s-f1", "auto-login-11-new-buffer");
+define_key(minibuffer_keymap,            "C-c s-f1", "minibuffer-abort");
+
+interactive("auto-login-12","Login to account profile 12 fully automatically.",
+    function (I) {
+        if (check_password_database_disabled(I) == false) {
+            remove_old_hooks(I);
+            g_selection=12;
+            yield auto_login(I);
+        }
+    });
+define_key(content_buffer_normal_keymap, "s-f2", "auto-login-12");
+define_key(minibuffer_keymap,            "s-f2", "minibuffer-abort");
+
+interactive("auto-login-12-new-buffer","Login to account profile 12 fully automatically.",
+    function (I) {
+        if (check_password_database_disabled(I) == false) {
+            remove_old_hooks(I);
+            g_selection=12;
+            yield auto_login(I,true);
+        }
+    });
+define_key(content_buffer_normal_keymap, "C-c s-f2", "auto-login-12-new-buffer");
+define_key(minibuffer_keymap,            "C-c s-f2", "minibuffer-abort");
 
 function remove_old_hooks(I) {
     remove_hook.call(I.window.buffers.current, "content_buffer_finished_loading_hook", logout_resolve_hook_function);
@@ -719,28 +792,28 @@ function insert_current_password(I) {
     } else {
         // XXXX: some websites do not like the .value attribute being set directly
         //       hence the wierd copy/pasting
-        if ( "login-id" in logindata[g_theloginkey] ) {
-            var n1 = login_document.getElementById(logindata[g_theloginkey]["login-id"]);
+        if ( "login-id" in g_logindata[g_theloginkey] ) {
+            var n1 = login_document.getElementById(g_logindata[g_theloginkey]["login-id"]);
             browser_element_focus(I.window.buffers.current, n1);
             type_manually(I,g_theloginuser);
-        } else if ( "login-class" in logindata[g_theloginkey] ) {
-            var n1 = login_document.getElementsByClassName(logindata[g_theloginkey]["login-class"])[0];
+        } else if ( "login-class" in g_logindata[g_theloginkey] ) {
+            var n1 = login_document.getElementsByClassName(g_logindata[g_theloginkey]["login-class"])[0];
             browser_element_focus(I.window.buffers.current, n1);
             type_manually(I,g_theloginuser);
-        } else if ( "login-element" in logindata[g_theloginkey] && "login-type" in logindata[g_theloginkey] ) {
-            var theelements = login_document.querySelectorAll(logindata[g_theloginkey]["login-element"]);
+        } else if ( "login-element" in g_logindata[g_theloginkey] && "login-type" in logindata[g_theloginkey] ) {
+            var theelements = login_document.querySelectorAll(g_logindata[g_theloginkey]["login-element"]);
             for (let e in theelements) {
-                if (theelements[e].type == logindata[g_theloginkey]["login-type"]) {
+                if (theelements[e].type == g_logindata[g_theloginkey]["login-type"]) {
                     var n1 = theelements[e];
                     break;
                 }
             }
             browser_element_focus(I.window.buffers.current, n1);
             type_manually(I,g_theloginuser);
-        } else if ( "login-element" in logindata[g_theloginkey] && "login-name" in logindata[g_theloginkey] ) {
-            var theelements = login_document.querySelectorAll(logindata[g_theloginkey]["login-element"]);
+        } else if ( "login-element" in g_logindata[g_theloginkey] && "login-name" in logindata[g_theloginkey] ) {
+            var theelements = login_document.querySelectorAll(g_logindata[g_theloginkey]["login-element"]);
             for (let e in theelements) {
-                if (theelements[e].name == logindata[g_theloginkey]["login-name"]) {
+                if (theelements[e].name == g_logindata[g_theloginkey]["login-name"]) {
                     var n1 = theelements[e];
                     break;
                 }
@@ -749,28 +822,28 @@ function insert_current_password(I) {
             type_manually(I,g_theloginuser);
         }
         ////////////////////////////////////////////////////////////////////////////////
-        if ( "password-id" in logindata[g_theloginkey] ) {
-            var n2 = login_document.getElementById(logindata[g_theloginkey]["password-id"]);
+        if ( "password-id" in g_logindata[g_theloginkey] ) {
+            var n2 = login_document.getElementById(g_logindata[g_theloginkey]["password-id"]);
             browser_element_focus(I.window.buffers.current, n2);
             type_manually(I,g_theloginpassword);
-        } else if ( "password-class" in logindata[g_theloginkey] ) {
-            var n2 = login_document.getElementsByClassName(logindata[g_theloginkey]["password-class"])[0];
+        } else if ( "password-class" in g_logindata[g_theloginkey] ) {
+            var n2 = login_document.getElementsByClassName(g_logindata[g_theloginkey]["password-class"])[0];
             browser_element_focus(I.window.buffers.current, n2);
             type_manually(I,g_theloginpassword);
-        } else if ( "password-element" in logindata[g_theloginkey] && "password-type" in logindata[g_theloginkey] ) {
-            var theelements = login_document.querySelectorAll(logindata[g_theloginkey]["password-element"]);
+        } else if ( "password-element" in g_logindata[g_theloginkey] && "password-type" in logindata[g_theloginkey] ) {
+            var theelements = login_document.querySelectorAll(g_logindata[g_theloginkey]["password-element"]);
             for (let e in theelements) {
-                if (theelements[e].type == logindata[g_theloginkey]["password-type"]) {
+                if (theelements[e].type == g_logindata[g_theloginkey]["password-type"]) {
                     var n1 = theelements[e];
                     break;
                 }
             }
             browser_element_focus(I.window.buffers.current, n1);
             type_manually(I,g_theloginpassword);
-        } else if ( "password-element" in logindata[g_theloginkey] && "password-name" in logindata[g_theloginkey] ) {
-            var theelements = login_document.querySelectorAll(logindata[g_theloginkey]["password-element"]);
+        } else if ( "password-element" in g_logindata[g_theloginkey] && "password-name" in logindata[g_theloginkey] ) {
+            var theelements = login_document.querySelectorAll(g_logindata[g_theloginkey]["password-element"]);
             for (let e in theelements) {
-                if (theelements[e].name == logindata[g_theloginkey]["password-name"]) {
+                if (theelements[e].name == g_logindata[g_theloginkey]["password-name"]) {
                     var n1 = theelements[e];
                     break;
                 }
@@ -779,34 +852,34 @@ function insert_current_password(I) {
             type_manually(I,g_theloginpassword);
         }
         ////////////////////////////////////////////////////////////////////////////////
-        if ( "submit-id" in logindata[g_theloginkey] ) {
-            var thebutton = login_document.getElementById(logindata[g_theloginkey]["submit-id"]);
+        if ( "submit-id" in g_logindata[g_theloginkey] ) {
+            var thebutton = login_document.getElementById(g_logindata[g_theloginkey]["submit-id"]);
             thebutton.click();
-        } else if ( "submit-class" in logindata[g_theloginkey] ) {
-            var thebutton = login_document.getElementsByClassName(logindata[g_theloginkey]["submit-class"])[0];
+        } else if ( "submit-class" in g_logindata[g_theloginkey] ) {
+            var thebutton = login_document.getElementsByClassName(g_logindata[g_theloginkey]["submit-class"])[0];
             thebutton.click();
-        } else if ( "submit-element" in logindata[g_theloginkey] && "submit-value" in logindata[g_theloginkey] ) {
-            var theelements = login_document.querySelectorAll(logindata[g_theloginkey]["submit-element"]);
+        } else if ( "submit-element" in g_logindata[g_theloginkey] && "submit-value" in logindata[g_theloginkey] ) {
+            var theelements = login_document.querySelectorAll(g_logindata[g_theloginkey]["submit-element"]);
             // now find the value in the elements
             for (let e in theelements) {
-                if (theelements[e].value == logindata[g_theloginkey]["submit-value"]) {
+                if (theelements[e].value == g_logindata[g_theloginkey]["submit-value"]) {
                     var thebutton = theelements[e];
                     break;
                 }
             }
             thebutton.click();
-        } else if ( "submit-element" in logindata[g_theloginkey] ) {
-            // && "submit-type" in logindata[g_theloginkey]
-            if ( "submit-narrow" in logindata[g_theloginkey] ) {
-                var submit_document =login_document.querySelectorAll(logindata[g_theloginkey]["submit-narrow"])[0];
+        } else if ( "submit-element" in g_logindata[g_theloginkey] ) {
+            // && "submit-type" in g_logindata[g_theloginkey]
+            if ( "submit-narrow" in g_logindata[g_theloginkey] ) {
+                var submit_document =login_document.querySelectorAll(g_logindata[g_theloginkey]["submit-narrow"])[0];
             } else {
                 var submit_document=login_document;
             }
-            var theelements = submit_document.querySelectorAll(logindata[g_theloginkey]["submit-element"]);
+            var theelements = submit_document.querySelectorAll(g_logindata[g_theloginkey]["submit-element"]);
             // now find the value in the elements
-            if ("submit-type" in logindata[g_theloginkey] ) {
+            if ("submit-type" in g_logindata[g_theloginkey] ) {
                 for (let e in theelements) {
-                    if (theelements[e].type == logindata[g_theloginkey]["submit-type"]) {
+                    if (theelements[e].type == g_logindata[g_theloginkey]["submit-type"]) {
                         var thebutton = theelements[e];
                         break;
                     }
@@ -851,9 +924,9 @@ function current_signout (I) {
         g_thelogoutkey = thejson[0];
         g_thelogoutuser = thejson[1];
         var theurl = I.window.buffers.current.display_uri_string;
-        if ('logout-url' in logindata[g_thelogoutkey]) {
+        if ('logout-url' in g_logindata[g_thelogoutkey]) {
             I.window.minibuffer.message("Logging out: " + g_thelogoutkey);
-            g_thelogouturi=logindata[g_thelogoutkey]["logout-url"];
+            g_thelogouturi=g_logindata[g_thelogoutkey]["logout-url"];
             var spec = load_spec(g_thelogouturi);
             I.window.buffers.current.load(spec);
         } else {

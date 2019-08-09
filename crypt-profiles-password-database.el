@@ -106,7 +106,11 @@ this for every line."
   ;; TODO: almost identical to above...
   (with-current-file-transient-min crypt-profiles-password-database-path
     ;; goto heading
-    (cond ((equal alternate 6)
+    (cond ((equal alternate 12)
+           (cic:org-find-headline "Website Logins 12"))
+          ((equal alternate 11)
+           (cic:org-find-headline "Website Logins 11"))
+          ((equal alternate 6)
            (cic:org-find-headline "Website Logins 6"))
           ((equal alternate 5)
            (cic:org-find-headline "Website Logins 5"))
@@ -114,7 +118,7 @@ this for every line."
            (cic:org-find-headline "Website Logins 4"))
           ((equal alternate 3)
            (cic:org-find-headline "Website Logins 3"))
-          (alternate
+          ((equal alternate 2)
            (cic:org-find-headline "Website Logins 2"))
           (t
            (cic:org-find-headline "Website Logins 1")))

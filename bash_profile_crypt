@@ -84,7 +84,7 @@ main () {
         # set up normally if no passphrase given
         while [[ -z $TOPSECRET && "$TRYAGAIN" == "y" ]]; do
             # XXXX: might be problems here without other agents started by other programs
-            if [[ -e "$envfile" ]] && kill -0 "$(grep -- GPG_AGENT_INFO $envfile | cut -d: -f 2)" 2>/dev/null; then
+            if [[ -e "$envfile" ]] && kill -0 "$(grep --color=never -- GPG_AGENT_INFO $envfile | cut -d: -f 2)" 2>/dev/null; then
                 # eval "$(DISPLAY= cat "$envfile")"
                 msg "Sourcing envfile!"
                 DISPLAY= source $envfile

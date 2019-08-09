@@ -5,40 +5,6 @@
 
 var g_security_privacy_prefs_successful=false;
 
-////////////////////////////////////////////////////////////////////////////////
-// security stuff, taken from privacy prefs in ghacks
-// 0303: disable search update (Options>Advanced>Update>Automatically update: search engines)
-session_pref("browser.search.update", false);
-// 0304: disable add-ons auto checking for new versions
-session_pref("extensions.update.enabled", false);
-// 0305: disable add-ons auto update
-session_pref("extensions.update.autoUpdateDefault", false);
-// 0306: disable add-on metadata updating
-// sends daily pings to Mozilla about extensions and recent startups
-session_pref("extensions.getAddons.cache.enabled", false);
-// 0330a: disable telemetry
-// https://gecko.readthedocs.org/en/latest/toolkit/components/telemetry/telemetry/preferences.html
-// the pref (.unified) affects the behaviour of the pref (.enabled)
-// IF unified=false then .enabled controls the telemetry module
-// IF unified=true then .enabled ONLY controls whether to record extended data
-// so make sure to have both set as false
-// TODO: this does not seem to be in conkeror
-session_pref("toolkit.telemetry.unified", false);
-session_pref("toolkit.telemetry.enabled", false);
-// 0330b: set unifiedIsOptIn to make sure telemetry respects OptIn choice and that telemetry
-   // is enabled ONLY for people that opted into it, even if unified Telemetry is enabled
-session_pref("toolkit.telemetry.unifiedIsOptIn", true); // (hidden pref)
-// 0331: remove url of server telemetry pings are sent to
-session_pref("toolkit.telemetry.server", "");
-// 0341: disable Mozilla permission to silently opt you into tests
-session_pref("network.allow-experiments", false);
-
-// TODO: do these at some point, need to figure out if I have a blocklist for palemoon/conkeror
-// 0401: DON'T disable extension blocklist, but sanitize blocklist url - SECURITY
-   // It now includes updates for "revoked certificates" - security trumps privacy here
-   // https://blog.mozilla.org/security/2015/03/03/revoking-intermediate-certificates-introducing-onecrl
-   // https://trac.torproject.org/projects/tor/ticket/16931
-session_pref("extensions.blocklist.enabled", true);
 // session_pref("extensions.blocklist.url", "https://blocklist.addons.mozilla.org/blocklist/3/%APP_ID%/%APP_VERSION%/");
 // 0402: disable/enable various Kinto blocklist updates (FF50+)
    // What is Kinto?: https://wiki.mozilla.org/Firefox/Kinto#Specifications
@@ -73,11 +39,6 @@ session_pref("browser.search.suggest.enabled", false);
 // http://news.slashdot.org/story/15/08/14/2321202/how-to-quash-firefoxs-silent-requests
 // http://www.ghacks.net/2015/08/16/block-firefox-from-connecting-to-sites-when-you-hover-over-links
 session_pref("network.http.speculative-parallel-limit", 0);
-// 0606: disable pings (but enforce same host in case)
-// http://kb.mozillazine.org/Browser.send_pings
-// http://kb.mozillazine.org/Browser.send_pings.require_same_host
-session_pref("browser.send_pings", false);
-session_pref("browser.send_pings.require_same_host", true);
 // 0801: disable location bar using search - PRIVACY
 // don't leak typos to a search engine, give an error message instead
 session_pref("keyword.enabled", false);
@@ -234,10 +195,6 @@ session_pref("webgl.enable-debug-renderer-info", false);
 // 2021: disable speech recognition
 session_pref("media.webspeech.recognition.enable", false);
 session_pref("media.webspeech.synth.enabled", false);
-// 2022: disable screensharing
-session_pref("media.getusermedia.screensharing.enabled", false);
-session_pref("media.getusermedia.screensharing.allowed_domains", "");
-session_pref("media.getusermedia.screensharing.allow_on_old_platforms", false);
 // 2023: disable camera stuff
 session_pref("camera.control.face_detection.enabled", false);
 // 2024: enable/disable MSE (Media Source Extensions)
@@ -280,9 +237,6 @@ session_pref("dom.netinfo.enabled", false);
 // 2504: disable virtual reality devices
    // https://developer.mozilla.org/en-US/docs/Web/API/WebVR_API
 session_pref("dom.vr.enabled", false);
-// 2506: disable video statistics - JS performance fingerprinting
-  // https://trac.torproject.org/projects/tor/ticket/15757
-session_pref("media.video_stats.enabled", false);
 // 2507: disable keyboard fingerprinting (FF38+) (physical keyboards)
    // The Keyboard API allows tracking the "read parameter" of pressed keys in forms on
    // web pages. These parameters vary between types of keyboard layouts such as QWERTY,
@@ -380,9 +334,6 @@ session_pref("security.fileuri.strict_origin_policy", true);
 // session_pref("general.platform.override", "Win32"); // (hidden pref)
 //    // F: navigator.oscpu
 // session_pref("general.oscpu.override", "Windows NT 6.1"); // (hidden pref)
-// 2664: disable DeviceStorage API
-   // https://wiki.mozilla.org/WebAPI/DeviceStorageAPI
-session_pref("device.storage.enabled", false);
 // 2666: disable HTTP Alternative Services
    // http://www.ghacks.net/2015/08/18/a-comprehensive-list-of-firefox-privacy-and-security-settings/#comment-3970881
 session_pref("network.http.altsvc.enabled", false);

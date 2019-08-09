@@ -29,7 +29,7 @@
 # fi
 # XXXX: duplicate from bash_profile_crypt
 envfile="$HOME/.gnupg/gpg-agent-info-$HOSTNAME"
-if [[ -e "$envfile" ]] && kill -0 "$(grep -- GPG_AGENT_INFO $envfile | cut -d: -f 2)" 2>/dev/null;then
+if [[ -e "$envfile" ]] && kill -0 "$(grep --color=never -- GPG_AGENT_INFO $envfile | cut -d: -f 2)" 2>/dev/null;then
     DISPLAY= source $envfile
     export GPG_AGENT_INFO
 fi

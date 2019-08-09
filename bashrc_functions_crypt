@@ -380,7 +380,7 @@ harm-crypt () {
     killall-agents
     source "$HOME/.bash_profile"
     # TODO: decide if I really want this here like this, maybe use function?
-    # if ps -ef | grep -- "emacs --daemon" | grep -v grep >/dev/null && type -P launch-emacsclient >/dev/null 2>&1; then
+    # if ps -ef | grep --color=never -- "emacs --daemon" | grep -v grep >/dev/null && type -P launch-emacsclient >/dev/null 2>&1; then
     #     h2 "Re-initing Emacs!"
     #     launch-emacsclient noframe --eval "(cic:init-crypt)"
     # fi
@@ -878,7 +878,7 @@ master-privacy-brief () {
         # XXXX: seems to cause issues with long downloads in firefox
         # TODO: are things running that I don't want to clear privacy for
         # TODO: add things like vlc to test, or check if anything is currently using places to be shred
-        if ! ps -ef | grep '[f]irefox\|[i]ceweasel\|[p]alemoon\|[w]aterfox' >/dev/null; then
+        if ! ps -ef | grep --color=never '[f]irefox\|[i]ceweasel\|[p]alemoon\|[w]aterfox' >/dev/null; then
             master-privacy --batch
             echo "$(date-time-stamp) Success" >> "$HOME/.myprivacy.log"
         else
@@ -895,7 +895,7 @@ master-privacy-brief () {
 
 master-privacy-trash () {
     h2 "Clearing trash"
-    if [[ -d "$HOME/tmp/trash/" ]] && find "$HOME/tmp/trash/" -mindepth 1 -print -quit 2>/dev/null | grep -q .; then
+    if [[ -d "$HOME/tmp/trash/" ]] && find "$HOME/tmp/trash/" -mindepth 1 -print -quit 2>/dev/null | grep --color=never -q .; then
         msg  "Contents of ~/tmp/trash:"
         ls -A "$HOME"/tmp/trash/*
         while read -r -t 0;do read -r; done
@@ -906,7 +906,7 @@ master-privacy-trash () {
     else
         warn "Nothing in ~/tmp/trash"
     fi
-    if [[ -d "$HOME/tmp/screenshots/" ]] && find "$HOME/tmp/screenshots/" -mindepth 1 -print -quit 2>/dev/null | grep -q .; then
+    if [[ -d "$HOME/tmp/screenshots/" ]] && find "$HOME/tmp/screenshots/" -mindepth 1 -print -quit 2>/dev/null | grep --color=never -q .; then
         msg  "Contents of ~/tmp/screenshots:"
         ls -A "$HOME"/tmp/screenshots/*
         while read -r -t 0;do read -r; done
@@ -917,7 +917,7 @@ master-privacy-trash () {
     else
         warn "Nothing in ~/tmp/screenshots"
     fi
-    if [[ -d "$HOME/.local/share/Trash/files/" ]] && find "$HOME/.local/share/Trash/files/" -mindepth 1 -print -quit 2>/dev/null | grep -q .; then
+    if [[ -d "$HOME/.local/share/Trash/files/" ]] && find "$HOME/.local/share/Trash/files/" -mindepth 1 -print -quit 2>/dev/null | grep --color=never -q .; then
         msg "Contents of ~/.local/share/Trash/files/:"
         ls -A "$HOME/.local/share/Trash/files/"
         # TODO: check if empty?
@@ -933,7 +933,7 @@ master-privacy-trash () {
 
 master-privacy-tmp-shred () {
     # TODO: make interactive
-    if [[ -d "$HOME/tmp/tmp-shred/" ]] && find "$HOME/tmp/tmp-shred/" -mindepth 1 -print -quit 2>/dev/null | grep -q .; then
+    if [[ -d "$HOME/tmp/tmp-shred/" ]] && find "$HOME/tmp/tmp-shred/" -mindepth 1 -print -quit 2>/dev/null | grep --color=never -q .; then
         msg "Contents of ~/tmp/tmp-shred/:"
         ls -A "$HOME/tmp/tmp-shred/"
         # TODO: check if empty?
@@ -942,11 +942,11 @@ master-privacy-tmp-shred () {
         fi
     fi
     need_new_directory "$HOME/tmp/tmp-shred/"
-    if [[ -d "$HOME/mnt-secondary/tmp/imagemagick-tmp/" ]] && find "$HOME/mnt-secondary/tmp/imagemagick-tmp/" -mindepth 1 -print -quit 2>/dev/null | grep -q .; then
+    if [[ -d "$HOME/mnt-secondary/tmp/imagemagick-tmp/" ]] && find "$HOME/mnt-secondary/tmp/imagemagick-tmp/" -mindepth 1 -print -quit 2>/dev/null | grep --color=never -q .; then
         kill-recursive "$HOME/mnt-secondary/tmp/imagemagick-tmp/"
         need_new_directory "$HOME/mnt-secondary/tmp/imagemagick-tmp/"
     fi
-    if [[ -d "$HOME/mnt-secondary/tmp/cic-preview-tmp/" ]] && find "$HOME/mnt-secondary/tmp/cic-preview-tmp/" -mindepth 1 -print -quit 2>/dev/null | grep -q .; then
+    if [[ -d "$HOME/mnt-secondary/tmp/cic-preview-tmp/" ]] && find "$HOME/mnt-secondary/tmp/cic-preview-tmp/" -mindepth 1 -print -quit 2>/dev/null | grep --color=never -q .; then
         kill-recursive "$HOME/mnt-secondary/tmp/cic-preview-tmp/"
         need_new_directory "$HOME/mnt-secondary/tmp/cic-preview-tmp/"
     fi
@@ -955,11 +955,11 @@ master-privacy-tmp-shred () {
 master-privacy-conkeror () {
     h2 "Conkeror"
     # XXXX: I now use a password manager and just clear everything
-    if ! check-firefox; then
+    if ! check-mozilla-running; then
         if [[ -n "$CONKERORTEMPLATEPATH" && -d "$CONKERORTEMPLATEPATH" ]]; then
             THEDEFAULTDIR=$(find "$HOME/.conkeror.mozdev.org/conkeror/" -mindepth 1 -maxdepth 1 -type d -iname "*.default")
             if [[ $(wc -l <<< "$THEDEFAULTDIR") == "1" && -d "$THEDEFAULTDIR" ]]; then
-                SHREDDIR="$HOME/tmp/tmp-shred/$(date-time-stamp)-profile"
+                SHREDDIR="$HOME/tmp/tmp-shred/$(date-time-stamp)-conkeror-profile"
                 need_new_directory "$SHREDDIR"
                 mv "$THEDEFAULTDIR" "$SHREDDIR"
                 echo "Trashed old profile at $THEDEFAULTDIR if it existed!"
@@ -996,8 +996,6 @@ master-privacy-conkeror () {
             # cache files
             kill-directory-contents "$HOME/.cache/conkeror.mozdev.org/"
             # TODO: are these really what I want for conkeror, does conkeror ever write here?
-            kill-directory-contents "$HOME/.cache/firefox/"
-            kill-directory-contents "$HOME/.cache/mozilla/"
         fi
     else
         warn "Firefox or similar program running!"
@@ -1006,18 +1004,19 @@ master-privacy-conkeror () {
 
 master-privacy-firefox () {
     h2 "Firefox"
-    if ! check-firefox; then
+    if ! check-mozilla-running; then
         local FIREFOXPATH_DEFAULT=$(find "$HOME/.mozilla/firefox" -mindepth 1 -maxdepth 1 -type d -iname "*.default")
         if [[ $(wc -l <<< "$FIREFOXPATH_DEFAULT") == "1" && -d "$FIREFOXPATH_DEFAULT" ]]; then
             echo "Found Firefox profile at: $FIREFOXPATH_DEFAULT"
-            local SHREDDIR="$HOME/tmp/tmp-shred/$(date-time-stamp)-firefox-profile"
-            need_new_directory "$SHREDDIR"
-            mv-directory-contents-to-tmp-shred "$FIREFOXPATH_DEFAULT"
+            mv-directory-contents-to-tmp-shred "$FIREFOXPATH_DEFAULT" 'firefox-profile'
             echo "Trashed old Firefox 'default' profile if it existed"
         else
             echo "Old firefox 'default' profile not found so nothing trashed!"
         fi
     fi
+    mv-directory-contents-to-tmp-shred "$HOME/.mozilla/firefox/Pending Pings" 'firefox-pings'
+    mv-directory-contents-to-tmp-shred "$HOME/.mozilla/firefox/Crash Reports" 'firefox-crash'
+    mv-directory-contents-to-tmp-shred "$HOME/.cache/mozilla/"                'firefox-cache'
     # TODO: do I still want to ask?
     # if [[ "$ynfirefox" =~ y ]]; then
     #     # TODO: terrible way to do this
@@ -1040,11 +1039,11 @@ master-privacy-chromium () {
     # XXXX: I only use chromium as a secondary browser, shredding most things, but keeping adblock?
     if ! check-chromium; then
         # TODO: any more I want?
-        mv-directory-contents-to-tmp-shred "$HOME/.config/chromium/Default/"
-        mv-directory-contents-to-tmp-shred "$HOME/.config/chromium/Subresource Filter/"
-        mv-directory-contents-to-tmp-shred "$HOME/.config/chromium/ShaderCache/"
-        mv-directory-contents-to-tmp-shred "$HOME/.config/chromium/BrowserMetrics/"
-        mv-directory-contents-to-tmp-shred "$HOME/.cache/chromium/"
+        mv-directory-contents-to-tmp-shred "$HOME/.config/chromium/Default/"            'chromium-profile'
+        mv-directory-contents-to-tmp-shred "$HOME/.config/chromium/Subresource Filter/" 'chromium-profile'
+        mv-directory-contents-to-tmp-shred "$HOME/.config/chromium/ShaderCache/"        'chromium-profile'
+        mv-directory-contents-to-tmp-shred "$HOME/.config/chromium/BrowserMetrics/"     'chromium-profile'
+        mv-directory-contents-to-tmp-shred "$HOME/.cache/chromium/"                     'chromium-cache'
     else
         warn "Chromium running!"
     fi
@@ -1053,9 +1052,12 @@ master-privacy-chromium () {
 
 master-privacy () {
     time {
-        # TODO: ask first...
+        # TODO: things that ask first...
         # take out any leftover randomfiles used for filling hard drive with junk
-        [[ -e "$HOME/randomfile.bin" ]] && rm "$HOME/randomfile.bin"
+        # this puts the sudo thing right at the from
+        # TODO: also look for other locations
+        # TODO: not sure I want this... causes issues when run nested...
+        # [[ -e "$HOME/randomfile.bin" ]] && sudo rm "$HOME/randomfile.bin"
         # TODO: reset so gnome does not give errors
         h1 "Clearing browser information"
         master-privacy-chromium
@@ -1216,6 +1218,13 @@ master-privacy () {
             }
         fi
     }
+}
+
+master-privacy-kill-freespace () {
+    sudo true || { echo "Failed to sudo!"; return 1; }
+    local CURRENTUSER="$USER"
+    # TODO: is there a better way to do this
+    sudo su root -c "su $CURRENTUSER -c 'source /home/$CURRENTUSER/.bash_library;master-privacy';kill-freespace-random-file /home/$CURRENTUSER"
 }
 
 ################################################################################

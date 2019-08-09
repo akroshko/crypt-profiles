@@ -19,10 +19,6 @@ main() {
             echo "Must specific directory corresponding to device to kill space on!!!"
             return 1
         fi
-        if [[ -e "$ROOTPATH"/randomfile.bin ]]; then
-            echo "Deleting old "$ROOTPATH"/randomfile.bin"
-            rm "$ROOTPATH"/randomfile.bin
-        fi
         if (( $(cat /proc/meminfo | grep --color=never MemTotal | awk '{print $2}') < "4194304" )); then
             echo "Setting THEBUFFERSIZE to 512M!"
             # TODO: set up local?
@@ -42,9 +38,9 @@ main() {
         echo "Size of written file:"
         du -sh "$ROOTPATH"/randomfile.bin
         du -shb "$ROOTPATH"/randomfile.bin
-        rm "$ROOTPATH"/randomfile.bin
+        sudo rm "$ROOTPATH"/randomfile.bin
     }
-    if [[ "$(df / --output=source | grep -v ^Filesystem)" != "$(df /home --output=source | grep -v ^Filesystem)" ]]; then
+    if [[ "$(df / --output=source | grep --color=never -v ^Filesystem)" != "$(df /home --output=source | grep --color=never bash_profile_crypt -v ^Filesystem)" ]]; then
         # XXXX: this will almost run / out of space, but should be OK
         echo "---- / is not same device as /home, killing freespace on / first!"
         kill-freespace-random-file-local /
