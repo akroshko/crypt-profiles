@@ -5,7 +5,7 @@
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20190624
+# Version: 20190903
 # URL: https://github.com/akroshko/crypt-profiles
 #
 # This program is free software: you can redistribute it and/or modify
@@ -100,7 +100,6 @@ main () {
     else
         # XXXX: this is a dangerous script, make sure it always fails on error
         #       but not before here
-        set -e
         # XXXX: hard coded to ensure script does not screw anything up
         if [[ "$HOSTNAME" == "$BACKUPHOSTNAME" ]]; then
             # TODO: bail if sudo not correct

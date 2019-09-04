@@ -5,7 +5,7 @@
 ;; Author: Andrew Kroshko
 ;; Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 ;; Created: Mon Jun 20, 2016
-;; Version: 20190624
+;; Version: 20190903
 ;; URL: https://github.com/akroshko/crypt-profiles
 ;;
 ;; This program is free software; you can redistribute it and/or
@@ -39,15 +39,6 @@
   "0123456789abcdefghijklmnopqrstuvwxyz"
   "This is 36 characters total")
 
-;; TODO: not sure this will work for everyone, this is just what I use in my config files
-(when (file-exists-p "~/.gpg-agent-info.env")
-  (let ((gpg-agent
-        ;; read the file
-         (s-trim-full (with-temp-buffer
-                  (insert-file-contents "~/.gpg-agent-info.env")
-                  (buffer-string)))))
-    ;; set the variable
-    (setenv "GPG_AGENT_INFO" gpg-agent)))
 (setq epa-file-select-keys 'silent
       epg-gpg-program "/usr/bin/gpg2")
 (epa-file-enable)
@@ -100,7 +91,7 @@ this for every line."
 (when (file-exists-p "~/.crypt-database-path.el")
   (load "~/.crypt-database-path.el"))
 
-(defun crypt-profiles-get-matching-password-obfusicated (base64-url &optional alternate)
+(defun crypt-profiles-get-matching-password-obfusicated (login-key base64-url &optional alternate)
   ;; TODO make sure file decrypts before proceeding
   ;; TODO: hard coding is bad
   ;; TODO: almost identical to above...
@@ -128,11 +119,17 @@ this for every line."
     (let ((url (base64-decode-string base64-url))
           (the-lisp-table (cic:org-table-to-lisp-no-separators))
           return-value)
-      (dolist (lisp-row the-lisp-table)
-        (let ((name (s-trim-full (elt lisp-row 1)))
-              (autourl (s-trim-full (elt lisp-row 2))))
-          (when (and (not (equal autourl "")) (string-match autourl url))
-            (setq return-value (list name (elt lisp-row 4) (crypt-profiles-store-obfusicated-password (elt lisp-row 5)))))))
+      ;; TODO: issue with login keys matching partial
+      (if login-key
+          (dolist (lisp-row the-lisp-table)
+            (let ((name (s-trim-full (elt lisp-row 1))))
+              (when (string-match login-key (s-trim-full (elt lisp-row 1)))
+                (setq return-value (list name (elt lisp-row 4) (crypt-profiles-store-obfusicated-password (elt lisp-row 5)))))))
+        (dolist (lisp-row the-lisp-table)
+          (let ((name (s-trim-full (elt lisp-row 1)))
+                (autourl (s-trim-full (elt lisp-row 2))))
+            (when (and (not (equal autourl "")) (string-match autourl url))
+              (setq return-value (list name (elt lisp-row 4) (crypt-profiles-store-obfusicated-password (elt lisp-row 5))))))))
       ;; make things command line safe
       ;; TODO: base64 encode
       (json-encode return-value))))

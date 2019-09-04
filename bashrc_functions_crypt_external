@@ -5,7 +5,7 @@
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20190804
+# Version: 20190903
 # URL: https://github.com/akroshko/crypt-profiles
 #
 # This program is free software: you can redistribute it and/or modify
@@ -327,26 +327,26 @@ ssh-check-host-fingerprints () {
 
 ssh-user-fingerprint () {
     echo "$HOSTNAME"
-    if [[ -f ~/.ssh/id_ecdsa.pub ]]; then
+    if [[ -f "$HOME/.ssh/id_ecdsa.pub" ]]; then
         h2 'ECDSA fingerprint'
-        awk '{print $2}' ~/.ssh/id_ecdsa.pub | base64 -d | md5sum | sed 's/../&:/g; s/: .*$//'
-        ssh-keygen -lf ~/.ssh/id_ecdsa.pub
+        awk '{print $2}' "$HOME/.ssh/id_ecdsa.pub" | base64 -d | md5sum | sed 's/../&:/g; s/: .*$//'
+        ssh-keygen -lf "$HOME/.ssh/id_ecdsa.pub"
         # h3 'ECDSA public key'
         # cat /etc/ssh/ssh_host_ecdsa_key.pub
     fi
-    if [[ -f ~/.ssh/id_ed25519.pub ]]; then
+    if [[ -f "$HOME/.ssh/id_ed25519.pub" ]]; then
         h2 'ED25519 fingerprint'
         # https://superuser.com/questions/1088165/get-ssh-key-fingerprint-in-old-hex-format-on-new-version-of-openssh
-        awk '{print $2}' ~/.ssh/id_ed25519.pub | base64 -d | md5sum | sed 's/../&:/g; s/: .*$//'
+        awk '{print $2}' "$HOME/.ssh/id_ed25519.pub" | base64 -d | md5sum | sed 's/../&:/g; s/: .*$//'
         # new style for those that do not have it
-        awk '{print $2}' ~/.ssh/id_ed25519.pub | base64 -d | sha256sum -b | awk '{print $1}' | xxd -r -p | base64
+        awk '{print $2}' "$HOME/.ssh/id_ed25519.pub" | base64 -d | sha256sum -b | awk '{print $1}' | xxd -r -p | base64
         # h3 'ED25519 public key'
         # cat /etc/ssh/ssh_host_ed25519_key.pub
     fi
-    if [[ -f  ~/.ssh/id_rsa.pub ]]; then
+    if [[ -f  "$HOME/.ssh/id_rsa.pub" ]]; then
         h2 'RSA fingerprint'
-        awk '{print $2}' ~/.ssh/id_rsa.pub | base64 -d | md5sum | sed 's/../&:/g; s/: .*$//'
-        ssh-keygen -lf ~/.ssh/id_rsa.pub
+        awk '{print $2}' "$HOME/.ssh/id_rsa.pub" | base64 -d | md5sum | sed 's/../&:/g; s/: .*$//'
+        ssh-keygen -lf "$HOME/.ssh/id_rsa.pub"
         # h3 'RSA public key'
         # cat /etc/ssh/ssh_host_rsa_key.pub
     fi
@@ -372,7 +372,7 @@ ssh-controlmaster-kill-all () {
     \rm "$HOME/.ssh/controlmasters/"*
 }
 
-ssh-controlmaster-kill () {
+ssh-controlmaster-kill-select () {
     local CONTROLMASTERS=$(\ls --color=never -1 "$HOME/.ssh/controlmasters/")
     if [[ -n "$CONTROLMASTERS" ]]; then
         IFS=$'\n'
@@ -382,7 +382,7 @@ ssh-controlmaster-kill () {
             local count=$(( $count + 1 ))
         done
         while read -r -t 0;do read -r; done
-        read -n 1 -p "Enter the controlmaster to kill: " CONTROLMASTERSELECT
+        read -n 1 -s -r -p "Enter the controlmaster to kill: " CONTROLMASTERSELECT
         echo ""
         ssh -O exit $((sed -n "$CONTROLMASTERSELECT"p | sed 's/:.*//g') <<< "$CONTROLMASTERS")
     else

@@ -5,7 +5,7 @@
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20190624
+# Version: 20190903
 # URL: https://github.com/akroshko/crypt-profiles
 #
 # This program is free software: you can redistribute it and/or modify
@@ -31,8 +31,14 @@
 #       might cause efficiency issues if too much authentication/profile
 
 # TODO: can I source something that gives me this first?
+# TODO: I think this is somewhere else
 gpg-batch () {
     gpg2 --no-verbose --quiet --batch --yes "$@"
+}
+
+# for debugging only
+gpg-verbose-debug () {
+    gpg2 --verbose --verbose --batch --yes "$@"
 }
 
 main () {
@@ -43,28 +49,24 @@ main () {
     [[ -n "$1" ]] && local GNUPGPWD="$1"
     # stop this from being run as root, just in case
     h1 "Running "$(basename -- "$BASH_SOURCE")
-    if [[ $EUID -ne 0 ]]; then
+    if [[ "$EUID" -ne 0 ]]; then
         # XXXX: don't want something so severe in the future
         pkill -9 -f gnome-keyring-daemon
         pkill -9 pinentry
         # initializes and add important functions
-        source $(dirname -- "${BASH_SOURCE[0]}")/bash_env_crypt
-        source $(dirname -- "${BASH_SOURCE[0]}")/bashrc_functions_crypt
+        source $(dirname -- "$BASH_SOURCE")/bashrc_functions_crypt
         # test if we can decrypt, make non-interactive by linking linking pinentry to /bin/false
         if [[ -f "$HOME/bin/pinentry-select" ]]; then
             rm -f "$HOME/bin/pinentry-select"
         fi
         ln -s /bin/false "$HOME/bin/pinentry-select"
-        if [[ -f "$HOME/.secrets/secrets.txt.gpg" ]]; then
+        if [[ -f "$HOME/.secrets/secrets.txt.gpg" ]] && DISPLAY= gpg-batch --decrypt "$HOME/.secrets/secrets.txt.gpg" >/dev/null 2>&1; then
             # TODO: maybe incorporate dummy file instead of secrets to try
-            DISPLAY= gpg-batch --decrypt "$HOME/.secrets/secrets.txt.gpg" >/dev/null
-        fi
-        if [[ $? != 0 ]]; then
             # reset everything properly if key for GPG profile expired or set up wrong
+            msg "Decrypt OK! Skipping resetting gpg agent!"
+        else
             msg "Resetting agents!"
             killall-agents
-        else
-            msg "Decrypt OK! Skipping resetting gpg agent!"
         fi
         # set up to force pinentry-curses for this particular program
         # otherwise there is an issue with pinentry popping up on a remote
@@ -78,28 +80,22 @@ main () {
         # run keychain after we see if we need to kill agents
         if type -P keychain &>/dev/null; then
             $(type -P keychain) --nogui --agents ssh
+            # TODO: this is a really bad idea... use a loop
             source $HOME/.keychain/*-sh >/dev/null
         fi
         msg "Keychain done!"
         # set up normally if no passphrase given
-        while [[ -z $TOPSECRET && "$TRYAGAIN" == "y" ]]; do
-            # XXXX: might be problems here without other agents started by other programs
-            if [[ -e "$envfile" ]] && kill -0 "$(grep --color=never -- GPG_AGENT_INFO $envfile | cut -d: -f 2)" 2>/dev/null; then
-                # eval "$(DISPLAY= cat "$envfile")"
-                msg "Sourcing envfile!"
-                DISPLAY= source $envfile
-                export GPG_AGENT_INFO
-            fi
+        while [[ -z "$TOPSECRET" && "$TRYAGAIN" == "y" ]]; do
             if [[ -f "$HOME/.secrets/secrets.txt.gpg" ]]; then
                 if [[ -n "$GNUPGPWD" ]]; then
                     msg "Using entered password!"
-                    local TOPSECRET=$(DISPLAY= gpg-batch --passphrase-fd 0 --decrypt --use-agent "$HOME/.secrets/secrets.txt.gpg" <<< "$GNUPGPWD")
+                    local TOPSECRET=$(DISPLAY= gpg-batch --passphrase-fd 0 --decrypt "$HOME/.secrets/secrets.txt.gpg" <<< "$GNUPGPWD")
                 else
-                    local TOPSECRET=$(DISPLAY= gpg-batch --decrypt --use-agent "$HOME/.secrets/secrets.txt.gpg")
+                    local TOPSECRET=$(DISPLAY= gpg-batch --decrypt "$HOME/.secrets/secrets.txt.gpg")
                     if [[ $? != 0 ]]; then
                         # TODO: add real option for quit
                         while read -r -t 0;do read -r; done
-                        read -n 1 -p "Error decrypting such as bad password.  Try again (y/n/q)? " TRYAGAIN
+                        read -n 1 -s -r -p "Error decrypting such as bad password.  Try again (y/n/q)? " TRYAGAIN
                         echo ""
                     fi
                 fi
@@ -114,9 +110,9 @@ main () {
     h2 "Initializing or reinitializing ssh keys"
     # open the top secret keyfile first
     # TODO: make a seperate function to initialize SSH
-    if [[ ! -z $TOPSECRET ]]; then
+    if [[ ! -z "$TOPSECRET" ]]; then
         # add identity to gpg-agent
-        if [[ -z $GNUPGPWD ]]; then
+        if [[ -z "$GNUPGPWD" ]]; then
             msg "Retrieving master password!"
             local GNUPGPWD=$(sed -n '1p' <<< "$TOPSECRET")
         fi
@@ -124,14 +120,14 @@ main () {
         # TODO: possibly need to test for gpg-preset-passphrase working properly
         #       will clearing the agent deal with sleep and hibernation issues?
         # TODO: not working here, PRESETGPGKEYS not being loaded
-        [[ -z "$PRESETGPGKEYS" ]] && warn "No preset keys!"
-        for PRESETKEY in ${PRESETGPGKEYS}; do
-            msg "Presetting: $PRESETKEY"
-            /usr/lib/gnupg2/gpg-preset-passphrase --verbose --preset "$PRESETKEY" <<< "$GNUPGPWD"
-        done
-        if [[ -f "$HOME/.gnupg/gpg-agent-info-$HOSTNAME" ]]; then
-            source "$HOME/.gnupg/gpg-agent-info-$HOSTNAME"
-            export GPG_AGENT_INFO
+        if [[ -n "$PRESETGPGKEYS" ]]; then
+            # TODO: this should be keygrip
+            for PRESETKEY in ${PRESETGPGKEYS}; do
+                msg "Presetting: $PRESETKEY"
+                /usr/lib/gnupg2/gpg-preset-passphrase --preset "$PRESETKEY" <<< "$GNUPGPWD"
+            done
+        else
+            warn "No preset keys!"
         fi
         ################################################################################
         ## initialize ssh keys only if agent is live
@@ -140,7 +136,8 @@ main () {
             if [[ -f "$PWDFILE" ]]; then
                 local KEYFILE=$(basename -- "${PWDFILE%.txt.gpg}")
                 h2 "key for $KEYFILE"
-                local TOPSECRET=$(DISPLAY= gpg-batch --no-tty --decrypt --use-agent "$PWDFILE")
+                # on --pinentry-mode loopback or other fail, still indicates success
+                local TOPSECRET=$(DISPLAY= gpg-batch --no-tty --decrypt "$PWDFILE")
                 if [[ $? == 0 ]]; then
                     local KEYPWD=$(sed -n '1p' <<< "$TOPSECRET")
                     empty -f -i in.fifo -o out.fifo -p empty.pid -L /tmp/empty-bash-profile-crypt.log ssh-add -t 2419200 "$HOME/.ssh/$KEYFILE"
