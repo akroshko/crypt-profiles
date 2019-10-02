@@ -617,6 +617,12 @@ mount-container () {
         mkdir -p /run/user/$(id -u)/"$MNTBASENAME"
         echo "Creating symlink: /run/user/$(id -u)/$MNTBASENAME --> $2"
         ln -s /run/user/$(id -u)/"$MNTBASENAME" "$2"
+        # if mount unsuccessful
+        # TODO: unmap crypt and maybe checking command directly is good
+        if [[ "$?" != 0 ]]; then
+            yell "Error creating symlink for mounting container!"
+            return 1
+        fi
         # TODO: do better than this
         if ! mountpoint -q /run/user/$(id -u)/"$MNTBASENAME"; then
             sudo mount "/dev/mapper/$THEBASENAME" /run/user/$(id -u)/"$MNTBASENAME"
@@ -906,7 +912,9 @@ privacy-trash () {
         while read -r -t 0;do read -r; done
         # TODO: add a countdown here
         if ask_yn "Do you want to delete ~/tmp/trash?";then
-            kill-directory-contents "$HOME/tmp/trash"
+            local CLEARTMPTRASH=1
+        else
+            local CLEARTMPTRASH=
         fi
     else
         warn "Nothing in ~/tmp/trash"
@@ -917,7 +925,9 @@ privacy-trash () {
         while read -r -t 0;do read -r; done
         # TODO: add a countdown here
         if ask_yn "Do you want to delete ~/tmp/screenshots-collect?";then
-            kill-directory-contents "$HOME/tmp/screenshots-collect"
+            local CLEARSCREENSHOTS=1
+        else
+            local CLEARSCREENSHOTS=
         fi
     else
         warn "Nothing in ~/tmp/screenshots-collect"
@@ -927,13 +937,38 @@ privacy-trash () {
         \ls -A "$HOME/.local/share/Trash/files/"
         # TODO: check if empty?
         if ask_yn "Do you want to delete ~/.local/share/Trash/?"; then
-            kill-recursive "$HOME/.local/share/Trash/"
+            local CLEARLOCALTRASH=1
+        else
+            local CLEARLOCALTRASH=
         fi
     else
         warn "Nothing in $HOME/.local/share/Trash/files/"
     fi
+    if [[ -z "$1" ]]; then
+        if [[ -d "$HOME/tmp/tmp-shred/" ]] && find "$HOME/tmp/tmp-shred/" -mindepth 1 -print -quit 2>/dev/null | grep --color=never -q .; then
+            msg "Contents of ~/tmp/tmp-shred/:"
+            \ls -A "$HOME/tmp/tmp-shred/"
+            # TODO: check if empty?
+            if [[ -n "$1" ]] || ask_yn "Do you want to delete ~/tmp/tmp-shred/?"; then
+                local CLEARTMPSHRED=1
+            else
+                local CLEARTMPSHRED=
+            fi
+        fi
+    else
+        local CLEARTMPSHRED=1
+    fi
+    if [[ -n "$CLEARTMPTRASH" ]]; then
+        kill-directory-contents "$HOME/tmp/trash"
+    fi
+    if [[ -n "$CLEARSCREENSHOTS" ]]; then
+        kill-directory-contents "$HOME/tmp/screenshots-collect"
+    fi
+    if [[ -n "$CLEARLOCALTRASH" ]]; then
+        kill-recursive "$HOME/.local/share/Trash/"
+    fi
     # always shred tmp-shred if called automatically
-    privacy-tmp-shred "$1"
+    privacy-tmp-shred "$CLEARTMPSHRED"
 }
 
 privacy-tmp-shred () {
@@ -947,13 +982,20 @@ privacy-tmp-shred () {
         fi
     fi
     need_new_directory "$HOME/tmp/tmp-shred/"
-    if [[ -d "$HOME/mnt-secondary/tmp/imagemagick-tmp/" ]] && find "$HOME/mnt-secondary/tmp/imagemagick-tmp/" -mindepth 1 -print -quit 2>/dev/null | grep --color=never -q .; then
-        kill-recursive "$HOME/mnt-secondary/tmp/imagemagick-tmp/"
-        need_new_directory "$HOME/mnt-secondary/tmp/imagemagick-tmp/"
-    fi
-    if [[ -d "$HOME/mnt-secondary/tmp/cic-preview-tmp/" ]] && find "$HOME/mnt-secondary/tmp/cic-preview-tmp/" -mindepth 1 -print -quit 2>/dev/null | grep --color=never -q .; then
-        kill-recursive "$HOME/mnt-secondary/tmp/cic-preview-tmp/"
-        need_new_directory "$HOME/mnt-secondary/tmp/cic-preview-tmp/"
+    privacy-tmp-shred-try "$HOME/tmp/tmp-imagemagick/"
+    privacy-tmp-shred-try "$HOME/mnt-secondary/tmp/tmp-imagemagick/"
+    privacy-tmp-shred-try "$HOME/tmp/document-process-tmp/"
+    privacy-tmp-shred-try "$HOME/mnt-secondary/tmp/document-process-tmp/"
+    privacy-tmp-shred-try "$HOME/tmp/tmp-cic-preview/"
+    privacy-tmp-shred-try "$HOME/mnt-secondary/tmp/tmp-cic-preview/"
+    privacy-tmp-shred-try "$HOME/tmp/tmp-webz/"
+    privacy-tmp-shred-try "$HOME/mnt-secondary/tmp/tmp-webz/"
+}
+
+privacy-tmp-shred-try () {
+    if [[ -d "$1" ]] && find "$1" -mindepth 1 -print -quit 2>/dev/null | grep --color=never -q .; then
+        kill-recursive "$1"
+        need_new_directory "$1"
     fi
 }
 
