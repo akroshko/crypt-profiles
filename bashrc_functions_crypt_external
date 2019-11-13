@@ -56,8 +56,10 @@ kill-freespace-random-file () {
     else
        local BUFSIZE=2048M
     fi
+    echo "Space left on path where randomfile.bin will be"
+    df -Ph . | tail -1 | awk '{print $4}'
     echo "Using buffer size $BUFSIZE!"
-    sudo true || { echo "Failed to sudo!"; return 1; }
+    sudo true || { echo 'Failed to sudo!'; return 1; }
     # TOD:O move down? get rid of sudo?
     [[ -e "$ROOTPATH"/randomfile.bin ]] && sudo rm "$ROOTPATH"/randomfile.bin
     sudo -i su root <<EOF
@@ -435,7 +437,7 @@ crypt-password-database-retrieve-third () {
 container-create-encrypted () {
     # create an encrypted container formatted to ext4
     # TODO: error checking!!!
-    sudo true || { echo "Failed to sudo!"; return 1; }
+    sudo true || { echo 'Failed to sudo!'; return 1; }
     local USAGE="Usage: container-create-encrypted <<size>> <<container filename>>"
     if [[ -z "$3" ]]; then
         echo "$USAGE"

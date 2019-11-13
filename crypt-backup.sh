@@ -40,7 +40,7 @@ source "$HOME/.bash_library"
 # TODO: generalize with crypt-luks-headers-dump
 crypt-luks-headers-backup-here () {
     # TODO: do I want this?
-    sudo true || { echo "Failed to sudo!"; return 1; }
+    sudo true || { echo 'Failed to sudo!'; return 1; }
     (IFS=$'\n'
      # XXXX: | sort | uniq means only one of a raid arry gets it's luks headers gets backed up
      # TODO: make sure this is OK
@@ -94,7 +94,7 @@ main () {
         [[ "$HOSTNAME" == "$BACKUPHOSTNAME" ]] && sudo lvremove /dev/crypt-main/backup-snapshot
         return 0
     fi
-    if [[ $@ == *"--headers-only"* ]]; then
+    if [[ $@ == *'--headers-only'* ]]; then
        crypt-luks-headers-backup-here
        return 0
     else
@@ -103,8 +103,8 @@ main () {
         # XXXX: hard coded to ensure script does not screw anything up
         if [[ "$HOSTNAME" == "$BACKUPHOSTNAME" ]]; then
             # TODO: bail if sudo not correct
-            sudo true || { echo "Failed to sudo!"; return 1; }
-            echo "Creating snapshot of /dev/crypt-main/home"
+            sudo true || { echo 'Failed to sudo!'; return 1; }
+            echo 'Creating snapshot of /dev/crypt-main/home'
             # TODO: is this necessary?
             sync; sleep 10; sync
             # TODO: make sure I backup proper directory rather than home by default
@@ -117,7 +117,7 @@ main () {
         fi
         local BACKUPPATH=$(mount-disk-uuid "$BACKUPUUID")
         if [[ $? != 0 ]]; then
-            warn "Disk cannot be mounted or already mounted!!!"
+            warn 'Disk cannot be mounted or already mounted!!!'
             return 1
         fi
         if ! gpg --list-keys "$CRYPTGPGUSER"; then
@@ -131,34 +131,34 @@ main () {
         # http://www.krazyworks.com/multithreaded-encryption-and-compression/
         # https://catchchallenger.first-world.info/wiki/Quick_Benchmark:_Gzip_vs_Bzip2_vs_LZMA_vs_XZ_vs_LZ4_vs_LZO
         clear
-        if [[ $@ == *"--bzip2"* ]]; then
-            local COMPRESSPROG="bzip2"
+        if [[ $@ == *'--bzip2'* ]]; then
+            local COMPRESSPROG='bzip2'
             # the benchmarks I looked at, this helps a lot and slows things down by a factor of two
-            local COMPRESSLEVEL="-9"
-            local COMPRESSEXT="tbz"
-        elif [[ $@ == *"--gzip"* ]]; then
-            local COMPRESSPROG="gzip"
+            local COMPRESSLEVEL='-9'
+            local COMPRESSEXT='tbz'
+        elif [[ $@ == *'--gzip'* ]]; then
+            local COMPRESSPROG='gzip'
             local COMPRESSLEVEL=
-            local COMPRESSEXT="tgz"
-        elif [[ $@ == *"--lz4"* ]]; then
+            local COMPRESSEXT='tgz'
+        elif [[ $@ == *'--lz4'* ]]; then
             # TODO: possibly a good replacement for lzop
-            local COMPRESSPROG="lz4"
-            local COMPRESSLEVEL="-1"
-            local COMPRESSEXT="tar.lz4"
-        elif [[ $@ == *"--pigz"* ]]; then
+            local COMPRESSPROG='lz4'
+            local COMPRESSLEVEL='-1'
+            local COMPRESSEXT='tar.lz4'
+        elif [[ $@ == *'--pigz'* ]]; then
             # TODO: test this
-            local COMPRESSPROG="pigz"
+            local COMPRESSPROG='pigz'
             local COMPRESSLEVEL=
-            local COMPRESSEXT="tgz"
-        elif [[ $@ == *"--xz"* ]]; then
-            local COMPRESSPROG="xz"
-            local COMPRESSLEVEL="-1"
-            local COMPRESSEXT="txz"
+            local COMPRESSEXT='tgz'
+        elif [[ $@ == *'--xz'* ]]; then
+            local COMPRESSPROG='xz'
+            local COMPRESSLEVEL='-1'
+            local COMPRESSEXT='txz'
         else
             # TODO: default compression level as 6, which is fast (do a test)
-            local COMPRESSPROG="lzop"
-            local COMPRESSLEVEL="-6"
-            local COMPRESSEXT="tzo"
+            local COMPRESSPROG='lzop'
+            local COMPRESSLEVEL='-6'
+            local COMPRESSEXT='tzo'
         fi
         # XXXX: . used, expect to change to directory in /mnt-snapshot/
         # TODO: shift eventually?

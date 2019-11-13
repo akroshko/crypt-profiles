@@ -361,10 +361,10 @@ crypt-profile-printable () {
 killall-agents () {
     # kill all the agents and remove identifying information
     # XXXX: this is an incredibly crude way to reset, but works when nothing else does
-    pkill -9 -f gpg-agent
-    pkill -9 -f ssh-agent
+    pkill -9 --full gpg-agent
+    pkill -9 --full ssh-agent
     # XXXX: not completely desirable, but kill gnome keychain because it often interferes
-    pkill -9 -f gnome-keyring-daemon
+    pkill -9 --full gnome-keyring-daemon
     # this is hopefully enough to purge it
     # TODO: delete only things I own?
     # find /tmp -iname "gpg-*" &>/dev/null && rm /tmp/gpg-*
@@ -601,7 +601,18 @@ mount-container () {
         echo "$USAGE"
         return 1
     fi
-    # sudo true || { echo "Failed to sudo!"; return 1; }
+    # TODO: condense logic
+    if [[ -e "$2" || -h "$2" ]]; then
+        if [[ -h "$2" && ! -e "$2" ]]; then
+            rm "$2"
+        elif [[ -d "$2" ]]; then
+            # TODO: try to rmdir
+            rmdir "$2"
+        else
+            yell "$2 exists and is not a broken symlink or empty directory! Remove manually!"
+            return 1
+        fi
+    fi
     local THEBASENAME=$(basename -- "$1")
     if [[ ! -e "/dev/mapper/$THEBASENAME" ]]; then
         msg "Opening $THEBASENAME!"
@@ -673,7 +684,7 @@ umount-container () {
             return 1
         fi
     fi
-    # sudo true || { echo "Failed to sudo!"; return 1; }
+    # sudo true || { echo 'Failed to sudo!'; return 1; }
     msg "Unmounting $MOUNTPOINT!"
     sudo umount "$MOUNTPOINT"
     # fusermount -u "$MOUNTPOINT"
@@ -982,12 +993,22 @@ privacy-tmp-shred () {
         fi
     fi
     need_new_directory "$HOME/tmp/tmp-shred/"
+    # temporary place for imagemagick
     privacy-tmp-shred-try "$HOME/tmp/tmp-imagemagick/"
     privacy-tmp-shred-try "$HOME/mnt-secondary/tmp/tmp-imagemagick/"
-    privacy-tmp-shred-try "$HOME/tmp/document-process-tmp/"
-    privacy-tmp-shred-try "$HOME/mnt-secondary/tmp/document-process-tmp/"
+    # temproary place to process documents
+    privacy-tmp-shred-try "$HOME/tmp/tmp-document-process-/"
+    privacy-tmp-shred-try "$HOME/mnt-secondary/tmp/tmp-document-process/"
+    # temporary place to store previews
     privacy-tmp-shred-try "$HOME/tmp/tmp-cic-preview/"
     privacy-tmp-shred-try "$HOME/mnt-secondary/tmp/tmp-cic-preview/"
+    # a temporary place to create archives
+    privacy-tmp-shred-try "$HOME/tmp/tmp-archive-process/"
+    privacy-tmp-shred-try "$HOME/mnt-secondary/tmp/tmp-archive-process/"
+    # a temporary place to unencrypt
+    privacy-tmp-shred-try "$HOME/tmp/tmp-gpg/"
+    privacy-tmp-shred-try "$HOME/mnt-secondary/tmp/tmp-gpg/"
+    # a temporary place to mount compressed webpages
     privacy-tmp-shred-try "$HOME/tmp/tmp-webz/"
     privacy-tmp-shred-try "$HOME/mnt-secondary/tmp/tmp-webz/"
 }
@@ -1020,6 +1041,9 @@ privacy-conkeror () {
                 # else
                 #     echo "Old conkeror profile not found so nothing trashed!"
                 # fi
+                # cache files
+                # TODO: copy to tmp
+                kill-directory-contents "$HOME/.cache/conkeror.mozdev.org/"
             done
         elif [[ -d "$HOME/.conkeror.mozdev.org/" ]]; then
             msg "Clearing firefox-based browsers OK!"
@@ -1273,7 +1297,7 @@ privacy () {
 }
 
 privacy-kill-freespace () {
-    sudo true || { echo "Failed to sudo!"; return 1; }
+    sudo true || { echo 'Failed to sudo!'; return 1; }
     local CURRENTUSER="$USER"
     # TODO: is there a better way to do this, especially assuming we are in /root/
     sudo su root -c "su $CURRENTUSER -c 'source /home/$CURRENTUSER/.bash_library;privacy';source /root/.bashrc;kill-freespace-random-file /home/$CURRENTUSER"
@@ -1340,7 +1364,7 @@ ssh-crypt-profile-batch-cmd () {
 }
 
 crypt-luks-headers-dump () {
-    sudo true || { echo "Failed to sudo!"; return 1; }
+    sudo true || { echo 'Failed to sudo!'; return 1; }
     (IFS=$'\n'
      for Z in $(lsblk -l -o name | tail -n +2); do
          if [[ -e /dev/"$Z" ]]; then

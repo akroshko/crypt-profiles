@@ -51,7 +51,7 @@ main () {
     h1 "Running "$(basename -- "$BASH_SOURCE")
     if [[ "$EUID" -ne 0 ]]; then
         # XXXX: don't want something so severe in the future
-        pkill -9 -f gnome-keyring-daemon
+        pkill -9 --full gnome-keyring-daemon
         pkill -9 pinentry
         # initializes and add important functions
         source $(dirname -- "$BASH_SOURCE")/bashrc_functions_crypt

@@ -5,7 +5,7 @@
 ;; Author: Andrew Kroshko
 ;; Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 ;; Created: Mon Jun 20, 2016
-;; Version: 20190903
+;; Version: 20191112
 ;; URL: https://github.com/akroshko/crypt-profiles
 ;;
 ;; This program is free software; you can redistribute it and/or
@@ -38,6 +38,12 @@
 (defconst cic:password-characters-alphanum-lower
   "0123456789abcdefghijklmnopqrstuvwxyz"
   "This is 36 characters total")
+
+;; TODO: currently not used
+(defvar do-debug
+  t
+  "Give some more info, disable normally to avoid recording
+  sensitive information to stdout/stderr."  )
 
 (setq epa-file-select-keys 'silent
       epg-gpg-program "/usr/bin/gpg2")
