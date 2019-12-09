@@ -5,7 +5,7 @@
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20190903
+# Version: 20191209
 # URL: https://github.com/akroshko/crypt-profiles
 #
 # This program is free software: you can redistribute it and/or modify
@@ -57,7 +57,7 @@ main () {
         source $(dirname -- "$BASH_SOURCE")/bashrc_functions_crypt
         # test if we can decrypt, make non-interactive by linking linking pinentry to /bin/false
         if [[ -f "$HOME/bin/pinentry-select" ]]; then
-            rm -f "$HOME/bin/pinentry-select"
+            \rm -f "$HOME/bin/pinentry-select"
         fi
         ln -s /bin/false "$HOME/bin/pinentry-select"
         if [[ -f "$HOME/.secrets/secrets.txt.gpg" ]] && DISPLAY= gpg-batch --decrypt "$HOME/.secrets/secrets.txt.gpg" >/dev/null 2>&1; then
@@ -74,7 +74,7 @@ main () {
         # TODO: describe this issue with GnuPG in documentation
         # keep pinentry disabled when using $1=$GNUPGPWD because shell is generally non-interactive
         if [[ -z "$GNUPGPWD" ]]; then
-            [[ -f "$HOME/bin/pinentry-select" ]] && rm -f "$HOME/bin/pinentry-select"
+            [[ -f "$HOME/bin/pinentry-select" ]] && \rm -f "$HOME/bin/pinentry-select"
             [[ -f /usr/bin/pinentry-curses ]] && ln -s /usr/bin/pinentry-curses "$HOME/bin/pinentry-select"
         fi
         # run keychain after we see if we need to kill agents
@@ -95,7 +95,7 @@ main () {
                     if [[ $? != 0 ]]; then
                         # TODO: add real option for quit
                         while read -r -t 0;do read -r; done
-                        read -n 1 -s -r -p "Error decrypting such as bad password.  Try again (y/n/q)? " TRYAGAIN
+                        read -n 1 -s -r -p "Error decrypting for reasons such as bad password.  Try again (y/n/q)? " TRYAGAIN
                         echo ""
                     fi
                 fi
@@ -160,7 +160,7 @@ main () {
     # reset curses pinentry for this particular program
     # TODO: why is this here?
     # if [[ -f "$HOME/bin/pinentry-select" && -f /usr/bin/pinentry-gtk-2 ]]; then
-    #     rm -f "$HOME/bin/pinentry-select"
+    #     \rm -f "$HOME/bin/pinentry-select"
     #     ln -s /usr/bin/pinentry-gtk-2 "$HOME/bin/pinentry-select"
     # fi
     h1-end "Finishing "$(basename -- "$BASH_SOURCE")

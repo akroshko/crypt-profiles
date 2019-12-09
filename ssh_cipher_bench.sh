@@ -5,7 +5,7 @@
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20190903
+# Version: 20191209
 # URL: https://github.com/akroshko/crypt-profiles
 #
 # This program is free software: you can redistribute it and/or modify
@@ -45,21 +45,21 @@ main () {
 
     # create a file of random garbage in ram
     # TODO: make sure that this works
-    echo "Creating a random file in ram."
+    echo "Creating a random file in RAM." 1>&2
     sudo mkdir -p /mnt-ram
     sudo mount -o size=$((MB*1024))M -t tmpfs none /mnt-ram
     # allow anymore to access the disk
     sudo dd if=/dev/urandom of=/mnt-ram/random.bin bs=1M count=$MB conv=sync
     msg "Random file of size ${MB}M created in ram!"
     for cipher in $ciphers; do
-        echo "================================================================================"
-        echo cipher: "$cipher"
+        echo "================================================================================"ram
+        echo cipher: "$cipher" 1>2
         # dd if=/dev/zero bs=1M count=$MB conv=sync  | \
         #     sshpass -p $password ssh -c $cipher -o Compression=no -o Port=$port $user@127.0.0.1 "cat - >/dev/null"
-        echo "Compression yes:"
+        echo "Compression yes:" 1>2
         dd if=/mnt-ram/random.bin bs=1M count=$MB conv=sync | \
             ssh -c $cipher -o Compression=yes -o Port=$port $user@127.0.0.1 "cat - >/dev/null"
-        echo "Compression no:"
+        echo "Compression no:" 1>2
         dd if=/mnt-ram/random.bin bs=1M count=$MB conv=sync | \
             ssh -c $cipher -o Compression=no -o Port=$port $user@127.0.0.1 "cat - >/dev/null"
     done

@@ -5,7 +5,7 @@
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20190903
+# Version: 20191209
 # URL: https://github.com/akroshko/crypt-profiles
 #
 # This program is free software: you can redistribute it and/or modify
@@ -41,7 +41,7 @@ kill-freespace-random-file () {
     # time openssl enc -aes-256-ctr -pass pass:"$(dd if=/dev/urandom bs=128 count=1 2>/dev/null | base64)" -nosalt < /dev/zero | pv -pterb > ~/randomfile.bin
     local ROOTPATH=$(readlink -f -- "$1")
     if [[ -z "$ROOTPATH" || ! -d "$ROOTPATH" ]]; then
-        echo "Must specify valid directory corresponding to device to kill space on!!!"
+        echo "Must specify valid directory corresponding to device to kill space on!!!" 1>&2
         return 1
     fi
     # check if I can run a command with elevated priveleges
@@ -56,10 +56,10 @@ kill-freespace-random-file () {
     else
        local BUFSIZE=2048M
     fi
-    echo "Space left on path where randomfile.bin will be"
+    echo "Space left on path where randomfile.bin will be" 1>&2
     df -Ph . | tail -1 | awk '{print $4}'
-    echo "Using buffer size $BUFSIZE!"
-    sudo true || { echo 'Failed to sudo!'; return 1; }
+    echo "Using buffer size $BUFSIZE!" 1>&2
+    sudo true || { echo 'Failed to sudo!' 1>&2; return 1; }
     # TOD:O move down? get rid of sudo?
     [[ -e "$ROOTPATH"/randomfile.bin ]] && sudo rm "$ROOTPATH"/randomfile.bin
     sudo -i su root <<EOF
@@ -87,7 +87,7 @@ kill-drive-random-data () {
         }
     else
         yell "File $1 is non-existent or not a block device!!!"
-        echo "$USAGE"
+        echo "$USAGE" 1>&2
     fi
 }
 
@@ -101,7 +101,7 @@ write-random-data () {
     if [[ ! -z $1 && ! -z $2 ]]; then
         time openssl enc -aes-256-ctr -pass pass:"$(dd if=/dev/urandom bs=128 count=1 2>/dev/null | base64)" -nosalt < /dev/zero | pv -pterb --size "$1"g --stop-at-size > "$2"
     else
-        echo "$USAGE"
+        echo "$USAGE" 1>&2
     fi
 }
 
@@ -117,7 +117,7 @@ write-random-data-stdout () {
     if [[ ! -z $1 ]]; then
         time openssl enc -aes-256-ctr -pass pass:"$(dd if=/dev/urandom bs=128 count=1 2>/dev/null | base64)" -nosalt < /dev/zero | pv -pterb --size "$1"g --stop-at-size
     else
-        echo "$USAGE"
+        echo "$USAGE" 1>&2
     fi
 }
 
@@ -301,7 +301,7 @@ super-password-easy () {
 ssh-check-host-fingerprints () {
     # get the sshd fingerprints of the current host
     # TODO: no color for now
-    echo "$HOSTNAME"
+    echo "$HOSTNAME" 1>&2
     if [[ -f /etc/ssh/ssh_host_ecdsa_key.pub ]]; then
         h2 'ECDSA fingerprint'
         awk '{print $2}' /etc/ssh/ssh_host_ecdsa_key.pub | base64 -d | md5sum | sed 's/../&:/g; s/: .*$//'
@@ -328,7 +328,7 @@ ssh-check-host-fingerprints () {
 }
 
 ssh-user-fingerprint () {
-    echo "$HOSTNAME"
+    echo "$HOSTNAME" 1>&2
     if [[ -f "$HOME/.ssh/id_ecdsa.pub" ]]; then
         h2 'ECDSA fingerprint'
         awk '{print $2}' "$HOME/.ssh/id_ecdsa.pub" | base64 -d | md5sum | sed 's/../&:/g; s/: .*$//'
@@ -388,7 +388,7 @@ ssh-controlmaster-kill-select () {
         echo ""
         ssh -O exit $((sed -n "$CONTROLMASTERSELECT"p | sed 's/:.*//g') <<< "$CONTROLMASTERS")
     else
-        echo "$HOME/.ssh/controlmasters is empty!"
+        echo "$HOME/.ssh/controlmasters is empty!" 1>&2
     fi
 }
 
@@ -401,7 +401,7 @@ ssh-kill-offending-key () {
         local LINENO=$(cut -d':' -f2 <<< "$1")
         if [[ -n "$HOSTSFILE" && -n "$LINENO" ]];then
             # delete appropriate line
-            echo "Deleting $LINENO in $HOSTSFILE!!!"
+            echo "Deleting $LINENO in $HOSTSFILE!!!" 1>&2
             sed -i -e "${LINENO}d" "$HOSTSFILE"
         fi
     else
@@ -437,10 +437,10 @@ crypt-password-database-retrieve-third () {
 container-create-encrypted () {
     # create an encrypted container formatted to ext4
     # TODO: error checking!!!
-    sudo true || { echo 'Failed to sudo!'; return 1; }
+    sudo true || { echo 'Failed to sudo!' 1>&2; return 1; }
     local USAGE="Usage: container-create-encrypted <<size>> <<container filename>>"
     if [[ -z "$3" ]]; then
-        echo "$USAGE"
+        echo "$USAGE" 1>&2
         return 1
     fi
     local THESIZE="$1"
@@ -450,12 +450,12 @@ container-create-encrypted () {
     # TODO: get rid of any extension
     local THECONTAINERNAME=$(basename -- "$2")
     if [[ -e "$THEFNAME" ]]; then
-        echo "Filename $THEFNAME cannot exist!"
-        echo "$USAGE"
+        echo "Filename $THEFNAME cannot exist!" 1>&2
+        echo "$USAGE" 1>&2
         return 1
     fi
     if [[ ! $(readlink -f -- "$THEFNAME") =~ $HOME ]];then
-        echo "Filename must be created in home directory!"
+        echo "Filename must be created in home directory!" 1>&2
         return 1
     fi
     # TODO: check that size is valid

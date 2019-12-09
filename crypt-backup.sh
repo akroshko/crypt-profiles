@@ -5,7 +5,7 @@
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20190903
+# Version: 20191209
 # URL: https://github.com/akroshko/crypt-profiles
 #
 # This program is free software: you can redistribute it and/or modify
@@ -40,7 +40,7 @@ source "$HOME/.bash_library"
 # TODO: generalize with crypt-luks-headers-dump
 crypt-luks-headers-backup-here () {
     # TODO: do I want this?
-    sudo true || { echo 'Failed to sudo!'; return 1; }
+    sudo true || { echo 'Failed to sudo!' 1>&2; return 1; }
     (IFS=$'\n'
      # XXXX: | sort | uniq means only one of a raid arry gets it's luks headers gets backed up
      # TODO: make sure this is OK
@@ -85,7 +85,7 @@ main () {
 
     # XXXX: these must be set externally
     if [[ $@ == *"--help"* || -z "$CRYPTGPGKEY" || -z "$CRYPTGPGUSER" || -z "$BACKUPHOSTNAME" || -z "$BACKUPUUID" ]]; then
-        echo "$HELPTEXT"
+        echo "$HELPTEXT" 1>&2
         return 1
     fi
     if [[ $@ == *"--reset"* ]]; then
@@ -103,8 +103,8 @@ main () {
         # XXXX: hard coded to ensure script does not screw anything up
         if [[ "$HOSTNAME" == "$BACKUPHOSTNAME" ]]; then
             # TODO: bail if sudo not correct
-            sudo true || { echo 'Failed to sudo!'; return 1; }
-            echo 'Creating snapshot of /dev/crypt-main/home'
+            sudo true || { echo 'Failed to sudo!' 1>&2; return 1; }
+            echo 'Creating snapshot of /dev/crypt-main/home' 1>&2
             # TODO: is this necessary?
             sync; sleep 10; sync
             # TODO: make sure I backup proper directory rather than home by default
@@ -112,7 +112,7 @@ main () {
             sudo lvcreate --size 12G --snapshot --name backup-snapshot /dev/crypt-main/home
             sudo mount /dev/crypt-main/backup-snapshot /mnt-snapshot -o ro
         else
-            echo "Wrong host for this script!"
+            echo "Wrong host for this script!" 1>&2
             return 1
         fi
         local BACKUPPATH=$(mount-disk-uuid "$BACKUPUUID")

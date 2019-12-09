@@ -5,7 +5,7 @@
 # Author: Andrew Kroshko
 # Maintainer: Andrew Kroshko <akroshko.public+devel@gmail.com>
 # Created: Tue May 25, 2016
-# Version: 20190903
+# Version: 20191209
 # URL: https://github.com/akroshko/crypt-profiles
 #
 # This program is free software: you can redistribute it and/or modify
@@ -36,10 +36,8 @@ crypt-create-profile () {
     #       put somewhere universal and import everywhere?
     # TODO: also manage disk and container LUKS encryption keys
     #
-    # TODO: not robust enough yet, absolutely need to retry in case of
-    # unusable public key for encryption
-    #
-    # TODO: automate a bit better
+    # TODO: automate a bit better, test final product is good
+    #       this is a really good candidate for stand-alone script and set -e
     #
     # References:
     #   http://spin.atomicobject.com/2013/10/23/secure-gpg-keys/
@@ -85,7 +83,7 @@ crypt-create-profile () {
         h2 "Generating initial key:"
         msg "Recommend RSA (set your own capabilities), toggle until only capability is certify, 4096 bits, no expiry for now."
         # is it useful to have a special phrase in comment?
-        # echo "Comment should include phrase ..."
+        # echo "Comment should include phrase ..." 1>&2
         echo ""
         # TODO: retry if fail to build public key, e.g., password is bad
         DISPLAY= gpg-batch --homedir "$MASTERPROFILE" --expert --gen-key
@@ -114,7 +112,7 @@ crypt-create-profile () {
     if true; then
         cp -r "$MASTERPROFILE" "$WORKINGPROFILE"
         fix-crypt-permissions "$WORKINGPROFILE"
-        gpg-batch --homedir "$WORKINGPROFILE" --export-secret-subkeys "$RECIPIENT" > "$HOME/crypt-profiles-secret-keys"
+        gpg-batch --yes --homedir "$WORKINGPROFILE" --export-secret-subkeys "$RECIPIENT" --output "$HOME/crypt-profiles-secret-keys"
         h1
         msg "Answer (y)es to delete secret key"
         echo ""
@@ -143,7 +141,7 @@ crypt-create-profile () {
 crypt-create-rsa-keys () {
     # fail without leaving dangling files when some command does not work
     if [[ -z "$1" || -z "$2" || -z "$2" ]];then
-        echo "Must specify <<MASTERPROFILE>> <<RECIPIENT>> <<GPGPASSWORD>>"
+        echo "Must specify <<MASTERPROFILE>> <<RECIPIENT>> <<GPGPASSWORD>>" 1>&2
         return 1
     fi
     local MASTERPROFILE="$1"
@@ -153,13 +151,13 @@ crypt-create-rsa-keys () {
     # create the ssh key
     ssh-keygen-rsa "$MASTERPROFILE" "$PASSWORD"
     # use gpg key to encrypt the password
-    DISPLAY= echo "$PASSWORD" | gpg-batch --homedir "$MASTERPROFILE" --recipient "$RECIPIENT" --encrypt --passphrase "$GPGPASSWORD" --output "$MASTERPROFILE/id_rsa.txt.gpg" -
+    DISPLAY= echo "$PASSWORD" | gpg-batch --yes --homedir "$MASTERPROFILE" --recipient "$RECIPIENT" --encrypt --passphrase "$GPGPASSWORD" --output "$MASTERPROFILE/id_rsa.txt.gpg" -
 }
 
 crypt-create-ed25519-keys () {
     # fail without leaving dangling files when some command does not work
     if [[ -z "$1" || -z "$2" || -z "$2" ]];then
-        echo "Must specify <<MASTERPROFILE>> <<RECIPIENT>> <<GPGPASSWORD>>"
+        echo "Must specify <<MASTERPROFILE>> <<RECIPIENT>> <<GPGPASSWORD>>" 1>&2
         return 1
     fi
     local MASTERPROFILE="$1"
@@ -170,7 +168,7 @@ crypt-create-ed25519-keys () {
     # create the ssh key
     ssh-keygen-ed25519 "$MASTERPROFILE" "$PASSWORD"
     # use gpg key to encrypt the password
-    DISPLAY= echo "$PASSWORD" | gpg-batch --homedir "$MASTERPROFILE" --recipient "$RECIPIENT" --encrypt --passphrase "$GPGPASSWORD" --output "$MASTERPROFILE/id_ed25519.txt.gpg" -
+    DISPLAY= echo "$PASSWORD" | gpg-batch --yes --homedir "$MASTERPROFILE" --recipient "$RECIPIENT" --encrypt --passphrase "$GPGPASSWORD" --output "$MASTERPROFILE/id_ed25519.txt.gpg" -
 }
 
 # TODO: will eventually want to be able to modify secret files
@@ -183,10 +181,12 @@ crypt-add-secret-to-profile () {
     # TODO: check that crypt is working
     if [[ -z "$1" ]]; then
         yell "Empty primary location specified!"
+        msg "crypt-add-secret-to-profile <<primary location>> <<secret name>"
         return 1
     fi
     if [[ -z "$2" ]]; then
         yell "Empty secret name specified!"
+        msg "crypt-add-secret-to-profile <<primary location>> <<secret name>"
         return 1
     fi
     # XXXX: must keep crypt active, possibly fix permissions
@@ -216,6 +216,7 @@ crypt-add-secret-to-profile () {
     fi
 }
 
+# TODO: flush this out
 crypt-replace-subkeys () {
     yell "Not implemented yet!"
     false
@@ -252,41 +253,41 @@ crypt-profile-switch () {
     # gpg symlinks
     [[ -e "$HOME/.gnupg" ]] && \mv --backup=t -- "$HOME/.gnupg" "$HOME/.gnupg.backup"
     # make sure things are synced
-    need_new_symlink "$PRIMARYPROFILE/pubring.gpg" "$WORKINGPROFILE/pubring.gpg"
-    need_new_symlink "$PRIMARYPROFILE/secring.gpg" "$WORKINGPROFILE/secring.gpg"
-    need_new_symlink "$PRIMARYPROFILE/trustdb.gpg" "$WORKINGPROFILE/trustdb.gpg"
+    cp_if_different "$PRIMARYPROFILE/pubring.gpg"        "$WORKINGPROFILE/pubring.gpg"
+    cp_if_different "$PRIMARYPROFILE/secring.gpg"        "$WORKINGPROFILE/secring.gpg"
+    cp_if_different "$PRIMARYPROFILE/trustdb.gpg"        "$WORKINGPROFILE/trustdb.gpg"
+    # TODO: working profile must exist...
+    mkdir -p "$WORKINGPROFILE/private-keys-v1.d"
+    # TODO: cp_if_different wildcards?
+    cp "$PRIMARYPROFILE/private-keys-v1.d"/* "$WORKINGPROFILE/private-keys-v1.d"
     need_new_symlink "$WORKINGPROFILE" "$HOME/.gnupg"
     # link to the secrets files
     need_new_directory "$HOME/.secrets"
-    # a loop to create symlinks
+    # a loop to copy
     for THESECRETFILE in $PRIMARYPROFILE/*; do
         [[ $THESECRETFILE =~ secrets || $THESECRETFILE =~ openvpn ]]  || continue
         local THEBASENAME=$(basename -- "$THESECRETFILE")
-        need_new_symlink "$THESECRETFILE" "$HOME/.secrets/$THEBASENAME"
+        cp_if_different "$THESECRETFILE" "$HOME/.secrets/$THEBASENAME"
     done
-    # XXXX: just use secrets for itself, use last word in directory
-    # TODO: document this and possibly make a better way to do this
+    # secrets files
     local THEBASENAME=$(basename -- "${PRIMARYPROFILE##*-}")
-    need_new_symlink "$PRIMARYPROFILE/secrets.txt.gpg"    "$HOME/.secrets/$THEBASENAME.txt.gpg"
-    need_new_symlink "$PRIMARYPROFILE/id_rsa.txt.gpg"     "$HOME/.secrets/id_rsa.txt.gpg"
-    need_new_symlink "$PRIMARYPROFILE/id_ecdsa.txt.gpg"   "$HOME/.secrets/id_ecdsa.txt.gpg"
-    need_new_symlink "$PRIMARYPROFILE/id_ed25519.txt.gpg" "$HOME/.secrets/id_ed25519.txt.gpg"
-    # ssh symlinks
-    # TODO: what to do if something other than symlinks exists?
-    need_new_symlink "$PRIMARYPROFILE/id_ecdsa"       "$HOME/.ssh/id_ecdsa"
-    need_new_symlink "$PRIMARYPROFILE/id_ecdsa.pub"   "$HOME/.ssh/id_ecdsa.pub"
-    need_new_symlink "$PRIMARYPROFILE/id_ed25519"     "$HOME/.ssh/id_ed25519"
-    need_new_symlink "$PRIMARYPROFILE/id_ed25519.pub" "$HOME/.ssh/id_ed25519.pub"
-    need_new_symlink "$PRIMARYPROFILE/id_rsa"         "$HOME/.ssh/id_rsa"
-    need_new_symlink "$PRIMARYPROFILE/id_rsa.pub"     "$HOME/.ssh/id_rsa.pub"
-    # TODO: may be an obsolete lines
-    # TODO: do this for others?
-    [[ -e "$HOME/.ssh/config" ]] && rm -f "$HOME/.ssh/config"
-    need_new_symlink "$CRYPTSSHCONFIGPATH/config" "$HOME/.ssh/config"
+    cp_if_different "$PRIMARYPROFILE/secrets.txt.gpg"     "$HOME/.secrets/$THEBASENAME.txt.gpg"
+    cp_if_different "$PRIMARYPROFILE/id_rsa.txt.gpg"      "$HOME/.secrets/id_rsa.txt.gpg"
+    cp_if_different "$PRIMARYPROFILE/id_ecdsa.txt.gpg"    "$HOME/.secrets/id_ecdsa.txt.gpg"
+    cp_if_different "$PRIMARYPROFILE/id_ed25519.txt.gpg"  "$HOME/.secrets/id_ed25519.txt.gpg"
+    # ssh files
+    cp_if_different "$PRIMARYPROFILE/id_ecdsa"            "$HOME/.ssh/id_ecdsa"
+    cp_if_different "$PRIMARYPROFILE/id_ecdsa.pub"        "$HOME/.ssh/id_ecdsa.pub"
+    cp_if_different "$PRIMARYPROFILE/id_ed25519"          "$HOME/.ssh/id_ed25519"
+    cp_if_different "$PRIMARYPROFILE/id_ed25519.pub"      "$HOME/.ssh/id_ed25519.pub"
+    cp_if_different "$PRIMARYPROFILE/id_rsa"              "$HOME/.ssh/id_rsa"
+    cp_if_different "$PRIMARYPROFILE/id_rsa.pub"          "$HOME/.ssh/id_rsa.pub"
+    cp_if_different "$CRYPTSSHCONFIGPATH/config" "$HOME/.ssh/config"
     # for scripts that modify .ssh/config, ensure there always an original
-    need_new_symlink "$CRYPTSSHCONFIGPATH/config"         "$HOME/.ssh/config_fallback"
-    need_new_symlink "$CRYPTGPGCONFIGPATH/gpg.conf"       "$HOME/.gnupg/gpg.conf"
-    need_new_symlink "$CRYPTGPGCONFIGPATH/gpg-agent.conf" "$HOME/.gnupg/gpg-agent.conf"
+    cp_if_different "$CRYPTSSHCONFIGPATH/config"          "$HOME/.ssh/config_fallback"
+    # copy gpg config files
+    cp_if_different  "$CRYPTGPGCONFIGPATH/gpg.conf"       "$HOME/.gnupg/gpg.conf"
+    cp_if_different  "$CRYPTGPGCONFIGPATH/gpg-agent.conf" "$HOME/.gnupg/gpg-agent.conf"
     fix-gpg-ssh-permissions
 }
 
@@ -367,7 +368,7 @@ killall-agents () {
     pkill -9 --full gnome-keyring-daemon
     # this is hopefully enough to purge it
     # TODO: delete only things I own?
-    # find /tmp -iname "gpg-*" &>/dev/null && rm /tmp/gpg-*
+    # find /tmp -iname "gpg-*" &>/dev/null && \rm /tmp/gpg-*
     [[ -e "$HOME/.keychain" ]] && find "$HOME/.keychain" -type f -delete
 }
 
@@ -453,12 +454,12 @@ bootstrap-temporary-ssh-remove () {
     fi
     # XXXX: only do this if an id_rsa does not already exist on host machine
     # delete on private key on host machine
-    ssh $(whoami)@"$1" rm "$HOME/.ssh/id_rsa"
+    ssh $(whoami)@"$1" \rm "$HOME/.ssh/id_rsa"
     # delete public and authorized keys on this machine
     # TODO: clean up blank lines
     sed -i '/Temporary key to login/d' "$HOME/.ssh/authorized_keys"
     # delete the keys themselves
-    rm "$HOME/.ssh/id_rsa_temp" "$HOME/.ssh/id_rsa_temp.pub"
+    \rm "$HOME/.ssh/id_rsa_temp" "$HOME/.ssh/id_rsa_temp.pub"
 }
 
 bootstrap-temporary-ssh-remove-all () {
@@ -598,13 +599,13 @@ mount-container () {
 
   <<mount point>> mount point to create and use"
     if [[ -z "$1" || -z "$2" ]]; then
-        echo "$USAGE"
+        echo "$USAGE" 1>&2
         return 1
     fi
     # TODO: condense logic
     if [[ -e "$2" || -h "$2" ]]; then
         if [[ -h "$2" && ! -e "$2" ]]; then
-            rm "$2"
+            \rm "$2"
         elif [[ -d "$2" ]]; then
             # TODO: try to rmdir
             rmdir "$2"
@@ -624,9 +625,9 @@ mount-container () {
     # TODO: add more error checking?
     if [[ $? != 4 ]]; then
         local MNTBASENAME=$(basename -- "$2")
-        echo "Creating directory: /run/user/$(id -u)/$MNTBASENAME"
+        echo "Creating directory: /run/user/$(id -u)/$MNTBASENAME" 1>&2
         mkdir -p /run/user/$(id -u)/"$MNTBASENAME"
-        echo "Creating symlink: /run/user/$(id -u)/$MNTBASENAME --> $2"
+        echo "Creating symlink: /run/user/$(id -u)/$MNTBASENAME --> $2" 1>&2
         ln -s /run/user/$(id -u)/"$MNTBASENAME" "$2"
         # if mount unsuccessful
         # TODO: unmap crypt and maybe checking command directly is good
@@ -661,7 +662,7 @@ umount-container () {
     container, the filename of the container is the same name used for
     the mapping in /dev/mapper, or the mount point to umount and remove"
     if [[ -z "$1" ]]; then
-        echo "$USAGE"
+        echo "$USAGE" 1>&2
         return 1
     fi
     if [[ -d "$1" ]]; then
@@ -684,13 +685,13 @@ umount-container () {
             return 1
         fi
     fi
-    # sudo true || { echo 'Failed to sudo!'; return 1; }
+    # sudo true || { echo 'Failed to sudo!' 1>&2; return 1; }
     msg "Unmounting $MOUNTPOINT!"
     sudo umount "$MOUNTPOINT"
     # fusermount -u "$MOUNTPOINT"
     # TODO: get rid of directory anyways?
     rmdir "$MOUNTPOINT"
-    [[ -h "$1" ]] && rm "$1"
+    [[ -h "$1" ]] && \rm "$1"
     msg "Closing $MAPPER!"
     sudo cryptsetup luksClose "$MAPPER"
 }
@@ -704,7 +705,7 @@ open-vg () {
 
   <<volume group>> the name of the volume group"
     if [[ -z "$1" || -z "$2" ]]; then
-        echo "$USAGE"
+        echo "$USAGE" 1>&2
         return 1
     fi
     if [[ -e "$1" ]]; then
@@ -732,7 +733,7 @@ open-vg-maintenance () {
 
   <<volume group>> the name of the volume group"
     if [[ -z "$1" || -z "$2" ]]; then
-        echo "$USAGE"
+        echo "$USAGE" 1>&2
         return 1
     fi
     if [[ -e "$1" ]]; then
@@ -762,7 +763,7 @@ vg-container-expand () {
 
   <<size to add>> the number of gb to add"
     if [[ -z "$1" || -z "$2" ]]; then
-        echo "$USAGE"
+        echo "$USAGE" 1>&2
         return 1
     fi
     if ask_yn "This is a dangerous and poorly tested function!!! Continue";then
@@ -801,7 +802,7 @@ close-vg () {
 
   <<volume group>> the name of the volume group"
     if [[ -z "$1" || -z "$2" ]]; then
-        echo "$USAGE"
+        echo "$USAGE" 1>&2
         return 1
     fi
     local THEBASENAME=$(basename -- "$1")
@@ -822,7 +823,7 @@ mount-vg-img () {
 
   <<mount point>>  mount point to create and use"
     if [[ -z "$1" || -z "$2" ]]; then
-        echo "$USAGE"
+        echo "$USAGE" 1>&2
         return 1
     fi
     local THEBASENAME=$(basename -- "$2")
@@ -850,7 +851,7 @@ umount-vg-img () {
 
   <<mount point>>  mount point that is deleted after unmounting"
     if [[ -z "$1" || -z "$2" ]]; then
-        echo "$USAGE"
+        echo "$USAGE" 1>&2
         return 1
     fi
     if [[ -d "$2" ]]; then
@@ -1027,19 +1028,19 @@ privacy-conkeror () {
         if [[ -n "$CONKERORTEMPLATEPATH" && -d "$CONKERORTEMPLATEPATH" ]]; then
             for PROFILEDIR in $HOME/.conkeror.mozdev.org/conkeror/*; do
                 [[ -d "$PROFILEDIR" ]] || continue
-                echo "$PROFILEDIR"
+                echo "$PROFILEDIR" 1>&2
                 local PROFILEBASENAME=$(basename -- "$PROFILEDIR")
                 # PROFILEDIR=$(find "$HOME/.conkeror.mozdev.org/conkeror/" -mindepth 1 -maxdepth 1 -type d -iname "*.default")
                 # if [[ $(wc -l <<< "$PROFILEDIR") == "1" && -d "$PROFILEDIR" ]]; then
                 SHREDDIR="$HOME/tmp/tmp-shred/$(date-time-stamp)-conkeror-profile-$PROFILEBASENAME"
                 need_new_directory "$SHREDDIR"
                 mv "$PROFILEDIR" "$SHREDDIR"
-                echo "Trashed old profile at $PROFILEDIR if it existed!"
+                echo "Trashed old profile at $PROFILEDIR if it existed!" 1>&2
                 mkdir -p "$PROFILEDIR"
                 cp -r "$CONKERORTEMPLATEPATH"/* "$PROFILEDIR"
-                echo "Copied a new profile as $PROFILEDIR!"
+                echo "Copied a new profile as $PROFILEDIR!" 1>&2
                 # else
-                #     echo "Old conkeror profile not found so nothing trashed!"
+                #     echo "Old conkeror profile not found so nothing trashed!" 1>&2
                 # fi
                 # cache files
                 # TODO: copy to tmp
@@ -1083,11 +1084,11 @@ privacy-firefox () {
     if ! check-mozilla-running; then
         local FIREFOXPATH_DEFAULT=$(find "$HOME/.mozilla/firefox" -mindepth 1 -maxdepth 1 -type d -iname "*.default")
         if [[ $(wc -l <<< "$FIREFOXPATH_DEFAULT") == "1" && -d "$FIREFOXPATH_DEFAULT" ]]; then
-            echo "Found Firefox profile at: $FIREFOXPATH_DEFAULT"
+            echo "Found Firefox profile at: $FIREFOXPATH_DEFAULT" 1>&2
             mv-directory-contents-to-tmp-shred "$FIREFOXPATH_DEFAULT" 'firefox-profile'
-            echo "Trashed old Firefox 'default' profile if it existed"
+            echo "Trashed old Firefox 'default' profile if it existed" 1>&2
         else
-            echo "Old firefox 'default' profile not found so nothing trashed!"
+            echo "Old firefox 'default' profile not found so nothing trashed!" 1>&2
         fi
     fi
     mv-directory-contents-to-tmp-shred "$HOME/.mozilla/firefox/Pending Pings" 'firefox-pings'
@@ -1133,7 +1134,7 @@ privacy () {
         # this puts the sudo thing right at the from
         # TODO: also look for other locations
         # TODO: not sure I want this... causes issues when run nested...
-        # [[ -e "$HOME/randomfile.bin" ]] && sudo rm "$HOME/randomfile.bin"
+        # [[ -e "$HOME/randomfile.bin" ]] && sudo \rm "$HOME/randomfile.bin"
         # TODO: reset so gnome does not give errors
         h1 "Clearing browser information"
         privacy-chromium
@@ -1238,7 +1239,7 @@ privacy () {
         # only shred emacs files if interactive
         if [[ -z "$1" ]]; then
             # if ! check-emacs-daemon; then
-            echo "Shredding temporary emacs files!"
+            echo "Shredding temporary emacs files!" 1>&2
             kill-directory-contents "$HOME/.emacs.d/tmp/"
             kill-directory-contents "$HOME/.emacs.d/image-dired/"
             # TODO: ask before this?
@@ -1276,20 +1277,20 @@ privacy () {
         # rerun/recomple python and sage if they exist, to restore cached stuff
         # TODO: should this be done elsewhere? function for this
         if type -P sage &>/dev/null; then
-            echo "recache sage"
+            echo "recache sage" 1>&2
             time {
                 sage -c "pass"
             }
         fi
         if type -P python &>/dev/null; then
-            echo "recache python"
+            echo "recache python" 1>&2
             time {
                 python -c "pass"
             }
         fi
         if type -P ipython &>/dev/null; then
             time {
-                echo "recache ipython"
+                echo "recache ipython" 1>&2
                 ipython -c "pass"
             }
         fi
@@ -1297,7 +1298,7 @@ privacy () {
 }
 
 privacy-kill-freespace () {
-    sudo true || { echo 'Failed to sudo!'; return 1; }
+    sudo true || { echo 'Failed to sudo!' 1>&2; return 1; }
     local CURRENTUSER="$USER"
     # TODO: is there a better way to do this, especially assuming we are in /root/
     sudo su root -c "su $CURRENTUSER -c 'source /home/$CURRENTUSER/.bash_library;privacy';source /root/.bashrc;kill-freespace-random-file /home/$CURRENTUSER"
@@ -1358,13 +1359,13 @@ ssh-crypt-profile-batch-cmd () {
             local B64COMMAND=$(base64 <<< "$3")
             ssh-batch-interact $1 "source ~/.bash_profile $GPGPWD;source ~/.bash_library;bash -c \"$(base64 -d <<< ${B64COMMAND})\""
         else
-            echo "Error decrypting!!!"
+            echo "Error decrypting!!!" 1>&2
         fi
     fi
 }
 
 crypt-luks-headers-dump () {
-    sudo true || { echo 'Failed to sudo!'; return 1; }
+    sudo true || { echo 'Failed to sudo!' 1>&2; return 1; }
     (IFS=$'\n'
      for Z in $(lsblk -l -o name | tail -n +2); do
          if [[ -e /dev/"$Z" ]]; then
