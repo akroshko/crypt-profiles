@@ -1,6 +1,13 @@
 crypt-profiles: Easily synced GnuPG and OpenSSH keys
 ====================================================
 
+**This repository is not being developed anymore.  I have switched to
+using a Python script that builds and deploys my system-specific
+configuration files, including the appropriate ssh/gpg files and keys.
+My password management is also different and incorporated into Firefox
+since Conkeror is depricated.  I will update here if I make the Python
+script and/or Firefox extensions available at some point.**
+
 The *crypt-profiles* package generates password-protected OpenSSH
 keypairs that are secured by GnuPG encryption in a way that allows for
 managing multiple sets of keys and easy synchronization among many
@@ -44,12 +51,12 @@ This package requires environment variables to be configured for when
 both `~./bashrc` and `~/.bash_profile` are being sourced.  A
 convenient configuration snippet is:
 
-    export BACKUPHOSTNAME="<<hostname>>"                              # the hostname allowed for backup
-    export BACKUPUUID="<<backup drive UUID>>"                         # the UUID of the backup drive
-    export CRYPTGPGKEY="<<path of public key to iport>>"              # file with the public key if not already imported
-    export CRYPTGPGUSER="<<name or email of user>>"                   # the user of the public key to use in general
-    export CRYPTGPGCONFIGPATH="<<path with gpg.conf/gpg-agent.conf>>" # directory containing a standard gpg.conf and gpg-agent.conf
-    export CRYPTSSHCONFIGPATH="<<path with config for SSH>>"          # directory with standard ssh_config configuration file
+    export BACKUPHOSTNAME="<hostname...>"                              # the hostname allowed for backup
+    export BACKUPUUID="<backup drive UUID...>"                         # the UUID of the backup drive
+    export CRYPTGPGKEY="<path of public key to import...>"             # file with the public key if not already imported
+    export CRYPTGPGUSER="<name or email of user...>"                   # the user of the public key to use in general
+    export CRYPTGPGCONFIGPATH="<path with gpg.conf/gpg-agent.conf...>" # directory containing a standard gpg.conf and gpg-agent.conf
+    export CRYPTSSHCONFIGPATH="<path with config for SSH...>"          # directory with standard ssh_config configuration file
 
 which is found at
 [bash_env_crypt_sample](http://github.com/akroshko/crypt-profiles/bash_env_crypt_sample)
@@ -83,38 +90,38 @@ Generating and using a profile
 
 Using suggested suffixes, the locations used by a `crypt-profile` are:
 
-- `<<crypt-profile-name>>-master` given henceforth by `<<master>>`,
+- `<crypt-profile-name...>-master` given henceforth by `<master...>`,
 that contains the master keypair that only allows certification, in
 addition to the two subkeys for encryption and signing.  This master
 profile should then be stored securely as a backup in case the private
 subkeys ever need to be revoked.
 
-- `<<crypt-profile-name>>-primary` given henceforth by `<<primary>>`,
+- `<crypt-profile-name...>-primary` given henceforth by `<primary...>`,
 that contains the keypair is then copied to
-`<<crypt-profile-name>>-primary` without the master private key that
+`<crypt-profile-name...>-primary` without the master private key that
 stores both the GnuPG and SSH keys as well as any support files.
 
-- `<<crypt-profile-name>>-working` given henceforth by `<<working>>`,
+- `<crypt-profile-name...>-working` given henceforth by `<working...>`,
 that is the local working directory (unique on each computer) that is
 symlinked to the `~/.gnupg` directory
 
 To generate a profile use the command:
 
-    crypt-create-profile <<master>> <<primary>> <working>>
+    crypt-create-profile <master...> <primary...> <working...>
 
 To switch to a new profile use the command:
 
-    crypt-profile-switch <<primary>> <working>>
+    crypt-profile-switch <primary...> <working...>
 
 Note that both of these commands kill all agents in memory in order to
 avoid interference.  Cryptography agents must be restarted with
 `harm-crypt` command after switching.
 
-The `<<primary>>` directory is the location for the `crypt-profile`
+The `<primary...>` directory is the location for the `crypt-profile`
 that is synced to other computers and stores the actual keyfiles for
 everyday use.  The primary private GnuPG key is not stored in this
 location but instead separate subkeys are used for signing and
-encryption.  Other files in `<<primary>>` include:
+encryption.  Other files in `<primary...>` include:
 
 - `secrets.txt.gpg` stores the password for the GnuPG key, it is
   symlinked into `~/.secrets`
@@ -134,9 +141,9 @@ encryption.  Other files in `<<primary>>` include:
 - `trustdb.gpg` that stores the trust database for GnuPG for the
   particular `crypt-profile`
 
-The `<<working>>` directory is symlinked to the `~/.gnupg` directory
+The `<working...>` directory is symlinked to the `~/.gnupg` directory
 and is specific to each computer.  The appropriate files from
-`<<primary>>` are symlinked into `<<working>>` to make this a fully
+`<primary...>` are symlinked into `<working...>` to make this a fully
 functional `~/.gnupg` directory.
 
 Already mentioned, but also important is the `$CRYPTGPGCONFIGPATH`
